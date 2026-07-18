@@ -271,9 +271,20 @@ propagation, RLS impersonation. tsc clean.
 
 REMAINING PHASES: P2 real-estate core (property_interests, viewings,
 offers, reservations w/ one-active-per-unit constraint, CRM-owned inventory
-boards, import 192 website leads via website_lead_id, deal detail drawer);
-P3 financial (transactions, payments, payment plans, commissions+splits);
-P4 SLA/scoring/automations/role dashboards.
+boards, deal detail drawer); P3 financial (transactions, payments, payment
+plans, commissions+splits + Finance/Manager roles per the standard's
+permission matrix); P4 SLA/scoring/automations/role dashboards.
+
+STANDALONE + HANDOVER MODEL (user decision 2026-07-18 late): this CRM is
+INDEPENDENT — do NOT import the website `leads` table (192 rows); the
+`crm_leads.website_lead_id` column stays but unused. Handover: org agents
+sign up with @irfaninvest.com (email or Google) → auto-approved as role
+'agent' (owner-edit only); admin ONLY via crm_invites. CEO/developer = the
+user with FULL access: members amiralishamsipur@gmail.com +
+amirshamsipur1997@kioskoman.com (both admin), unused admin invites for
+a.shamsipour@irfaninvest.com (his org email — claims admin on first login)
+and amirshamsipur1997@gmail.com. Before handover: delete preview admin +
+sample rows, drop kioskoman.com from allowed_domains if wanted.
 
 ## What's NEXT (user drives order, sends screenshots/Figma nodes)
 
