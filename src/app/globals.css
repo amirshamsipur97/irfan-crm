@@ -1,26 +1,66 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* fonts (loaded via next/font in layout.tsx) */
+  --font-sans: var(--font-figtree);
+  --font-display: var(--font-poppins);
+
+  /* text */
+  --color-ink: #323338; /* Tuna */
+  --color-ink-muted: #676879; /* Dolphin */
+  --color-ink-disabled: rgba(50, 51, 56, 0.38);
+  --color-link: #1f76c2; /* Mariner */
+
+  /* borders */
+  --color-line: #d0d4e4; /* Blue Haze — cards, tables */
+  --color-line-strong: #c3c6d4; /* Ghost — buttons, inputs */
+  --color-line-soft: #e7e9ef; /* Athens Gray — layout seams */
+
+  /* surfaces */
+  --color-canvas: #f6f7fb; /* White Lilac — app background */
+  --color-cover: #f5f6f8; /* workspace cover */
+  --color-check: #ecedf5; /* checkbox fill */
+
+  /* brand */
+  --color-brand: #00c875; /* Caribbean Green */
+  --color-teal: #00a0a0; /* Persian Green */
+  --color-teal-deep: #007f9b; /* active tab indicator */
+  --color-cyan: #00d2d2;
+  --color-azure: #66ccff; /* workspace icon tile */
+  --color-alert: #d83a52; /* Cerise Red */
+
+  /* tints */
+  --color-cyan-tint: #d1ecef; /* Jagged Ice — chips, banner */
+  --color-cyan-soft: #e7f4f6; /* Black Squeeze — card headers */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --active-nav: rgba(174, 222, 229, 0.4); /* icon rail / sidebar active */
+  --hover-ghost: rgba(103, 104, 121, 0.1); /* Dolphin 10% */
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-figtree), sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Monday-style thin scrollbars */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #c3c6d4 transparent;
+}
+.thin-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: #c3c6d4;
+  border-radius: 3px;
 }

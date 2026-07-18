@@ -1,0 +1,212 @@
+"use client";
+
+import { useRef } from "react";
+import { gsap } from "gsap";
+import { useGSAP } from "@gsap/react";
+import { Surface } from "@/components/shell/AppChrome";
+import { AiFloaty } from "@/components/shell/AiFloaty";
+import { Icon } from "@/components/ui/Icon";
+import { canAnimate } from "@/lib/motion";
+import type { CrmUser } from "@/lib/types";
+import {
+  ActivityTrackerWidget,
+  BarsWidget,
+  FunnelWidget,
+  GaugeWidget,
+  MonthlyTargetWidget,
+  PieWidget,
+  StatWidget,
+  Widget,
+} from "./widgets";
+
+export interface DashboardData {
+  annual: { actual: number; target: number };
+  monthly: { actual: number; target: number };
+  avgDealValue: number;
+  activeForecast: number;
+  statusDistribution: { label: string; color: string; count: number }[];
+  revenueByMonth: { label: string; value: number }[];
+  funnel: { label: string; count: number; color: string }[];
+  conversionToWon: number;
+  forecastByMonth: { label: string; value: number }[];
+  forecastGoal: number;
+  forecastByStage: { label: string; color: string; value: number }[];
+  activityEvents: { owner: string; type: string; at: string }[];
+}
+
+function HeaderButton({ children }: { children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      className="flex h-[36px] items-center gap-[8px] whitespace-nowrap rounded-[4px] border border-line-strong px-[12px] font-sans text-[14px] leading-[22px] text-ink transition-colors hover:bg-[var(--hover-ghost)]"
+    >
+      {children}
+    </button>
+  );
+}
+
+export function SalesDashboard({
+  profile,
+  data,
+}: {
+  profile: CrmUser;
+  data: DashboardData;
+}) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  void profile;
+
+  useGSAP(
+    () => {
+      if (!canAnimate()) return;
+      gsap.from(".dash-widget", {
+        y: 20,
+        opacity: 0,
+        duration: 0.4,
+        stagger: 0.06,
+        ease: "power2.out",
+        clearProps: "all",
+      });
+    },
+    { scope: rootRef }
+  );
+
+  return (
+    <Surface>
+      <div ref={rootRef} className="thin-scroll h-full overflow-y-auto">
+        {/* dashboard header */}
+        <div className="flex items-center justify-between px-[32px] pb-[8px] pt-[24px]">
+          <span className="flex items-center gap-[10px]">
+            <h1 className="font-display text-[24px] font-medium leading-[30px] tracking-[-0.1px] text-ink">
+              Sales Dashboard
+            </h1>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
+              <path
+                d="M10 2.6l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L2.8 7.9l5-.7L10 2.6z"
+                stroke="#676879"
+                strokeWidth="1.3"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+          <span className="flex items-center gap-[8px]">
+            <HeaderButton>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+                <path d="M8 10.5V2.5M8 2.5L5 5.4M8 2.5l3 2.9M3 10.5v2a1 1 0 001 1h8a1 1 0 001-1v-2" stroke="#323338" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Export
+              <span className="text-[11px] text-ink-muted">⌄</span>
+            </HeaderButton>
+            <HeaderButton>
+              <Icon name="invite" size={16} />
+              Invite
+            </HeaderButton>
+            <button
+              type="button"
+              aria-label="Dashboard options"
+              className="flex size-[36px] items-center justify-center rounded-[4px] transition-colors hover:bg-[var(--hover-ghost)]"
+            >
+              <span className="font-sans text-[18px] leading-none text-ink">⋯</span>
+            </button>
+          </span>
+        </div>
+
+        {/* toolbar */}
+        <div className="flex items-center justify-between border-b border-line-soft px-[32px] pb-[12px]">
+          <div className="flex items-center gap-[12px]">
+            <button
+              type="button"
+              className="flex h-[36px] items-center gap-[8px] rounded-[4px] bg-teal-deep px-[12px] font-sans text-[14px] leading-[22px] text-white transition-colors hover:bg-[#006e87]"
+            >
+              <span className="text-[18px] leading-none">+</span> Add widget
+            </button>
+            <HeaderButton>
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
+                <rect x="2" y="2.5" width="12" height="11" rx="1.5" stroke="#323338" strokeWidth="1.3" />
+                <path d="M6.5 2.5v11" stroke="#323338" strokeWidth="1.3" />
+              </svg>
+              1 connected board
+            </HeaderButton>
+            <span className="flex h-[36px] w-[220px] items-center gap-[8px] rounded-[4px] border border-line-strong px-[10px]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/figma/imgVariant9.svg" alt="" width={14} height={14} />
+              <input
+                placeholder="Type to filter"
+                className="w-full bg-transparent font-sans text-[14px] text-ink outline-none placeholder:text-ink-muted"
+              />
+            </span>
+            <span className="h-[22px] w-px bg-line" />
+            <button type="button" className="flex h-[36px] items-center gap-[8px] rounded-[4px] px-[10px] font-sans text-[14px] text-ink transition-colors hover:bg-[var(--hover-ghost)]">
+              <Icon name="bhPerson" size={20} className="w-[24px]" />
+              People
+            </button>
+            <button type="button" className="flex h-[36px] items-center gap-[8px] rounded-[4px] px-[10px] font-sans text-[14px] text-ink transition-colors hover:bg-[var(--hover-ghost)]">
+              <Icon name="bhFilter" size={20} className="w-[24px]" />
+              Filter
+            </button>
+          </div>
+          <Icon name="settings" size={20} />
+        </div>
+
+        {/* widget grid */}
+        <div className="grid grid-cols-12 gap-[16px] p-[24px] pb-[64px]">
+          <Widget title="Annual Target" className="col-span-5 min-h-[320px]">
+            <GaugeWidget actual={data.annual.actual} target={data.annual.target} />
+          </Widget>
+          <Widget title="Monthly Target" className="col-span-4 min-h-[320px]">
+            <MonthlyTargetWidget actual={data.monthly.actual} target={data.monthly.target} />
+          </Widget>
+          <div className="col-span-3 flex flex-col gap-[16px]">
+            <Widget title="Average Deal Value" className="flex-1">
+              <StatWidget value={data.avgDealValue} />
+            </Widget>
+            <Widget title="Active deals - Forecast" className="flex-1">
+              <StatWidget value={data.activeForecast} />
+            </Widget>
+          </div>
+
+          <Widget title="Deal status distribution" className="col-span-6 min-h-[320px]">
+            {data.statusDistribution.length > 0 ? (
+              <PieWidget segments={data.statusDistribution} />
+            ) : (
+              <p className="py-[48px] text-center font-sans text-[14px] text-ink-muted">No deals yet</p>
+            )}
+          </Widget>
+          <Widget title="Actual Revenue by Month (Deals won)" className="col-span-6 min-h-[320px]">
+            {data.revenueByMonth.length > 0 ? (
+              <BarsWidget bars={data.revenueByMonth} yLabel="Deal Value" />
+            ) : (
+              <p className="py-[48px] text-center font-sans text-[14px] text-ink-muted">No won deals yet</p>
+            )}
+          </Widget>
+
+          <Widget title="Pipeline conversion" className="col-span-12 min-h-[320px]">
+            <FunnelWidget steps={data.funnel} conversionToWon={data.conversionToWon} />
+          </Widget>
+
+          <Widget title="Activity tracker" className="col-span-12">
+            <ActivityTrackerWidget events={data.activityEvents} />
+          </Widget>
+
+          <Widget title="Forecasted Revenue by month" className="col-span-6 min-h-[320px]">
+            {data.forecastByMonth.length > 0 ? (
+              <BarsWidget bars={data.forecastByMonth} goal={data.forecastGoal} yLabel="Forecast Value" />
+            ) : (
+              <p className="py-[48px] text-center font-sans text-[14px] text-ink-muted">No active deals yet</p>
+            )}
+          </Widget>
+          <Widget title="Forecasted Revenue by Stage" className="col-span-6 min-h-[320px]">
+            {data.forecastByStage.length > 0 ? (
+              <BarsWidget
+                bars={data.forecastByStage.map((s) => ({ label: s.label, value: s.value, color: s.color === "#579bfc" ? "#579bfc" : "#66ccff" }))}
+                yLabel="Forecast Value"
+              />
+            ) : (
+              <p className="py-[48px] text-center font-sans text-[14px] text-ink-muted">No active deals yet</p>
+            )}
+          </Widget>
+        </div>
+      </div>
+      <AiFloaty />
+    </Surface>
+  );
+}

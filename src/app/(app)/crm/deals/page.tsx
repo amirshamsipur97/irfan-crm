@@ -1,0 +1,44 @@
+import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/profile";
+import { recordBoardVisit } from "@/lib/visits";
+import { DealsBoard } from "@/components/crm/deals/DealsBoard";
+import type { CrmAccount, CrmContact, CrmDeal, CrmDealGroup, CrmDealStage, CrmUser } from "@/lib/types";
+
+export default async function DealsBoardPage() {
+  const [profile, supabase] = await Promise.all([getProfile(), createClient(), recordBoardVisit("deals")]);
+
+  const [{ data: groups }, { data: deals }, { data: stages }, { data: users }, { data: accounts }, { data: contacts }] =
+    await Promise.all([
+      supabase
+        .from("crm_deal_groups")
+        .select("*")
+        .order("position")
+        .returns<CrmDealGroup[]>(),
+      supabase.from("crm_deals").select("*").order("created_at").returns<CrmDeal[]>(),
+      supabase
+        .from("crm_deal_stages")
+        .select("*")
+        .order("position")
+        .returns<CrmDealStage[]>(),
+      supabase
+        .from("crm_users")
+        .select("*")
+        .eq("is_active", true)
+        .order("full_name")
+        .returns<CrmUser[]>(),
+      supabase.from("crm_accounts").select("*").order("name").returns<CrmAccount[]>(),
+      supabase.from("crm_contacts").select("*").order("name").returns<CrmContact[]>(),
+    ]);
+
+  return (
+    <DealsBoard
+      profile={profile}
+      groups={groups ?? []}
+      deals={deals ?? []}
+      stages={stages ?? []}
+      users={users ?? []}
+      accounts={accounts ?? []}
+      contacts={contacts ?? []}
+    />
+  );
+}
