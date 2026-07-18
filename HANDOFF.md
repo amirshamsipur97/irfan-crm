@@ -216,6 +216,42 @@ boards; Person = owner filter (leads/deals/projects/activities); lead timeline
 Demo data wiped to ONE linked "Sample …" row per board (template mode).
 Remaining visual-only controls are listed in the memory note.
 
+## STANDARDIZATION TRACK (started 2026-07-18, drives all future phases)
+
+User supplied a "Master CRM Audit & Standardization" spec (real-estate,
+monday-model). Full audit report (scores, 20-pitfall checklist, gap matrix,
+ER diagram, phase plan) published as artifact:
+https://claude.ai/code/artifact/b702a706-9708-4065-8861-4f3f6393c589
+
+USER DECISIONS (2026-07-18): (1) team-read / owner-edit permissions;
+(2) deals pipeline → middle 9-stage version (New → Qualified → Viewing →
+Negotiation → Offer → Reserved → Contract → Won / Lost); (3) currency OMR
+default + multi-currency column; (4) Inventory = INDEPENDENT crm tables
+(NOT the whitewill projects/project_units tables — user chose independence;
+sync/import later).
+
+PHASE 0 DONE (2026-07-18, migration `crm_phase0_security_integrity`, DB-only,
+zero UI change): UPDATE policies rewritten on 8 row tables (admin OR owner_id
+OR created_by; tasks use assigned_to; SELECT stays team-wide, DELETE stays
+admin); `crm_audit_log` (admin-read, trigger-written, immutable) + AFTER
+triggers: deal stage/owner/value changes, lead owner changes, deletes of
+lead/deal/contact/account; `crm_deal_stage_history` (mirrors lead history).
+E2E-verified via SQL role impersonation (agent blocked on others' rows=0,
+own row=1, team read=1; 3 field-audits + 1 history row + delete audits).
+⚠️ UI caveat: non-owner cell edits now fail silently at the DB (optimistic
+state shows until reload) — Phase 1 adds read-only affordance for non-owners.
+⚠️ SQL testing gotcha: a wCTE UPDATE cannot see rows INSERTed in the same
+statement — test sequentially or the trigger test falsely reports 0.
+
+REMAINING PHASES: P1 identity (contact_id/account_id FKs + dual-write behind
+existing name chips, E.164/email normalization + dup warning, transactional
+lead→contact conversion RPC, currency column OMR, lost_reason/next_step +
+9-stage pipeline reseed); P2 real-estate core (property_interests, viewings,
+offers, reservations w/ one-active-per-unit constraint, CRM-owned inventory
+boards, import 192 website leads via website_lead_id, deal detail drawer);
+P3 financial (transactions, payments, payment plans, commissions+splits);
+P4 SLA/scoring/automations/role dashboards.
+
 ## What's NEXT (user drives order, sends screenshots/Figma nodes)
 
 1. **2 more Sales Dashboard sections** — user said they'll send screenshots.
