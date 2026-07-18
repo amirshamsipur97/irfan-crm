@@ -208,6 +208,30 @@ export interface CrmProject {
   updated_at: string;
 }
 
+export interface CrmProductGroup {
+  id: string;
+  name: string;
+  color: string;
+  position: number;
+  is_collapsed: boolean;
+  created_at: string;
+}
+
+export interface CrmProduct {
+  id: string;
+  name: string;
+  group_id: string | null;
+  owner_id: string | null;
+  status: string | null;
+  price: number | null;
+  billing: string | null;
+  sku: string | null;
+  description: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CrmActivityGroup {
   id: string;
   name: string;

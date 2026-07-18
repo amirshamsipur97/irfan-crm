@@ -43,6 +43,15 @@ Storage: public bucket `crm-avatars` (users upload under their own uid folder).
 ## Phases
 
 1. ✅ **Planning + database + scaffold**
+1j. ✅ **Products & Services board** (2026-07-18, no Figma frame — shared board
+    pattern like Client Projects): /crm/products — groups Products (#579bfc) /
+    Services (#a25ddc); columns Owner, Status (Active/Draft/Discontinued +
+    battery footer), Price (money + sum footer), Billing (One-time/Monthly/
+    Yearly), SKU, Description. Migration `crm_products_schema`
+    (crm_product_groups + crm_products, RLS, updated_at trigger, sample row).
+    SuccessToast + undo on cell edits; BOARD_META.products.table wired for the
+    workspace Content tab.
+
 1b. ✅ **App shell + Agent Home + Workspace home** (2026-07-16) — pixel build
    from Figma `Irfan-invest` file (nodes 884-38531, 883-30112): design tokens in
    globals.css, 70+ exported assets in public/figma + map in

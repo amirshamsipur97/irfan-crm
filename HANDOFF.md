@@ -1,7 +1,36 @@
 # Irfan CRM — Session Handoff
 
 > Read this + `PLAN.md` first. This file is the single source of truth for
-> continuing the build in a new session. Updated: 2026-07-17.
+> continuing the build in a new session. Updated: 2026-07-18 (end of the big
+> 07-18 session; all work checkpointed in git commit a18c1cd).
+
+## CURRENT STATE SNAPSHOT (2026-07-18 end)
+
+- **LIVE**: https://irfan-crm.vercel.app (Vercel project `irfan-crm`, scope
+  amirshamsipurs-projects; deploy = `npx vercel deploy --prod --yes`).
+  Local dev: preview_start `irfan-crm`, port 3070; /preview auto-login works
+  locally only (DEMO_* not on Vercel → 404 in prod, by design).
+- **Auth is DONE end-to-end**: Figma login/signup pages (AuthShell +
+  "Power By NeXPROP" footer), registration = company domain
+  (irfaninvest.com, kioskoman.com in `crm_registration_settings`) OR
+  `crm_invites` row, 20-active-agent cap, Google OAuth enabled + verified,
+  `crm_claim_membership()` RPC heals invited-after-signin users,
+  /auth/callback + /auth/denied, proxy lets /auth/* through.
+  Members: preview admin (dev), amiralishamsipur@gmail.com (ADMIN — user's
+  real account), amirshamsipur1997@kioskoman.com (admin),
+  korooshkhaleghi72@gmail.com (agent). Unused admin invites:
+  amirshamsipur1997@gmail.com, a.shamsipour@irfaninvest.com.
+- **All 6 boards + dashboard functional**; cross-board features: activity
+  logging (+ on timeline → menu/composer) on leads/deals/contacts/accounts;
+  ConnectPicker (find-or-create) for deals contacts+accounts AND contacts
+  accounts; SuccessToast w/ real undo on cell edits (leads/deals/contacts/
+  accounts); board Search + Person filters; popovers are fixed-positioned
+  (never clipped — see memory gotcha, always use Popover/anchorFixedPos).
+- **Data**: user is entering REAL company data now (Google/Apple/Amazon/
+  Irfaninvest/Microsoft accounts, deals with values). DO NOT wipe.
+- **Deepest detail lives in the auto-memory file** (irfan-crm entry) —
+  per-feature notes, testing gotchas (hidden-tab freezes, 0-viewport
+  webview, '.ws-tabs button' selectors), and the NEXT list.
 
 ## What this project is
 
@@ -190,7 +219,15 @@ Remaining visual-only controls are listed in the memory note.
 ## What's NEXT (user drives order, sends screenshots/Figma nodes)
 
 1. **2 more Sales Dashboard sections** — user said they'll send screenshots.
-2. Products & Services board (same board pattern; Client Projects done).
+2. ~~Products & Services board~~ DONE 2026-07-18 (late): /crm/products on the
+   shared board pattern — groups Products (#579bfc) / Services (#a25ddc),
+   columns Owner / Status (Active #00c875, Draft #fdab3d, Discontinued
+   #e2445c + battery footer) / Price (money + sum footer) / Billing
+   (One-time #579bfc, Monthly #00a0a0, Yearly #a25ddc) / SKU / Description.
+   Migration `crm_products_schema` (crm_product_groups + crm_products, full
+   RLS, updated_at trigger, 1 sample row). SuccessToast + undo wired.
+   BOARD_META products.table now `crm_products` (workspace Content tab picks
+   it up). E2E tested: add item, Status popover, DB persist; test row cleaned.
 3. Lead submission form tab (Leads board), detail drawers (lead/deal/contact),
    Team/invite page w/ avatar upload, notifications.
 4. Polish pass — known bugs list: subitem count badge + expand chevron on deal
