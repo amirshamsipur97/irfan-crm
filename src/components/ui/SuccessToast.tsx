@@ -2,13 +2,15 @@
 
 import { useEffect } from "react";
 
-/** Monday-style green confirmation bar with optional Undo. */
+/** Monday-style confirmation bar with optional Undo (green success / red alert). */
 export function SuccessToast({
   message,
+  tone = "success",
   onUndo,
   onClose,
 }: {
   message: string;
+  tone?: "success" | "alert";
   onUndo?: () => void;
   onClose: () => void;
 }) {
@@ -18,16 +20,26 @@ export function SuccessToast({
   }, [onClose]);
 
   return (
-    <div className="fixed left-1/2 top-[16px] z-[95] flex -translate-x-1/2 items-center gap-[14px] rounded-[8px] bg-[#258750] py-[10px] pl-[18px] pr-[12px] text-white shadow-[0px_8px_24px_rgba(0,0,0,0.3)]">
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
-        <path
-          d="M2.8 9.6l4 4L15.2 5"
-          stroke="#ffffff"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+    <div
+      className="fixed left-1/2 top-[16px] z-[95] flex -translate-x-1/2 items-center gap-[14px] rounded-[8px] py-[10px] pl-[18px] pr-[12px] text-white shadow-[0px_8px_24px_rgba(0,0,0,0.3)]"
+      style={{ backgroundColor: tone === "alert" ? "#c23b53" : "#258750" }}
+    >
+      {tone === "success" ? (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+          <path
+            d="M2.8 9.6l4 4L15.2 5"
+            stroke="#ffffff"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ) : (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+          <path d="M9 3.4v7" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="9" cy="13.8" r="1.2" fill="#fff" />
+        </svg>
+      )}
       <span className="whitespace-nowrap font-sans text-[14px] leading-[20px]">{message}</span>
       {onUndo && (
         <button

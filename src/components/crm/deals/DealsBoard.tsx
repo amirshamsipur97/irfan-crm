@@ -26,6 +26,8 @@ import {
 } from "@/app/(app)/crm/deals/actions";
 import type { LogPayload } from "./activity-log";
 import type { PickerOption } from "./connect-picker";
+import { LostReasonDialog } from "./lost-reason-dialog";
+import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 
 const VIEWS = ["Main table", "Sales report", "Pipeline"];
 
@@ -59,7 +61,8 @@ export function DealsBoard({
   const [contactOptions, setContactOptions] = useState<PickerOption[]>(
     contacts.map((c) => ({ name: c.name, sub: c.account_name }))
   );
-  const [toast, setToast] = useState<{ message: string; undo?: () => void } | null>(null);
+  const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+  const [lostPrompt, setLostPrompt] = useState<{ dealId: string; stageId: string } | null>(null);
 
   useEffect(() => setLocalDeals(deals), [deals]);
   useEffect(() => setLocalGroups(groups), [groups]);
@@ -89,6 +92,18 @@ export function DealsBoard({
 
   const patchDeal = (dealId: string, patch: Partial<CrmDeal>, silent = false) => {
     const prevDeal = localDeals.find((d) => d.id === dealId);
+    if (prevDeal && !canEditRow(profile, prevDeal)) {
+      setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
+      return;
+    }
+    // entering the Lost stage requires a reason (dialog completes the patch)
+    if (patch.stage_id && !("lost_reason" in patch)) {
+      const target = stages.find((s) => s.id === patch.stage_id);
+      if (target?.is_lost) {
+        setLostPrompt({ dealId, stageId: patch.stage_id });
+        return;
+      }
+    }
     setLocalDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, ...patch } : d)));
     updateDeal(dealId, patch as Record<string, unknown>);
 
@@ -155,6 +170,11 @@ export function DealsBoard({
         is_done: false,
         contact_name: null,
         account_name: null,
+        contact_id: null,
+        account_id: null,
+        currency: "OMR",
+        lost_reason: null,
+        next_step: null,
         forecast_category: null,
         last_interaction_at: null,
         lead_id: null,
@@ -259,8 +279,19 @@ export function DealsBoard({
       {toast && (
         <SuccessToast
           message={toast.message}
+          tone={toast.tone}
           onUndo={toast.undo}
           onClose={() => setToast(null)}
+        />
+      )}
+      {lostPrompt && (
+        <LostReasonDialog
+          dealName={localDeals.find((d) => d.id === lostPrompt.dealId)?.name ?? "deal"}
+          onCancel={() => setLostPrompt(null)}
+          onSubmit={(reason) => {
+            patchDeal(lostPrompt.dealId, { stage_id: lostPrompt.stageId, lost_reason: reason });
+            setLostPrompt(null);
+          }}
         />
       )}
       <AiFloaty />

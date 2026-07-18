@@ -207,57 +207,20 @@ export async function updateLead(leadId: string, patch: Record<string, unknown>)
 }
 
 /** Copy the lead into the Contacts board and mark it as moved (green check). */
+/**
+ * Standard lead conversion (Phase 1): transactional + idempotent RPC that
+ * matches an existing contact by normalized phone/email before creating one,
+ * and records converted_contact_id / converted_at on the lead.
+ */
 export async function moveLeadToContacts(leadId: string) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "not authenticated" };
-
-  const { data: lead } = await supabase
-    .from("crm_leads")
-    .select("*")
-    .eq("id", leadId)
-    .maybeSingle<{
-      name: string;
-      email: string | null;
-      phone: string | null;
-      country_code: string | null;
-      title: string | null;
-      company: string | null;
-      custom: Record<string, unknown> | null;
-    }>();
-  if (!lead) return { error: "lead not found" };
-
-  const custom = lead.custom ?? {};
-  if (custom.moved_to_contacts) return {};
-
-  const { data: group } = await supabase
-    .from("crm_contact_groups")
-    .select("id")
-    .order("position")
-    .limit(1)
-    .maybeSingle<{ id: string }>();
-
-  const { error } = await supabase.from("crm_contacts").insert({
-    name: lead.name,
-    email: lead.email,
-    phone: lead.phone,
-    country_code: lead.country_code,
-    title: lead.title,
-    account_name: lead.company,
-    group_id: group?.id ?? null,
-    created_by: user.id,
-  });
+  const { data, error } = await supabase.rpc("crm_convert_lead", { p_lead_id: leadId });
   if (error) return { error: error.message };
 
-  const { error: flagError } = await supabase
-    .from("crm_leads")
-    .update({ custom: { ...custom, moved_to_contacts: true } })
-    .eq("id", leadId);
-  if (flagError) return { error: flagError.message };
+  const result = (data ?? {}) as { error?: string; matched?: boolean; contact_id?: string };
+  if (result.error) return { error: result.error };
 
   revalidatePath(BOARD_PATH);
   revalidatePath("/crm/contacts");
-  return {};
+  return { matched: result.matched ?? false, contactId: result.contact_id };
 }

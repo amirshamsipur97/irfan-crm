@@ -18,6 +18,9 @@ const PATCHABLE = new Set([
   "account_name",
   "forecast_category",
   "last_interaction_at",
+  "currency",
+  "lost_reason",
+  "next_step",
 ]);
 
 /** Log a meeting / call / note / email from a deal's Activities timeline. */

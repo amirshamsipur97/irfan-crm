@@ -149,3 +149,19 @@ export async function logContactActivity(
   revalidatePath("/crm/activities");
   return {};
 }
+
+/** Duplicate warning (Phase 1): find another contact with the same normalized email/phone. */
+export async function findDuplicateContact(
+  email: string | null,
+  phone: string | null,
+  excludeId: string | null
+) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("crm_find_duplicate_contact", {
+    p_email: email,
+    p_phone: phone,
+    p_exclude: excludeId,
+  });
+  if (error || !data) return null;
+  return data as { id: string; name: string } | null;
+}

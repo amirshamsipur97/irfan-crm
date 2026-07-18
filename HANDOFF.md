@@ -243,10 +243,33 @@ state shows until reload) — Phase 1 adds read-only affordance for non-owners.
 ⚠️ SQL testing gotcha: a wCTE UPDATE cannot see rows INSERTed in the same
 statement — test sequentially or the trigger test falsely reports 0.
 
-REMAINING PHASES: P1 identity (contact_id/account_id FKs + dual-write behind
-existing name chips, E.164/email normalization + dup warning, transactional
-lead→contact conversion RPC, currency column OMR, lost_reason/next_step +
-9-stage pipeline reseed); P2 real-estate core (property_interests, viewings,
+PHASE 1 DONE (2026-07-18, migration `crm_phase1_identity_relations` + frontend):
+(1) FKs behind name chips — crm_deals.contact_id/account_id, crm_contacts/
+crm_projects.account_id; BEFORE triggers resolve *_name → FK on every write
+(UI untouched); AFTER triggers propagate contact/account RENAMES into cached
+name columns everywhere (SECURITY DEFINER to cross owner-edit RLS) — the
+"rename breaks links" bug is dead. Backfilled from existing names.
+(2) normalized_email + normalized_phone (E.164-ish) GENERATED columns on
+leads+contacts w/ indexes. (3) `crm_convert_lead(lead_id)` RPC — transactional
+(FOR UPDATE), idempotent, matches existing contact by normalized phone/email
+before creating, writes converted_contact_id/converted_at; moveLeadToContacts
+action now calls it and the toast says "linked to existing contact (duplicate
+avoided)" on match. (4) `crm_find_duplicate_contact` RPC + alert toast when an
+email/phone edited on leads/contacts matches another contact. (5) Currency:
+money() now "1,000 OMR" everywhere (currency param, default OMR); currency
+column on deals/products/projects, leads default OMR. (6) 9-stage pipeline
+LIVE: New → Qualified → Viewing → Negotiation → Offer → Reserved → Contract →
+Won → Lost (Discovery/Proposal RENAMED in place so existing deals kept ids).
+(7) Lost enforcement: stage→Lost opens LostReasonDialog (deals/
+lost-reason-dialog.tsx), saves stage+lost_reason together; lost_reason/
+next_step columns + PATCHABLE. (8) Owner-lock UI: canEditRow() in
+lib/permissions.ts guards patch fns on leads/deals/contacts/accounts/products
+boards → red alert toast (SuccessToast gained tone="alert") instead of
+silent RLS rejection. E2E: OMR render, 9-stage popover, Lost dialog → DB
+lost_reason + history + audit rows, convert-match by phone, rename
+propagation, RLS impersonation. tsc clean.
+
+REMAINING PHASES: P2 real-estate core (property_interests, viewings,
 offers, reservations w/ one-active-per-unit constraint, CRM-owned inventory
 boards, import 192 website leads via website_lead_id, deal detail drawer);
 P3 financial (transactions, payments, payment plans, commissions+splits);

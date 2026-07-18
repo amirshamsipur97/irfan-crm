@@ -31,9 +31,10 @@ export function categoryMeta(key: ForecastCategory | null) {
   return FORECAST_CATEGORIES.find((c) => c.key === key) ?? null;
 }
 
-export function money(value: number | null | undefined): string {
-  if (value == null) return "$0";
-  return `$${Number(value).toLocaleString("en-US")}`;
+/** Default currency is OMR (Phase-1 decision); rows may override via their currency column. */
+export function money(value: number | null | undefined, currency = "OMR"): string {
+  const n = value == null ? 0 : Number(value);
+  return `${n.toLocaleString("en-US")} ${currency}`;
 }
 
 /** Monday computes forecast value as deal value × close probability. */

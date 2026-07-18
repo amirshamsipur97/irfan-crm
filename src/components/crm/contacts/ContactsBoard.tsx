@@ -21,6 +21,8 @@ import {
 } from "@/app/(app)/crm/contacts/actions";
 import type { LogPayload } from "@/components/crm/deals/activity-log";
 import { SuccessToast } from "@/components/ui/SuccessToast";
+import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { findDuplicateContact } from "@/app/(app)/crm/contacts/actions";
 import { quickCreateAccount } from "@/app/(app)/crm/deals/actions";
 import type { PickerOption } from "@/components/crm/deals/connect-picker";
 
@@ -62,7 +64,7 @@ export function ContactsBoard({
     { scope: rootRef }
   );
 
-  const [toast, setToast] = useState<{ message: string; undo?: () => void } | null>(null);
+  const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
   const [accountOptions, setAccountOptions] = useState<PickerOption[]>(
     accounts.map((a) => ({ name: a.name, sub: a.domain }))
   );
@@ -74,10 +76,24 @@ export function ContactsBoard({
 
   const patchContact = (contactId: string, patch: Partial<CrmContact>, silent = false) => {
     const prevRow = localContacts.find((x) => x.id === contactId);
+    if (prevRow && !canEditRow(profile, prevRow)) {
+      setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
+      return;
+    }
     setLocalContacts((prev) =>
       prev.map((x) => (x.id === contactId ? { ...x, ...patch } : x))
     );
     updateContact(contactId, patch as Record<string, unknown>);
+    if ("email" in patch || "phone" in patch) {
+      const next = { ...prevRow, ...patch } as CrmContact;
+      findDuplicateContact(
+        next.email,
+        `${next.country_code ?? ""}${next.phone ?? ""}`,
+        contactId
+      ).then((dup) => {
+        if (dup) setToast({ message: `Possible duplicate: "${dup.name}" has the same email/phone`, tone: "alert" });
+      });
+    }
     if (!silent && prevRow) {
       const previous = Object.fromEntries(
         Object.keys(patch).map((k) => [k, prevRow[k as keyof CrmContact] ?? null])
@@ -109,6 +125,7 @@ export function ContactsBoard({
         priority: null,
         comments: null,
         account_name: null,
+        account_id: null,
         group_id: groupId,
         last_interaction_at: null,
         created_by: profile.id,
@@ -203,6 +220,7 @@ export function ContactsBoard({
       {toast && (
         <SuccessToast
           message={toast.message}
+          tone={toast.tone}
           onUndo={toast.undo}
           onClose={() => setToast(null)}
         />

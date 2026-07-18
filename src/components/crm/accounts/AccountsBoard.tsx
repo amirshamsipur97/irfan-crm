@@ -21,6 +21,7 @@ import {
 } from "@/app/(app)/crm/accounts/actions";
 import type { LogPayload } from "@/components/crm/deals/activity-log";
 import { SuccessToast } from "@/components/ui/SuccessToast";
+import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 
 export function AccountsBoard({
   profile,
@@ -60,10 +61,14 @@ export function AccountsBoard({
     { scope: rootRef }
   );
 
-  const [toast, setToast] = useState<{ message: string; undo?: () => void } | null>(null);
+  const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
 
   const patchAccount = (accountId: string, patch: Partial<CrmAccount>, silent = false) => {
     const prevRow = localAccounts.find((x) => x.id === accountId);
+    if (prevRow && !canEditRow(profile, prevRow)) {
+      setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
+      return;
+    }
     setLocalAccounts((prev) =>
       prev.map((x) => (x.id === accountId ? { ...x, ...patch } : x))
     );
@@ -183,6 +188,7 @@ export function AccountsBoard({
       {toast && (
         <SuccessToast
           message={toast.message}
+          tone={toast.tone}
           onUndo={toast.undo}
           onClose={() => setToast(null)}
         />

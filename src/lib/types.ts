@@ -83,6 +83,8 @@ export interface CrmLead {
   next_followup_at: string | null;
   last_activity_at: string | null;
   website_lead_id: string | null;
+  converted_contact_id: string | null;
+  converted_at: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
   created_at: string;
@@ -124,6 +126,11 @@ export interface CrmDeal {
   forecast_category: ForecastCategory | null;
   last_interaction_at: string | null;
   lead_id: string | null;
+  contact_id: string | null;
+  account_id: string | null;
+  currency: string;
+  lost_reason: string | null;
+  next_step: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -150,6 +157,7 @@ export interface CrmContact {
   priority: "high" | "medium" | "low" | null;
   comments: string | null;
   account_name: string | null;
+  account_id: string | null;
   group_id: string | null;
   last_interaction_at: string | null;
   created_by: string | null;

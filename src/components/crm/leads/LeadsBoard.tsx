@@ -25,6 +25,8 @@ import {
 } from "@/app/(app)/crm/leads/actions";
 import type { LogPayload } from "@/components/crm/deals/activity-log";
 import { SuccessToast } from "@/components/ui/SuccessToast";
+import { findDuplicateContact } from "@/app/(app)/crm/contacts/actions";
+import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 
 export function LeadsBoard({
   profile,
@@ -64,7 +66,7 @@ export function LeadsBoard({
     { scope: rootRef }
   );
 
-  const [toast, setToast] = useState<{ message: string; undo?: () => void } | null>(null);
+  const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
 
   const patchLead = (leadId: string, patch: Partial<CrmLead>) =>
     setLocalLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, ...patch } : l)));
@@ -72,8 +74,20 @@ export function LeadsBoard({
   /** cell edits: optimistic patch + persist + green toast with working undo */
   const editLead = (leadId: string, patch: Partial<CrmLead>) => {
     const prevLead = localLeads.find((l) => l.id === leadId);
+    if (prevLead && !canEditRow(profile, prevLead)) {
+      setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
+      return;
+    }
     patchLead(leadId, patch);
     updateLead(leadId, patch as Record<string, unknown>);
+    if ("email" in patch || "phone" in patch) {
+      const next = { ...prevLead, ...patch } as CrmLead;
+      findDuplicateContact(next.email, `${next.country_code ?? ""}${next.phone ?? ""}`, null).then(
+        (dup) => {
+          if (dup) setToast({ message: `Possible duplicate: contact "${dup.name}" has the same email/phone`, tone: "alert" });
+        }
+      );
+    }
     if (prevLead) {
       const previous = Object.fromEntries(
         Object.keys(patch).map((k) => [k, prevLead[k as keyof CrmLead] ?? null])
@@ -88,13 +102,26 @@ export function LeadsBoard({
     }
   };
 
-  const handleMoveToContacts = (leadId: string) => {
+  const handleMoveToContacts = async (leadId: string) => {
     const lead = localLeads.find((l) => l.id === leadId);
     const custom = (lead?.custom ?? {}) as Record<string, unknown>;
     if (custom.moved_to_contacts) return;
+    if (lead && !canEditRow(profile, lead)) {
+      setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
+      return;
+    }
     patchLead(leadId, { custom: { ...custom, moved_to_contacts: true } });
-    moveLeadToContacts(leadId);
-    setToast({ message: `${lead?.name ?? "Lead"} moved to Contacts` });
+    const result = await moveLeadToContacts(leadId);
+    if (result.error) {
+      patchLead(leadId, { custom: { ...custom, moved_to_contacts: false } });
+      setToast({ message: result.error, tone: "alert" });
+      return;
+    }
+    setToast({
+      message: result.matched
+        ? `${lead?.name ?? "Lead"} linked to an existing contact (duplicate avoided)`
+        : `${lead?.name ?? "Lead"} moved to Contacts`,
+    });
   };
 
   const handleAddLead = async (groupId: string, name: string) => {
@@ -114,7 +141,7 @@ export function LeadsBoard({
         source: "manual",
         interest: null,
         budget: null,
-        currency: "AED",
+        currency: "OMR",
         pipeline_id: firstStage?.pipeline_id ?? "",
         stage_id: firstStage?.id ?? "",
         owner_id: null,
@@ -123,6 +150,8 @@ export function LeadsBoard({
         next_followup_at: null,
         last_activity_at: null,
         website_lead_id: null,
+        converted_contact_id: null,
+        converted_at: null,
         custom: {},
         created_by: profile.id,
         created_at: new Date().toISOString(),
@@ -192,14 +221,29 @@ export function LeadsBoard({
                 renameGroup(group.id, name);
               }}
               onRenameLead={(leadId, name) => {
+                const row = localLeads.find((l) => l.id === leadId);
+                if (row && !canEditRow(profile, row)) {
+                  setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
+                  return;
+                }
                 patchLead(leadId, { name });
                 renameLead(leadId, name);
               }}
               onStageChange={(leadId, stageId) => {
+                const row = localLeads.find((l) => l.id === leadId);
+                if (row && !canEditRow(profile, row)) {
+                  setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
+                  return;
+                }
                 patchLead(leadId, { stage_id: stageId });
                 updateLeadStage(leadId, stageId);
               }}
               onOwnerChange={(leadId, ownerId) => {
+                const row = localLeads.find((l) => l.id === leadId);
+                if (row && !canEditRow(profile, row)) {
+                  setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
+                  return;
+                }
                 patchLead(leadId, { owner_id: ownerId });
                 updateLeadOwner(leadId, ownerId);
               }}
@@ -230,6 +274,7 @@ export function LeadsBoard({
       {toast && (
         <SuccessToast
           message={toast.message}
+          tone={toast.tone}
           onUndo={toast.undo}
           onClose={() => setToast(null)}
         />

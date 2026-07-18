@@ -7,6 +7,7 @@ import { Surface } from "@/components/shell/AppChrome";
 import { AiFloaty } from "@/components/shell/AiFloaty";
 import { Icon } from "@/components/ui/Icon";
 import { SuccessToast } from "@/components/ui/SuccessToast";
+import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { canAnimate } from "@/lib/motion";
 import type { CrmProduct, CrmProductGroup, CrmUser } from "@/lib/types";
 import { BoardHeader } from "@/components/crm/leads/BoardHeader";
@@ -38,7 +39,7 @@ export function ProductsBoard({
   const [personFilter, setPersonFilter] = useState<string | null>(null);
   const [localGroups, setLocalGroups] = useState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ message: string; undo?: () => void } | null>(null);
+  const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
 
   useEffect(() => setLocalProducts(products), [products]);
   useEffect(() => setLocalGroups(groups), [groups]);
@@ -60,6 +61,10 @@ export function ProductsBoard({
 
   const patchProduct = (productId: string, patch: Partial<CrmProduct>) => {
     const prevRow = localProducts.find((p) => p.id === productId);
+    if (prevRow && !canEditRow(profile, prevRow)) {
+      setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
+      return;
+    }
     setLocalProducts((prev) =>
       prev.map((p) => (p.id === productId ? { ...p, ...patch } : p))
     );
@@ -178,6 +183,7 @@ export function ProductsBoard({
       {toast && (
         <SuccessToast
           message={toast.message}
+          tone={toast.tone}
           onUndo={toast.undo}
           onClose={() => setToast(null)}
         />
