@@ -269,11 +269,32 @@ silent RLS rejection. E2E: OMR render, 9-stage popover, Lost dialog → DB
 lost_reason + history + audit rows, convert-match by phone, rename
 propagation, RLS impersonation. tsc clean.
 
-REMAINING PHASES: P2 real-estate core (property_interests, viewings,
-offers, reservations w/ one-active-per-unit constraint, CRM-owned inventory
-boards, deal detail drawer); P3 financial (transactions, payments, payment
-plans, commissions+splits + Finance/Manager roles per the standard's
-permission matrix); P4 SLA/scoring/automations/role dashboards.
+PHASE 2 PART 1 DONE (2026-07-19, migration `crm_phase2_real_estate_core` +
+3 new boards): DB — crm_developments (+groups, developer_name→crm_accounts FK
+resolve, statuses planned/under_construction/ready/handover), crm_units
+(+groups; development FK resolve; type/bedrooms/area_sqm/price/status
+available|held|reserved|contracted|sold|withdrawn), crm_viewings (+groups;
+contact/unit/deal FK resolves; statuses requested…no_show), 
+crm_property_interests (person+inventory check constraints), crm_offers,
+crm_reservations with PARTIAL UNIQUE INDEX (one pending/active per unit —
+verified: 2nd reservation raises 23505) + trigger syncing unit.status
+(reserve→'reserved', convert→'contracted', cancel/expire→release if no other
+active) + unit status/price audit triggers. Rename propagation extended:
+contact→viewings, account→developments.developer_name, development→units,
+unit→viewings, deal→viewings. RLS team-read/owner-edit/admin-delete on all.
+UI — /crm/developments (Developer ConnectPicker w/ create→quickCreateAccount,
+Status, Location, Completion TimeCell, computed Units count chip, Description),
+/crm/units (Development ConnectPicker, Type, Bedrooms, Area m², Price OMR w/
+sum, Status battery, Owner, Handover), /crm/viewings (Agent, Contact picker
+w/ create, Unit picker, When TimeCell, Status battery, Feedback). Sidebar +
+BOARD_META wired. E2E: dev added via UI, unit linked via picker (FK verified),
+viewings renders; test rows cleaned. tsc clean.
+
+REMAINING PHASES: P2 part 2 (deal detail drawer w/ property interests +
+offers + reservations UI — schema is LIVE, UI pending; shortlist flow);
+P3 financial (transactions, payments, payment plans, commissions+splits +
+Finance/Manager roles per the standard's permission matrix);
+P4 SLA/scoring/automations/role dashboards.
 
 STANDALONE + HANDOVER MODEL (user decision 2026-07-18 late): this CRM is
 INDEPENDENT — do NOT import the website `leads` table (192 rows); the

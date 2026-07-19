@@ -18,6 +18,9 @@ export const WORKSPACE_NAV: { label: string; icon: IconName; href: string }[] = 
   { label: "Accounts", icon: "navAccounts", href: "/crm/accounts" },
   { label: "Client Projects", icon: "navProjects", href: "/crm/projects" },
   { label: "Products & Services", icon: "navProducts", href: "/crm/products" },
+  { label: "Developments", icon: "navProjects", href: "/crm/developments" },
+  { label: "Units", icon: "navAccounts", href: "/crm/units" },
+  { label: "Viewings", icon: "navActivities", href: "/crm/viewings" },
   { label: "Activities", icon: "navActivities", href: "/crm/activities" },
   { label: "Sales Dashboard", icon: "navDashboard", href: "/crm/dashboard" },
 ];

@@ -240,6 +240,90 @@ export interface CrmProduct {
   updated_at: string;
 }
 
+export interface CrmDevelopmentGroup {
+  id: string;
+  name: string;
+  color: string;
+  position: number;
+  is_collapsed: boolean;
+  created_at: string;
+}
+
+export interface CrmDevelopment {
+  id: string;
+  name: string;
+  group_id: string | null;
+  owner_id: string | null;
+  developer_name: string | null;
+  developer_account_id: string | null;
+  status: string | null;
+  location: string | null;
+  completion_date: string | null;
+  description: string | null;
+  currency: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CrmUnitGroup {
+  id: string;
+  name: string;
+  color: string;
+  position: number;
+  is_collapsed: boolean;
+  created_at: string;
+}
+
+export interface CrmUnit {
+  id: string;
+  name: string;
+  group_id: string | null;
+  owner_id: string | null;
+  development_name: string | null;
+  development_id: string | null;
+  unit_type: string | null;
+  bedrooms: number | null;
+  area_sqm: number | null;
+  floor_label: string | null;
+  price: number | null;
+  currency: string;
+  status: string;
+  handover_date: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CrmViewingGroup {
+  id: string;
+  name: string;
+  color: string;
+  position: number;
+  is_collapsed: boolean;
+  created_at: string;
+}
+
+export interface CrmViewing {
+  id: string;
+  name: string;
+  group_id: string | null;
+  agent_id: string | null;
+  contact_name: string | null;
+  contact_id: string | null;
+  unit_name: string | null;
+  unit_id: string | null;
+  deal_name: string | null;
+  deal_id: string | null;
+  scheduled_start: string | null;
+  scheduled_end: string | null;
+  status: string;
+  feedback: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CrmActivityGroup {
   id: string;
   name: string;
