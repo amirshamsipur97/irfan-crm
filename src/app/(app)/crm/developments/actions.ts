@@ -93,3 +93,38 @@ export async function setDevelopmentGroupCollapsed(groupId: string, collapsed: b
   if (error) return { error: error.message };
   return {};
 }
+
+/** find-or-create used by pickers (Units board "Create development"). */
+export async function quickCreateDevelopment(name: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "not authenticated" };
+
+  const clean = name.trim();
+  if (!clean) return { error: "empty name" };
+
+  const { data: existing } = await supabase
+    .from("crm_developments")
+    .select("id")
+    .ilike("name", clean)
+    .maybeSingle<{ id: string }>();
+  if (existing) return { id: existing.id };
+
+  const { data: group } = await supabase
+    .from("crm_development_groups")
+    .select("id")
+    .order("position")
+    .limit(1)
+    .maybeSingle<{ id: string }>();
+
+  const { data, error } = await supabase
+    .from("crm_developments")
+    .insert({ name: clean, group_id: group?.id ?? null, created_by: user.id })
+    .select("id")
+    .single<{ id: string }>();
+  if (error) return { error: error.message };
+  revalidatePath(BOARD_PATH);
+  return { id: data.id };
+}

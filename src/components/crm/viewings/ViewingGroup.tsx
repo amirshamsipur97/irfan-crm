@@ -31,6 +31,7 @@ export function ViewingGroup({
   onPatch,
   onAdd,
   onCreateContact,
+  onCreateUnit,
 }: {
   group: CrmViewingGroup;
   viewings: CrmViewing[];
@@ -43,6 +44,7 @@ export function ViewingGroup({
   onPatch: (id: string, patch: Partial<CrmViewing>) => void;
   onAdd: (name: string) => void;
   onCreateContact: (viewingId: string, name: string) => void;
+  onCreateUnit: (viewingId: string, name: string) => void;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -240,7 +242,7 @@ export function ViewingGroup({
                           kind="account"
                           onPick={(name) => onPatch(viewing.id, { unit_name: name })}
                           onClear={() => onPatch(viewing.id, { unit_name: null })}
-                          onCreate={(name) => onPatch(viewing.id, { unit_name: name })}
+                          onCreate={(name) => onCreateUnit(viewing.id, name)}
                         />
                       </span>
                     );

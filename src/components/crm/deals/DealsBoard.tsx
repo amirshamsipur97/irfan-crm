@@ -7,7 +7,7 @@ import { Surface } from "@/components/shell/AppChrome";
 import { AiFloaty } from "@/components/shell/AiFloaty";
 import { Icon } from "@/components/ui/Icon";
 import { canAnimate } from "@/lib/motion";
-import type { CrmAccount, CrmContact, CrmDeal, CrmDealGroup, CrmDealStage, CrmUser } from "@/lib/types";
+import type { CrmAccount, CrmContact, CrmDeal, CrmDealGroup, CrmDealStage, CrmUnit, CrmUser } from "@/lib/types";
 import { BoardHeader } from "@/components/crm/leads/BoardHeader";
 import { GROUP_COLORS } from "@/components/crm/leads/board-config";
 import { SuccessToast } from "@/components/ui/SuccessToast";
@@ -27,6 +27,7 @@ import {
 import type { LogPayload } from "./activity-log";
 import type { PickerOption } from "./connect-picker";
 import { LostReasonDialog } from "./lost-reason-dialog";
+import { DealDrawer } from "./deal-drawer";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 
 const VIEWS = ["Main table", "Sales report", "Pipeline"];
@@ -39,6 +40,7 @@ export function DealsBoard({
   users,
   accounts,
   contacts,
+  units = [],
 }: {
   profile: CrmUser;
   groups: CrmDealGroup[];
@@ -47,6 +49,7 @@ export function DealsBoard({
   users: CrmUser[];
   accounts: CrmAccount[];
   contacts: CrmContact[];
+  units?: CrmUnit[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState("Main table");
@@ -63,6 +66,7 @@ export function DealsBoard({
   );
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
   const [lostPrompt, setLostPrompt] = useState<{ dealId: string; stageId: string } | null>(null);
+  const [openDealId, setOpenDealId] = useState<string | null>(null);
 
   useEffect(() => setLocalDeals(deals), [deals]);
   useEffect(() => setLocalGroups(groups), [groups]);
@@ -124,14 +128,16 @@ export function DealsBoard({
     }
   };
 
-  const createAndLink = (kind: "account" | "contact", dealId: string, name: string) => {
+  const createAndLink = async (kind: "account" | "contact", dealId: string, name: string) => {
+    // await the insert first — the FK-resolve trigger on the deal must be able
+    // to find the new row, otherwise the link stays name-only
     if (kind === "account") {
       setAccountOptions((prev) => [...prev, { name }]);
-      quickCreateAccount(name);
+      await quickCreateAccount(name);
       patchDeal(dealId, { account_name: name });
     } else {
       setContactOptions((prev) => [...prev, { name }]);
-      quickCreateContact(name);
+      await quickCreateContact(name);
       patchDeal(dealId, { contact_name: name });
     }
   };
@@ -231,6 +237,7 @@ export function DealsBoard({
                 contactOptions={contactOptions}
                 onCreateAccount={(dealId, name) => createAndLink("account", dealId, name)}
                 onCreateContact={(dealId, name) => createAndLink("contact", dealId, name)}
+                onOpenDeal={setOpenDealId}
                 onToggleCollapse={(collapsed) => {
                   setDealGroupCollapsed(group.id, collapsed);
                 }}
@@ -284,6 +291,20 @@ export function DealsBoard({
           onClose={() => setToast(null)}
         />
       )}
+      {openDealId && (() => {
+        const openDeal = localDeals.find((d) => d.id === openDealId);
+        if (!openDeal) return null;
+        return (
+          <DealDrawer
+            deal={openDeal}
+            stages={stages}
+            users={users}
+            units={units}
+            onClose={() => setOpenDealId(null)}
+            onToast={(message, tone) => setToast({ message, tone })}
+          />
+        );
+      })()}
       {lostPrompt && (
         <LostReasonDialog
           dealName={localDeals.find((d) => d.id === lostPrompt.dealId)?.name ?? "deal"}

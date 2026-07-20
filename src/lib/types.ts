@@ -324,6 +324,58 @@ export interface CrmViewing {
   updated_at: string;
 }
 
+export interface CrmPropertyInterest {
+  id: string;
+  lead_id: string | null;
+  contact_id: string | null;
+  deal_id: string | null;
+  development_id: string | null;
+  unit_id: string | null;
+  interest_level: "hot" | "warm" | "cold";
+  status: "active" | "shortlisted" | "rejected";
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  /** joined for display */
+  unit_name?: string | null;
+  development_name?: string | null;
+}
+
+export interface CrmOffer {
+  id: string;
+  deal_id: string | null;
+  contact_id: string | null;
+  unit_id: string | null;
+  amount: number | null;
+  currency: string;
+  status: string;
+  submitted_at: string | null;
+  expires_at: string | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CrmReservation {
+  id: string;
+  deal_id: string | null;
+  contact_id: string | null;
+  unit_id: string;
+  amount: number | null;
+  currency: string;
+  status: string;
+  reserved_at: string;
+  expires_at: string | null;
+  cancellation_reason: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  /** joined for display */
+  unit_name?: string | null;
+}
+
 export interface CrmActivityGroup {
   id: string;
   name: string;

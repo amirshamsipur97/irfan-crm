@@ -290,11 +290,39 @@ w/ create, Unit picker, When TimeCell, Status battery, Feedback). Sidebar +
 BOARD_META wired. E2E: dev added via UI, unit linked via picker (FK verified),
 viewings renders; test rows cleaned. tsc clean.
 
-REMAINING PHASES: P2 part 2 (deal detail drawer w/ property interests +
-offers + reservations UI — schema is LIVE, UI pending; shortlist flow);
-P3 financial (transactions, payments, payment plans, commissions+splits +
-Finance/Manager roles per the standard's permission matrix);
-P4 SLA/scoring/automations/role dashboards.
+PHASE 2 PART 2 DONE (2026-07-21): DEAL DRAWER — the rowOpen button on deals
+rows (was inert) opens components/crm/deals/deal-drawer.tsx (460px right
+panel, GSAP slide w/ canAnimate, overlay close): header (name, stage pill,
+OMR value, owner, close date, contact) + sections Shortlisted properties
+(select unit → addDealInterest, Reject → setInterestStatus), Offers (amount →
+addDealOffer status=submitted; Accept/Reject on submitted/countered),
+Reservation (select available/held unit + amount → createDealReservation
+status=active; 23505 → friendly "already has an active reservation" toast;
+Cancel requires reason → releases unit), Viewings (list by deal_id +
+"+ Request viewing" → addDealViewing creates a linked viewing named
+"Viewing — <deal>", deal_id resolved by trigger), Latest activity (by
+related_item). Server actions in app/(app)/crm/deals/drawer-actions.ts
+(getDealRelations single round-trip w/ joined unit names). Deals page now
+also fetches crm_units. E2E-verified end-to-end incl. reserve→unit reserved,
+cancel→unit released + reason stored.
+
+BUGFIX PASS (2026-07-21): (1) DATE OFF-BY-ONE — TimeCell emits UTC ISO;
+slice(0,10) shifted date-only columns (completion/handover) a day back in
+Oman (+04). New toLocalDateString() in activities-config; NEVER slice ISO
+for date columns. (2) crm_convert_lead now checks owner permission BEFORE
+creating the contact (was leaving an orphan contact on non-owner convert) —
+migration `crm_fix_convert_lead_permission_order`. (3) create-then-link RACE:
+all picker "Create X" flows now AWAIT the quickCreate action before patching
+the row, otherwise the FK-resolve trigger fires before the new row exists
+and the link stays name-only (fixed in Deals/Contacts/Developments/Units/
+Viewings boards). (4) new find-or-create actions quickCreateDevelopment /
+quickCreateUnit so picker-created developments/units are real rows, not
+dangling names.
+
+REMAINING PHASES: P3 financial (transactions, payments, payment plans,
+commissions+splits + Finance/Manager roles per the standard's permission
+matrix); P4 SLA/scoring/automations/role dashboards. Also pending: detail
+drawers for lead/contact (deal done), Team page, custom domain.
 
 STANDALONE + HANDOVER MODEL (user decision 2026-07-18 late): this CRM is
 INDEPENDENT — do NOT import the website `leads` table (192 rows); the

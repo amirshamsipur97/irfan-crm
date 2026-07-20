@@ -184,9 +184,9 @@ export function DevelopmentsBoard({
               }}
               onPatch={patchDevelopment}
               onAdd={(name) => handleAdd(group.id, name)}
-              onCreateDeveloper={(developmentId, name) => {
+              onCreateDeveloper={async (developmentId, name) => {
                 setDeveloperOptions((prev) => [...prev, { name }]);
-                quickCreateAccount(name);
+                await quickCreateAccount(name);
                 patchDevelopment(developmentId, { developer_name: name });
               }}
             />

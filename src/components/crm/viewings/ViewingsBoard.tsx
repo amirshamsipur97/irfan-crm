@@ -14,6 +14,7 @@ import { BoardHeader } from "@/components/crm/leads/BoardHeader";
 import { GROUP_COLORS } from "@/components/crm/leads/board-config";
 import type { PickerOption } from "@/components/crm/deals/connect-picker";
 import { quickCreateContact } from "@/app/(app)/crm/deals/actions";
+import { quickCreateUnit } from "@/app/(app)/crm/units/actions";
 import { ViewingGroup } from "./ViewingGroup";
 import {
   addViewing,
@@ -187,10 +188,14 @@ export function ViewingsBoard({
               }}
               onPatch={patchViewing}
               onAdd={(name) => handleAdd(group.id, name)}
-              onCreateContact={(viewingId, name) => {
+              onCreateContact={async (viewingId, name) => {
                 setContactOptions((prev) => [...prev, { name }]);
-                quickCreateContact(name);
+                await quickCreateContact(name);
                 patchViewing(viewingId, { contact_name: name });
+              }}
+              onCreateUnit={async (viewingId, name) => {
+                await quickCreateUnit(name);
+                patchViewing(viewingId, { unit_name: name });
               }}
             />
           ))}

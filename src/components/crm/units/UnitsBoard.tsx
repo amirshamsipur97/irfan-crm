@@ -14,6 +14,7 @@ import { BoardHeader } from "@/components/crm/leads/BoardHeader";
 import { GROUP_COLORS } from "@/components/crm/leads/board-config";
 import type { PickerOption } from "@/components/crm/deals/connect-picker";
 import { UnitGroup } from "./UnitGroup";
+import { quickCreateDevelopment } from "@/app/(app)/crm/developments/actions";
 import {
   addUnit,
   addUnitGroup,
@@ -174,6 +175,10 @@ export function UnitsBoard({
               }}
               onPatch={patchUnit}
               onAdd={(name) => handleAdd(group.id, name)}
+              onCreateDevelopment={async (unitId, name) => {
+                await quickCreateDevelopment(name);
+                patchUnit(unitId, { development_name: name });
+              }}
             />
           ))}
 

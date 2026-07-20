@@ -190,9 +190,9 @@ export function ContactsBoard({
               }}
               onPatchContact={patchContact}
               accountOptions={accountOptions}
-              onCreateAccount={(contactId, name) => {
+              onCreateAccount={async (contactId, name) => {
                 setAccountOptions((prev) => [...prev, { name }]);
-                quickCreateAccount(name);
+                await quickCreateAccount(name);
                 patchContact(contactId, { account_name: name });
               }}
               onLogActivity={(contactId, payload: LogPayload) => {

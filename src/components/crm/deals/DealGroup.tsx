@@ -80,6 +80,7 @@ export function DealGroup({
   onToggleCollapse,
   onRenameGroup,
   onPatchDeal,
+  onOpenDeal,
   onAddDeal,
   onLogActivity,
   accountOptions,
@@ -95,6 +96,7 @@ export function DealGroup({
   onToggleCollapse: (collapsed: boolean) => void;
   onRenameGroup: (name: string) => void;
   onPatchDeal: (dealId: string, patch: Partial<CrmDeal>) => void;
+  onOpenDeal?: (dealId: string) => void;
   onAddDeal: (name: string) => void;
   onLogActivity: (dealId: string, payload: LogPayload) => void;
   accountOptions: PickerOption[];
@@ -259,6 +261,7 @@ export function DealGroup({
                     <button
                       type="button"
                       aria-label={`Open ${deal.name}`}
+                      onClick={() => onOpenDeal?.(deal.id)}
                       className="flex size-[24px] shrink-0 items-center justify-center rounded-[4px] opacity-0 transition-opacity hover:bg-[var(--hover-ghost)] group-hover/row:opacity-100"
                     >
                       <Icon name="rowOpen" size={16} />

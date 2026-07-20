@@ -16,6 +16,7 @@ import { CONNECTED_UNDERLINE } from "@/components/crm/contacts/contacts-config";
 import { CenterEditCell } from "@/components/crm/leads/lead-cells";
 import { ConnectPicker, type PickerOption } from "@/components/crm/deals/connect-picker";
 import { TimeCell } from "@/components/crm/activities/activity-cells";
+import { toLocalDateString } from "@/components/crm/activities/activities-config";
 import { shortDate } from "@/components/crm/leads/board-config";
 import {
   DEVELOPMENT_COLUMNS,
@@ -266,7 +267,7 @@ export function DevelopmentGroup({
                           label={`Completion date for ${dev.name}`}
                           format={shortDate}
                           onChange={(iso) =>
-                            onPatch(dev.id, { completion_date: iso ? iso.slice(0, 10) : null })
+                            onPatch(dev.id, { completion_date: toLocalDateString(iso) })
                           }
                         />
                       </span>

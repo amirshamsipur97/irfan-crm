@@ -17,6 +17,7 @@ import { ConnectPicker, type PickerOption } from "@/components/crm/deals/connect
 import { NumberCell } from "@/components/crm/deals/deal-cells";
 import { money } from "@/components/crm/deals/deals-config";
 import { TimeCell } from "@/components/crm/activities/activity-cells";
+import { toLocalDateString } from "@/components/crm/activities/activities-config";
 import { shortDate } from "@/components/crm/leads/board-config";
 import { UNIT_COLUMNS, UNIT_NAME_COL_W, UNIT_STATUSES, UNIT_TYPES } from "./units-config";
 
@@ -32,6 +33,7 @@ export function UnitGroup({
   onRenameGroup,
   onPatch,
   onAdd,
+  onCreateDevelopment,
 }: {
   group: CrmUnitGroup;
   units: CrmUnit[];
@@ -42,6 +44,7 @@ export function UnitGroup({
   onRenameGroup: (name: string) => void;
   onPatch: (id: string, patch: Partial<CrmUnit>) => void;
   onAdd: (name: string) => void;
+  onCreateDevelopment: (unitId: string, name: string) => void;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -215,7 +218,7 @@ export function UnitGroup({
                           kind="account"
                           onPick={(name) => onPatch(unit.id, { development_name: name })}
                           onClear={() => onPatch(unit.id, { development_name: null })}
-                          onCreate={(name) => onPatch(unit.id, { development_name: name })}
+                          onCreate={(name) => onCreateDevelopment(unit.id, name)}
                         />
                       </span>
                     );
@@ -287,7 +290,7 @@ export function UnitGroup({
                           label={`Handover date for ${unit.name}`}
                           format={shortDate}
                           onChange={(iso) =>
-                            onPatch(unit.id, { handover_date: iso ? iso.slice(0, 10) : null })
+                            onPatch(unit.id, { handover_date: toLocalDateString(iso) })
                           }
                         />
                       </span>

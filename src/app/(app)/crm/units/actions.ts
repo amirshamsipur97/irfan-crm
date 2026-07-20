@@ -97,3 +97,38 @@ export async function setUnitGroupCollapsed(groupId: string, collapsed: boolean)
   if (error) return { error: error.message };
   return {};
 }
+
+/** find-or-create used by pickers (Viewings board "Create unit"). */
+export async function quickCreateUnit(name: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "not authenticated" };
+
+  const clean = name.trim();
+  if (!clean) return { error: "empty name" };
+
+  const { data: existing } = await supabase
+    .from("crm_units")
+    .select("id")
+    .ilike("name", clean)
+    .maybeSingle<{ id: string }>();
+  if (existing) return { id: existing.id };
+
+  const { data: group } = await supabase
+    .from("crm_unit_groups")
+    .select("id")
+    .order("position")
+    .limit(1)
+    .maybeSingle<{ id: string }>();
+
+  const { data, error } = await supabase
+    .from("crm_units")
+    .insert({ name: clean, group_id: group?.id ?? null, created_by: user.id })
+    .select("id")
+    .single<{ id: string }>();
+  if (error) return { error: error.message };
+  revalidatePath(BOARD_PATH);
+  return { id: data.id };
+}
