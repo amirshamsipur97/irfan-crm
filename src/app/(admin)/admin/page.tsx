@@ -19,7 +19,6 @@ export default async function AdminPage() {
   if (!isFullAccess(profile.role)) redirect("/crm");
 
   const supabase = await createClient();
-  const since7d = new Date(Date.now() - 7 * 24 * 3600_000).toISOString();
   const dataBoards = BOARD_META.filter((b) => b.table);
 
   const [
@@ -29,8 +28,7 @@ export default async function AdminPage() {
     { data: invites },
     { data: customColumns },
     { data: audit },
-    counts,
-    visits,
+    { data: usage },
   ] = await Promise.all([
     supabase.from("crm_registration_settings").select("*").maybeSingle<RegistrationSettings>(),
     supabase.from("crm_dashboard_settings").select("*").returns<{ key: string; value: number }[]>(),
@@ -52,32 +50,17 @@ export default async function AdminPage() {
       .order("created_at", { ascending: false })
       .limit(100)
       .returns<AdminAuditRow[]>(),
-    Promise.all(
-      dataBoards.map((b) =>
-        supabase
-          .from(b.table!)
-          .select("id", { count: "exact", head: true })
-          .then(({ count }) => count ?? 0)
-      )
-    ),
-    Promise.all(
-      dataBoards.map((b) =>
-        supabase
-          .from("crm_board_visits")
-          .select("user_id", { count: "exact", head: true })
-          .eq("board_key", b.key)
-          .gte("visited_at", since7d)
-          .then(({ count }) => count ?? 0)
-      )
-    ),
+    supabase
+      .rpc("crm_admin_usage_stats")
+      .single<{ rows: Record<string, number>; visits: Record<string, number> }>(),
   ]);
 
-  const boardStats: AdminBoardStat[] = dataBoards.map((b, i) => ({
+  const boardStats: AdminBoardStat[] = dataBoards.map((b) => ({
     key: b.key,
     name: b.name,
     href: b.href,
-    rows: counts[i],
-    visits7d: visits[i],
+    rows: usage?.rows?.[b.key] ?? 0,
+    visits7d: usage?.visits?.[b.key] ?? 0,
   }));
 
   return (

@@ -68,10 +68,10 @@ export function UnitsBoard({
     () => {
       if (!canAnimate()) return;
       gsap.from(".board-anim", {
-        y: 14,
+        y: 8,
         opacity: 0,
-        duration: 0.35,
-        stagger: 0.08,
+        duration: 0.22,
+        stagger: 0.04,
         ease: "power2.out",
         clearProps: "all",
       });
