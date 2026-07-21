@@ -166,6 +166,7 @@ export interface CrmContact {
   account_id: string | null;
   group_id: string | null;
   last_interaction_at: string | null;
+  custom: Record<string, unknown>;
   created_by: string | null;
   created_at: string;
   updated_at: string;

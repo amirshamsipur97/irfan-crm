@@ -17,6 +17,7 @@ const PATCHABLE = new Set([
   "priority",
   "comments",
   "account_name",
+  "custom",
   "last_interaction_at",
 ]);
 

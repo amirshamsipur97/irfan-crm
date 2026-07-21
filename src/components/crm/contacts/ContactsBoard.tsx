@@ -25,13 +25,21 @@ import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { findDuplicateContact } from "@/app/(app)/crm/contacts/actions";
 import { quickCreateAccount } from "@/app/(app)/crm/deals/actions";
 import type { PickerOption } from "@/components/crm/deals/connect-picker";
+import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import {
+  addCustomColumn,
+  deleteCustomColumn,
+  renameCustomColumn,
+} from "@/app/(app)/crm/custom-columns-actions";
 
 export function ContactsBoard({
   profile,
   groups,
   contacts,
   deals,
+  users,
   accounts,
+  customColumns,
 }: {
   profile: CrmUser;
   groups: CrmContactGroup[];
@@ -39,6 +47,7 @@ export function ContactsBoard({
   deals: CrmDeal[];
   users: CrmUser[];
   accounts: CrmAccount[];
+  customColumns: CrmCustomColumn[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [localContacts, setLocalContacts] = useState(contacts);
@@ -46,8 +55,38 @@ export function ContactsBoard({
   const [localGroups, setLocalGroups] = useState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
 
+  const [localColumns, setLocalColumns] = useState(customColumns);
+
   useEffect(() => setLocalContacts(contacts), [contacts]);
   useEffect(() => setLocalGroups(groups), [groups]);
+  useEffect(() => setLocalColumns(customColumns), [customColumns]);
+
+  const handleAddColumn = async (type: CustomColumnType) => {
+    const result = await addCustomColumn("contacts", type);
+    if (result.error || !result.column) {
+      setToast({ message: result.error ?? "could not add column", tone: "alert" });
+      return;
+    }
+    setLocalColumns((prev) => [...prev, result.column as CrmCustomColumn]);
+    setToast({ message: "Column added — click its name to rename" });
+  };
+
+  const handleRenameColumn = (columnId: string, label: string) => {
+    setLocalColumns((prev) => prev.map((c) => (c.id === columnId ? { ...c, label } : c)));
+    renameCustomColumn(columnId, label, "contacts");
+  };
+
+  const handleDeleteColumn = async (columnId: string) => {
+    const prev = localColumns;
+    setLocalColumns((cols) => cols.filter((c) => c.id !== columnId));
+    const result = await deleteCustomColumn(columnId, "contacts");
+    if (result.error) {
+      setLocalColumns(prev);
+      setToast({ message: result.error, tone: "alert" });
+    } else {
+      setToast({ message: "Column removed (values kept in history)" });
+    }
+  };
 
   useGSAP(
     () => {
@@ -126,6 +165,7 @@ export function ContactsBoard({
         comments: null,
         account_name: null,
         account_id: null,
+        custom: {},
         group_id: groupId,
         last_interaction_at: null,
         created_by: profile.id,
@@ -188,6 +228,12 @@ export function ContactsBoard({
                 renameContactGroup(group.id, name);
               }}
               onPatchContact={patchContact}
+              customColumns={localColumns}
+              users={users}
+              profile={profile}
+              onAddColumn={handleAddColumn}
+              onRenameColumn={handleRenameColumn}
+              onDeleteColumn={handleDeleteColumn}
               accountOptions={accountOptions}
               onCreateAccount={async (contactId, name) => {
                 setAccountOptions((prev) => [...prev, { name }]);

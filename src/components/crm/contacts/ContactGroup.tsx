@@ -29,6 +29,15 @@ import {
   ActivityLogMenu,
   type LogPayload,
 } from "@/components/crm/deals/activity-log";
+import type { CrmUser } from "@/lib/types";
+import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import { CUSTOM_COL_W } from "@/lib/custom-columns";
+import {
+  AddColumnButton,
+  CustomColumnHeader,
+  CustomValueCell,
+} from "@/components/crm/custom/custom-columns";
+import { isFullAccess } from "@/lib/permissions";
 
 const ROW_H = 36;
 
@@ -44,6 +53,12 @@ export function ContactGroup({
   onLogActivity,
   accountOptions,
   onCreateAccount,
+  customColumns,
+  users,
+  profile,
+  onAddColumn,
+  onRenameColumn,
+  onDeleteColumn,
 }: {
   group: CrmContactGroup;
   contacts: CrmContact[];
@@ -56,6 +71,12 @@ export function ContactGroup({
   onLogActivity: (contactId: string, payload: LogPayload) => void;
   accountOptions: PickerOption[];
   onCreateAccount: (contactId: string, name: string) => void;
+  customColumns: CrmCustomColumn[];
+  users: CrmUser[];
+  profile: CrmUser;
+  onAddColumn: (type: CustomColumnType) => void;
+  onRenameColumn: (columnId: string, label: string) => void;
+  onDeleteColumn: (columnId: string) => void;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -182,9 +203,16 @@ export function ContactGroup({
                 )}
               </span>
             ))}
-            <span className="flex w-[40px] items-center justify-center border-b border-t border-line bg-white">
-              <Icon name="tlAdd" size={16} />
-            </span>
+            {customColumns.map((col) => (
+              <CustomColumnHeader
+                key={col.id}
+                column={col}
+                canDelete={isFullAccess(profile.role)}
+                onRename={(label) => onRenameColumn(col.id, label)}
+                onDelete={() => onDeleteColumn(col.id)}
+              />
+            ))}
+            <AddColumnButton onAdd={onAddColumn} />
           </div>
 
           {/* rows */}
@@ -365,6 +393,19 @@ export function ContactGroup({
                       );
                   }
                 })}
+                {customColumns.map((col) => (
+                  <CustomValueCell
+                    key={col.id}
+                    column={col}
+                    value={(contact.custom ?? {})[col.key]}
+                    users={users}
+                    onSave={(next) =>
+                      onPatchContact(contact.id, {
+                        custom: { ...(contact.custom ?? {}), [col.key]: next },
+                      })
+                    }
+                  />
+                ))}
                 <span className="w-[40px] border-b border-line bg-white" />
               </div>
             );
@@ -400,7 +441,7 @@ export function ContactGroup({
             </div>
             <span
               className="border-b border-line bg-white"
-              style={{ width: CONTACT_COLUMNS.reduce((s, c) => s + c.w, 0) + 40 }}
+              style={{ width: CONTACT_COLUMNS.reduce((s, c) => s + c.w, 0) + customColumns.length * CUSTOM_COL_W + 40 }}
             />
           </div>
 
@@ -423,6 +464,13 @@ export function ContactGroup({
                   <span className="font-sans text-[14px] leading-[20px] text-ink-muted">-</span>
                 )}
               </span>
+            ))}
+            {customColumns.map((col) => (
+              <span
+                key={col.id}
+                className="border-b border-r border-line bg-white"
+                style={{ width: CUSTOM_COL_W }}
+              />
             ))}
             <span className="w-[40px] border-b border-line bg-white" />
           </div>

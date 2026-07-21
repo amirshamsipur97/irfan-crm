@@ -3,11 +3,12 @@ import { getProfile } from "@/lib/profile";
 import { recordBoardVisit } from "@/lib/visits";
 import { ContactsBoard } from "@/components/crm/contacts/ContactsBoard";
 import type { CrmAccount, CrmContact, CrmContactGroup, CrmDeal, CrmUser } from "@/lib/types";
+import type { CrmCustomColumn } from "@/lib/custom-columns";
 
 export default async function ContactsBoardPage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient(), recordBoardVisit("contacts")]);
 
-  const [{ data: groups }, { data: contacts }, { data: deals }, { data: users }, { data: accounts }] =
+  const [{ data: groups }, { data: contacts }, { data: deals }, { data: users }, { data: accounts }, { data: customColumns }] =
     await Promise.all([
       supabase
         .from("crm_contact_groups")
@@ -27,6 +28,12 @@ export default async function ContactsBoardPage() {
         .order("full_name")
         .returns<CrmUser[]>(),
       supabase.from("crm_accounts").select("*").order("name").returns<CrmAccount[]>(),
+      supabase
+        .from("crm_custom_columns")
+        .select("*")
+        .eq("board_key", "contacts")
+        .order("position")
+        .returns<CrmCustomColumn[]>(),
     ]);
 
   return (
@@ -37,6 +44,7 @@ export default async function ContactsBoardPage() {
       deals={deals ?? []}
       users={users ?? []}
       accounts={accounts ?? []}
+      customColumns={customColumns ?? []}
     />
   );
 }
