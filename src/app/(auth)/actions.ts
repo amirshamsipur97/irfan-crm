@@ -50,7 +50,9 @@ export async function signUp(_prev: AuthState, formData: FormData) {
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/login`,
+      // must be an allow-listed redirect URL in Supabase (…/auth/callback is),
+      // otherwise GoTrue silently falls back to the Site URL (localhost bug)
+      emailRedirectTo: `${origin}/auth/callback`,
       // the DB trigger accepts CRM signups with an invite or an approved company email
       data: {
         app: "crm",
