@@ -1,36 +1,67 @@
 # Irfan CRM — Session Handoff
 
-> Read this + `PLAN.md` first. This file is the single source of truth for
-> continuing the build in a new session. Updated: 2026-07-18 (end of the big
-> 07-18 session; all work checkpointed in git commit a18c1cd).
+> Read this + the auto-memory `irfan-crm` entry first. This file is the single
+> source of truth for continuing the build in a new session.
+> Updated: **2026-07-21 end of session** (all work committed locally through
+> `ddaa38f`; repo is LOCAL-ONLY, no remote).
 
-## CURRENT STATE SNAPSHOT (2026-07-18 end)
+## CURRENT STATE SNAPSHOT (2026-07-21)
 
 - **LIVE**: https://irfan-crm.vercel.app (Vercel project `irfan-crm`, scope
   amirshamsipurs-projects; deploy = `npx vercel deploy --prod --yes`).
-  Local dev: preview_start `irfan-crm`, port 3070; /preview auto-login works
-  locally only (DEMO_* not on Vercel → 404 in prod, by design).
-- **Auth is DONE end-to-end**: Figma login/signup pages (AuthShell +
-  "Power By NeXPROP" footer), registration = company domain
-  (irfaninvest.com, kioskoman.com in `crm_registration_settings`) OR
-  `crm_invites` row, 20-active-agent cap, Google OAuth enabled + verified,
-  `crm_claim_membership()` RPC heals invited-after-signin users,
-  /auth/callback + /auth/denied, proxy lets /auth/* through.
-  Members: preview admin (dev), amiralishamsipur@gmail.com (ADMIN — user's
-  real account), amirshamsipur1997@kioskoman.com (admin),
-  korooshkhaleghi72@gmail.com (agent). Unused admin invites:
-  amirshamsipur1997@gmail.com, a.shamsipour@irfaninvest.com.
-- **All 6 boards + dashboard functional**; cross-board features: activity
-  logging (+ on timeline → menu/composer) on leads/deals/contacts/accounts;
-  ConnectPicker (find-or-create) for deals contacts+accounts AND contacts
-  accounts; SuccessToast w/ real undo on cell edits (leads/deals/contacts/
-  accounts); board Search + Person filters; popovers are fixed-positioned
-  (never clipped — see memory gotcha, always use Popover/anchorFixedPos).
-- **Data**: user is entering REAL company data now (Google/Apple/Amazon/
-  Irfaninvest/Microsoft accounts, deals with values). DO NOT wipe.
-- **Deepest detail lives in the auto-memory file** (irfan-crm entry) —
-  per-feature notes, testing gotchas (hidden-tab freezes, 0-viewport
-  webview, '.ws-tabs button' selectors), and the NEXT list.
+  Prod env: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_SITE_URL (=prod URL, canonical for auth email links).
+  Local dev: preview_start `irfan-crm`, port 3070; `/preview` auto-login is
+  local-only. Supabase project `owgvrxipqlusepozlujv` (shared w/ whitewill).
+- **STANDARDIZATION COMPLETE — phases 0→5 of the real-estate audit are DONE**
+  (audit artifact: https://claude.ai/code/artifact/b702a706-9708-4065-8861-4f3f6393c589):
+  P0 owner-edit RLS + `crm_audit_log` + deal stage history; P1 identity FKs
+  behind name chips + E.164/email normalization + `crm_convert_lead` RPC +
+  OMR currency + 9-stage pipeline + LostReasonDialog; P2 real-estate core
+  (Developments/Units/Viewings boards, property_interests, offers,
+  reservations w/ one-active-per-unit DB lock + unit status sync, DEAL DRAWER
+  incl. shortlist/offers/reservation/viewings/activity); P3 financial layer
+  (transactions TX-refs, IMMUTABLE confirmed payments, payment plans schema,
+  commissions+splits, /crm/finance page, drawer finance sections); P4 SLA
+  timestamps + explainable lead scoring (Score column) + pg_cron automations
+  (reservation expiry hourly, rescore nightly) + My Work/Team dashboard rows;
+  P5 ROLE MATRIX developer|ceo|media|manager|agent|finance (all via 3 RLS
+  helper fns + lib/permissions.ts as the ONLY frontend gate source) +
+  /crm/team management page (roles, active toggle, invites).
+- **BOARDS (9, all with functional custom "+" column menu)**: Contacts,
+  Deals (3 views + drawer), Leads (Score column), Accounts, Client Projects,
+  Activities, Developments, Units, Viewings + Sales Dashboard + Finance
+  (finance-tier only) + Team (full-tier only). Products & Services board was
+  REMOVED (user decision) along with all dead Monday-clone chrome (Connect-AI
+  banner, rail extras, Integrate/Agents chips, AI floaty, fake sync panel,
+  Contact sales).
+- **SIGNUP FLOW**: /signup has a required Field/Position select (Sales Agent/
+  Media Team/Sales Manager/Finance) → everyone starts as `agent`; privileged
+  picks land in `crm_users.requested_role` and /crm/team shows an approve
+  hint. Confirm-email redirects to `/auth/callback` (allow-listed; user lands
+  signed in). ⚠️ USER STILL MUST set Supabase Auth Site URL →
+  https://irfan-crm.vercel.app (dashboard-only setting).
+- **MEMBERS**: 3 developer accounts (preview@irfancrm.local dev-only,
+  amiralishamsipur@gmail.com, amirshamsipur1997@kioskoman.com) + agents
+  korooshkhaleghi72@gmail.com and sara.farzin@irfaninvest.com. Pending
+  developer invites: amirshamsipur1997@gmail.com, a.shamsipour@irfaninvest.com.
+- **DATA IS REAL** (accounts/deals/leads + user-created custom columns on
+  deals). Never wipe or reseed without asking.
+- **NEXT / REMAINING**:
+  1. Supabase Site URL change (user, dashboard) — only open localhost risk.
+  2. Real notifications (TopBar bell is visual), lead/contact detail drawers,
+     payment-plan template UI + schedules, commission-splits UI.
+  3. 2 extra Sales Dashboard sections (user will send screenshots).
+  4. Custom domain crm.irfaninvest.com + attach to irfanapp/NexProp later.
+  5. PRE-HANDOVER CLEANUP: delete preview admin + /preview route + DEMO_* env,
+     remove kioskoman.com from allowed_domains (if wanted), delete Sample rows.
+- **HOW TO VERIFY**: tsc must stay clean; browser-pane E2E via /preview;
+  DB checks via execute_sql; board popovers need javascript_tool clicks
+  (computer clicks don't open them). All the sharp-edge gotchas (hidden-tab
+  GSAP freeze, 0-viewport webview, AFTER-trigger 27000 rule, wCTE snapshot,
+  toLocalDateString for date columns, await-before-link picker rule, RLS
+  role-migration needs privilege-guard trigger disabled) live in the
+  auto-memory `irfan-crm` entry — READ IT.
 
 ## What this project is
 
@@ -57,17 +88,17 @@ gets attached as an extension to the irfanapp/NexProp dashboard.
 ## Auth model
 
 - Supabase email+password, signup passes `{app:'crm', full_name}` metadata.
-- DB trigger `crm_handle_new_auth_user`: FIRST signup → admin; others need an
-  unused row in `crm_invites`. Privilege-guard trigger blocks non-admin
-  role/is_active changes.
-- ⚠️ **PREVIEW MODE ACTIVE**: `/preview` route (src/app/preview/route.ts)
-  auto-signs-in using `.env.local` DEMO_LOGIN=enabled, DEMO_EMAIL=
-  `preview@irfancrm.local`, DEMO_PASSWORD. That preview user CONSUMED the
-  first-signup-admin bootstrap and is currently the only crm_user (admin).
-  Demo rows are seeded in leads/deals/contacts/accounts/activity boards.
-  **Before real launch:** delete demo rows + preview auth user, remove DEMO_*
-  env + /preview from proxy PUBLIC_PATHS, then either re-arm bootstrap or
-  create the user's real admin account via SQL.
+- DB trigger `crm_handle_new_auth_user`: invites carry an exact role; plain
+  company-domain signups ALWAYS start as `agent` (their Field/Position pick
+  is stored in `requested_role` for approval on /crm/team). First-signup
+  bootstrap (already consumed) would grant `developer`. Privilege-guard
+  trigger blocks role/is_active changes by non-admin-tier users — disable it
+  around any SQL role migration.
+- ⚠️ **PREVIEW MODE ACTIVE (local only)**: `/preview` route auto-signs-in as
+  `preview@irfancrm.local` (role developer) via `.env.local` DEMO_* vars.
+  Real members exist now (see snapshot). **Before handover:** delete the
+  preview user + /preview route + DEMO_* env and the remaining "Sample …"
+  template rows.
 - Supabase email-confirmation is ON; repeated signups get silently
   rate-limited → create test users via SQL:
   insert auth.users (encrypted_password = extensions.crypt(pw,
@@ -77,11 +108,14 @@ gets attached as an extension to the irfanapp/NexProp dashboard.
 
 ## Database (all `crm_` prefixed, ALL RLS-on, in public schema)
 
-Migrations applied (in order): `crm_core_schema`, `crm_lead_groups`,
-`crm_fix_stage_change_trigger`, `crm_deals_schema`, `crm_contacts_schema`,
-`crm_accounts_schema`, `crm_activity_items_schema`, `crm_dashboard_settings`.
+Early migrations: core/lead_groups/deals/contacts/accounts/activity_items/
+dashboard_settings; then the standardization series `crm_phase0…crm_phase5`,
+`crm_custom_columns`, `crm_signup_requested_role` etc. — full ordered list via
+Supabase `list_migrations`. Deal stages were RESEEDED in Phase 1 to the
+9-stage buyer pipeline (New → … → Won/Lost).
 
-- `crm_users` (1:1 auth.users; role admin|agent), `crm_invites`
+- `crm_users` (1:1 auth.users; role developer|ceo|media|manager|agent|finance
+  + requested_role), `crm_invites` (role-carrying)
 - `crm_pipelines` + `crm_stages` (lead stages, seeded 7 Monday colors)
 - `crm_leads` (+group_id, title, budget, website_lead_id …)
 - `crm_lead_groups` (seeded "New Leads")
