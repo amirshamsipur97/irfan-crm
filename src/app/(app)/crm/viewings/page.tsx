@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import type { CrmCustomColumn } from "@/lib/custom-columns";
 import { getProfile } from "@/lib/profile";
 import { recordBoardVisit } from "@/lib/visits";
 import { ViewingsBoard } from "@/components/crm/viewings/ViewingsBoard";
@@ -11,7 +12,7 @@ export default async function ViewingsBoardPage() {
     recordBoardVisit("viewings"),
   ]);
 
-  const [{ data: groups }, { data: viewings }, { data: users }, { data: contacts }, { data: units }] =
+  const [{ data: groups }, { data: viewings }, { data: users }, { data: contacts }, { data: units }, { data: customColumns }] =
     await Promise.all([
       supabase
         .from("crm_viewing_groups")
@@ -27,7 +28,13 @@ export default async function ViewingsBoardPage() {
         .returns<CrmUser[]>(),
       supabase.from("crm_contacts").select("*").order("name").returns<CrmContact[]>(),
       supabase.from("crm_units").select("*").order("name").returns<CrmUnit[]>(),
-    ]);
+    supabase
+      .from("crm_custom_columns")
+      .select("*")
+      .eq("board_key", "viewings")
+      .order("position")
+      .returns<CrmCustomColumn[]>(),
+  ]);
 
   return (
     <ViewingsBoard
@@ -37,6 +44,7 @@ export default async function ViewingsBoardPage() {
       users={users ?? []}
       contacts={contacts ?? []}
       units={units ?? []}
+      customColumns={customColumns ?? []}
     />
   );
 }

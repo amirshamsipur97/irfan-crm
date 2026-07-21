@@ -192,6 +192,7 @@ export interface CrmAccount {
   hq_location: string | null;
   group_id: string | null;
   last_interaction_at: string | null;
+  custom: Record<string, unknown>;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -219,6 +220,7 @@ export interface CrmProject {
   account_name: string | null;
   notes: string | null;
   last_interaction_at: string | null;
+  custom: Record<string, unknown>;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -269,6 +271,7 @@ export interface CrmDevelopment {
   completion_date: string | null;
   description: string | null;
   currency: string;
+  custom: Record<string, unknown>;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -298,6 +301,7 @@ export interface CrmUnit {
   currency: string;
   status: string;
   handover_date: string | null;
+  custom: Record<string, unknown>;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -327,6 +331,7 @@ export interface CrmViewing {
   scheduled_end: string | null;
   status: string;
   feedback: string | null;
+  custom: Record<string, unknown>;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -461,6 +466,7 @@ export interface CrmActivityItem {
   start_at: string | null;
   end_at: string | null;
   related_item: string | null;
+  custom: Record<string, unknown>;
   created_by: string | null;
   created_at: string;
   updated_at: string;

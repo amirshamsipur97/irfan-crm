@@ -17,6 +17,7 @@ const PATCHABLE = new Set([
   "price",
   "status",
   "handover_date",
+  "custom",
 ]);
 
 export async function addUnit(groupId: string, name: string) {

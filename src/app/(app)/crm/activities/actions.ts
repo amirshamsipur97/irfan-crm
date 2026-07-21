@@ -14,6 +14,7 @@ const PATCHABLE = new Set([
   "start_at",
   "end_at",
   "related_item",
+  "custom",
 ]);
 
 export async function addActivity(groupId: string, name: string) {

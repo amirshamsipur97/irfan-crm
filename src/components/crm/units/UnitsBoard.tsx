@@ -1,5 +1,12 @@
 "use client";
 
+import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import {
+  addCustomColumn,
+  deleteCustomColumn,
+  renameCustomColumn,
+} from "@/app/(app)/crm/custom-columns-actions";
+
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -29,12 +36,14 @@ export function UnitsBoard({
   units,
   users,
   developments,
+  customColumns = [],
 }: {
   profile: CrmUser;
   groups: CrmUnitGroup[];
   units: CrmUnit[];
   users: CrmUser[];
   developments: CrmDevelopment[];
+  customColumns?: CrmCustomColumn[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState("Main table");
@@ -50,6 +59,8 @@ export function UnitsBoard({
     sub: d.location,
   }));
 
+  const [localColumns, setLocalColumns] = useState(customColumns);
+  useEffect(() => setLocalColumns(customColumns), [customColumns]);
   useEffect(() => setLocalUnits(units), [units]);
   useEffect(() => setLocalGroups(groups), [groups]);
 
@@ -108,6 +119,7 @@ export function UnitsBoard({
         currency: "OMR",
         status: "available",
         handover_date: null,
+        custom: {},
         created_by: profile.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -120,6 +132,33 @@ export function UnitsBoard({
     const color = GROUP_COLORS[localGroups.length % GROUP_COLORS.length];
     const result = await addUnitGroup("New Group", color);
     if (result.id) setNewGroupId(result.id);
+  };
+
+  const handleAddColumn = async (type: CustomColumnType) => {
+    const result = await addCustomColumn("units", type);
+    if (result.error || !result.column) {
+      setToast({ message: result.error ?? "could not add column", tone: "alert" });
+      return;
+    }
+    setLocalColumns((prev) => [...prev, result.column as CrmCustomColumn]);
+    setToast({ message: "Column added — click its name to rename" });
+  };
+
+  const handleRenameColumn = (columnId: string, label: string) => {
+    setLocalColumns((prev) => prev.map((c) => (c.id === columnId ? { ...c, label } : c)));
+    renameCustomColumn(columnId, label, "units");
+  };
+
+  const handleDeleteColumn = async (columnId: string) => {
+    const prevCols = localColumns;
+    setLocalColumns((cols) => cols.filter((c) => c.id !== columnId));
+    const result = await deleteCustomColumn(columnId, "units");
+    if (result.error) {
+      setLocalColumns(prevCols);
+      setToast({ message: result.error, tone: "alert" });
+    } else {
+      setToast({ message: "Column removed (values kept in history)" });
+    }
   };
 
   return (
@@ -174,6 +213,11 @@ export function UnitsBoard({
                 renameUnitGroup(group.id, name);
               }}
               onPatch={patchUnit}
+              customColumns={localColumns}
+              profile={profile}
+              onAddColumn={handleAddColumn}
+              onRenameColumn={handleRenameColumn}
+              onDeleteColumn={handleDeleteColumn}
               onAdd={(name) => handleAdd(group.id, name)}
               onCreateDevelopment={async (unitId, name) => {
                 await quickCreateDevelopment(name);

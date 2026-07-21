@@ -14,6 +14,7 @@ const PATCHABLE = new Set([
   "location",
   "completion_date",
   "description",
+  "custom",
 ]);
 
 export async function addDevelopment(groupId: string, name: string) {

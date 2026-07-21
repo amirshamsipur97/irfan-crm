@@ -1,5 +1,13 @@
 "use client";
 
+import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import {
+  addCustomColumn,
+  deleteCustomColumn,
+  renameCustomColumn,
+} from "@/app/(app)/crm/custom-columns-actions";
+import { SuccessToast } from "@/components/ui/SuccessToast";
+
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -25,11 +33,13 @@ export function ActivitiesBoard({
   groups,
   activities,
   users,
+  customColumns = [],
 }: {
   profile: CrmUser;
   groups: CrmActivityGroup[];
   activities: CrmActivityItem[];
   users: CrmUser[];
+  customColumns?: CrmCustomColumn[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [localActivities, setLocalActivities] = useState(activities);
@@ -39,6 +49,9 @@ export function ActivitiesBoard({
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
   const [itemHeight, setItemHeight] = useState<ItemHeight>("single");
 
+  const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert" } | null>(null);
+  const [localColumns, setLocalColumns] = useState(customColumns);
+  useEffect(() => setLocalColumns(customColumns), [customColumns]);
   useEffect(() => setLocalActivities(activities), [activities]);
   useEffect(() => setLocalGroups(groups), [groups]);
 
@@ -77,6 +90,7 @@ export function ActivitiesBoard({
         start_at: null,
         end_at: null,
         related_item: null,
+        custom: {},
         created_by: profile.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -89,6 +103,33 @@ export function ActivitiesBoard({
     const color = GROUP_COLORS[localGroups.length % GROUP_COLORS.length];
     const result = await addActivityGroup("New Group", color);
     if (result.id) setNewGroupId(result.id);
+  };
+
+  const handleAddColumn = async (type: CustomColumnType) => {
+    const result = await addCustomColumn("activities", type);
+    if (result.error || !result.column) {
+      setToast({ message: result.error ?? "could not add column", tone: "alert" });
+      return;
+    }
+    setLocalColumns((prev) => [...prev, result.column as CrmCustomColumn]);
+    setToast({ message: "Column added — click its name to rename" });
+  };
+
+  const handleRenameColumn = (columnId: string, label: string) => {
+    setLocalColumns((prev) => prev.map((c) => (c.id === columnId ? { ...c, label } : c)));
+    renameCustomColumn(columnId, label, "activities");
+  };
+
+  const handleDeleteColumn = async (columnId: string) => {
+    const prevCols = localColumns;
+    setLocalColumns((cols) => cols.filter((c) => c.id !== columnId));
+    const result = await deleteCustomColumn(columnId, "activities");
+    if (result.error) {
+      setLocalColumns(prevCols);
+      setToast({ message: result.error, tone: "alert" });
+    } else {
+      setToast({ message: "Column removed (values kept in history)" });
+    }
   };
 
   return (
@@ -146,6 +187,11 @@ export function ActivitiesBoard({
                 renameActivityGroup(group.id, name);
               }}
               onPatchActivity={patchActivity}
+              customColumns={localColumns}
+              profile={profile}
+              onAddColumn={handleAddColumn}
+              onRenameColumn={handleRenameColumn}
+              onDeleteColumn={handleDeleteColumn}
               onAddActivity={(name) => handleAddActivity(group.id, name)}
             />
           ))}
@@ -162,6 +208,9 @@ export function ActivitiesBoard({
           </div>
         </div>
       </div>
+      {toast && (
+        <SuccessToast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} />
+      )}
       <AiFloaty />
     </Surface>
   );

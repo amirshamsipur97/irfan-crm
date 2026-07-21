@@ -14,6 +14,7 @@ const PATCHABLE = new Set([
   "employees_range",
   "hq_location",
   "last_interaction_at",
+  "custom",
 ]);
 
 export async function addAccount(groupId: string, name: string) {

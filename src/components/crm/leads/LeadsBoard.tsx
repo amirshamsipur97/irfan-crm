@@ -1,5 +1,12 @@
 "use client";
 
+import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import {
+  addCustomColumn,
+  deleteCustomColumn,
+  renameCustomColumn,
+} from "@/app/(app)/crm/custom-columns-actions";
+
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -34,12 +41,14 @@ export function LeadsBoard({
   leads,
   stages,
   users,
+  customColumns = [],
 }: {
   profile: CrmUser;
   groups: CrmLeadGroup[];
   leads: CrmLead[];
   stages: CrmStage[];
   users: CrmUser[];
+  customColumns?: CrmCustomColumn[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [localLeads, setLocalLeads] = useState(leads);
@@ -48,6 +57,8 @@ export function LeadsBoard({
   const [search, setSearch] = useState("");
   const [personFilter, setPersonFilter] = useState<string | null>(null);
 
+  const [localColumns, setLocalColumns] = useState(customColumns);
+  useEffect(() => setLocalColumns(customColumns), [customColumns]);
   useEffect(() => setLocalLeads(leads), [leads]);
   useEffect(() => setLocalGroups(groups), [groups]);
 
@@ -183,6 +194,33 @@ export function LeadsBoard({
       (!personFilter || l.owner_id === personFilter)
   );
 
+  const handleAddColumn = async (type: CustomColumnType) => {
+    const result = await addCustomColumn("leads", type);
+    if (result.error || !result.column) {
+      setToast({ message: result.error ?? "could not add column", tone: "alert" });
+      return;
+    }
+    setLocalColumns((prev) => [...prev, result.column as CrmCustomColumn]);
+    setToast({ message: "Column added — click its name to rename" });
+  };
+
+  const handleRenameColumn = (columnId: string, label: string) => {
+    setLocalColumns((prev) => prev.map((c) => (c.id === columnId ? { ...c, label } : c)));
+    renameCustomColumn(columnId, label, "leads");
+  };
+
+  const handleDeleteColumn = async (columnId: string) => {
+    const prevCols = localColumns;
+    setLocalColumns((cols) => cols.filter((c) => c.id !== columnId));
+    const result = await deleteCustomColumn(columnId, "leads");
+    if (result.error) {
+      setLocalColumns(prevCols);
+      setToast({ message: result.error, tone: "alert" });
+    } else {
+      setToast({ message: "Column removed (values kept in history)" });
+    }
+  };
+
   return (
     <Surface>
       <div ref={rootRef} className="flex h-full flex-col">
@@ -254,6 +292,11 @@ export function LeadsBoard({
               }}
               onAddLead={(name) => handleAddLead(group.id, name)}
               onPatchLead={editLead}
+              customColumns={localColumns}
+              profile={profile}
+              onAddColumn={handleAddColumn}
+              onRenameColumn={handleRenameColumn}
+              onDeleteColumn={handleDeleteColumn}
               onMoveToContacts={handleMoveToContacts}
               onLogActivity={(leadId, payload: LogPayload) => {
                 patchLead(leadId, {

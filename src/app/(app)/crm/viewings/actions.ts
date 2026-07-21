@@ -16,6 +16,7 @@ const PATCHABLE = new Set([
   "scheduled_end",
   "status",
   "feedback",
+  "custom",
 ]);
 
 export async function addViewing(groupId: string, name: string) {

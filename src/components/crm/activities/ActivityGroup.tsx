@@ -1,5 +1,14 @@
 "use client";
 
+import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import { CUSTOM_COL_W } from "@/lib/custom-columns";
+import {
+  AddColumnButton,
+  CustomColumnHeader,
+  CustomValueCell,
+} from "@/components/crm/custom/custom-columns";
+import { isFullAccess } from "@/lib/permissions";
+
 import { useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -26,6 +35,11 @@ export function ActivityGroup({
   users,
   rowH = 36,
   isNew = false,
+  customColumns,
+  profile,
+  onAddColumn,
+  onRenameColumn,
+  onDeleteColumn,
   onToggleCollapse,
   onRenameGroup,
   onPatchActivity,
@@ -37,6 +51,11 @@ export function ActivityGroup({
   /** row height from the board's Item height setting */
   rowH?: number;
   isNew?: boolean;
+  customColumns: CrmCustomColumn[];
+  profile: CrmUser;
+  onAddColumn: (type: CustomColumnType) => void;
+  onRenameColumn: (columnId: string, label: string) => void;
+  onDeleteColumn: (columnId: string) => void;
   onToggleCollapse: (collapsed: boolean) => void;
   onRenameGroup: (name: string) => void;
   onPatchActivity: (activityId: string, patch: Partial<CrmActivityItem>) => void;
@@ -155,9 +174,16 @@ export function ActivityGroup({
                 {col.key === "related" && <Icon name="tblInfo" size={14} className="opacity-70" />}
               </span>
             ))}
-            <span className="flex w-[40px] items-center justify-center border-b border-t border-line bg-white">
-              <Icon name="tlAdd" size={16} />
-            </span>
+            {customColumns.map((col) => (
+              <CustomColumnHeader
+                key={col.id}
+                column={col}
+                canDelete={isFullAccess(profile.role)}
+                onRename={(label) => onRenameColumn(col.id, label)}
+                onDelete={() => onDeleteColumn(col.id)}
+              />
+            ))}
+            <AddColumnButton onAdd={onAddColumn} />
           </div>
 
           {/* rows */}
@@ -278,6 +304,19 @@ export function ActivityGroup({
                       );
                   }
                 })}
+                {customColumns.map((col) => (
+                  <CustomValueCell
+                    key={col.id}
+                    column={col}
+                    value={(activity.custom ?? {})[col.key]}
+                    users={users}
+                    onSave={(next) =>
+                      onPatchActivity(activity.id, {
+                        custom: { ...(activity.custom ?? {}), [col.key]: next },
+                      })
+                    }
+                  />
+                ))}
                 <span className="w-[40px] border-b border-line bg-white" />
               </div>
             );
@@ -313,7 +352,7 @@ export function ActivityGroup({
             </div>
             <span
               className="border-b border-line bg-white"
-              style={{ width: ACTIVITY_COLUMNS.reduce((s, c) => s + c.w, 0) + 40 }}
+              style={{ width: ACTIVITY_COLUMNS.reduce((s, c) => s + c.w, 0) + customColumns.length * CUSTOM_COL_W + 40 }}
             />
           </div>
 
@@ -333,6 +372,13 @@ export function ActivityGroup({
                   <BatteryBar segments={statusSegments} />
                 )}
               </span>
+            ))}
+            {customColumns.map((col) => (
+              <span
+                key={col.id}
+                className="border-b border-r border-line bg-white"
+                style={{ width: CUSTOM_COL_W }}
+              />
             ))}
             <span className="w-[40px] border-b border-line bg-white" />
           </div>

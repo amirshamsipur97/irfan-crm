@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import type { CrmCustomColumn } from "@/lib/custom-columns";
 import { getProfile } from "@/lib/profile";
 import { recordBoardVisit } from "@/lib/visits";
 import { DevelopmentsBoard } from "@/components/crm/developments/DevelopmentsBoard";
@@ -17,7 +18,7 @@ export default async function DevelopmentsBoardPage() {
     recordBoardVisit("developments"),
   ]);
 
-  const [{ data: groups }, { data: developments }, { data: units }, { data: users }, { data: accounts }] =
+  const [{ data: groups }, { data: developments }, { data: units }, { data: users }, { data: accounts }, { data: customColumns }] =
     await Promise.all([
       supabase
         .from("crm_development_groups")
@@ -33,7 +34,13 @@ export default async function DevelopmentsBoardPage() {
         .order("full_name")
         .returns<CrmUser[]>(),
       supabase.from("crm_accounts").select("*").order("name").returns<CrmAccount[]>(),
-    ]);
+    supabase
+      .from("crm_custom_columns")
+      .select("*")
+      .eq("board_key", "developments")
+      .order("position")
+      .returns<CrmCustomColumn[]>(),
+  ]);
 
   return (
     <DevelopmentsBoard
@@ -43,6 +50,7 @@ export default async function DevelopmentsBoardPage() {
       units={units ?? []}
       users={users ?? []}
       accounts={accounts ?? []}
+      customColumns={customColumns ?? []}
     />
   );
 }

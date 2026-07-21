@@ -17,6 +17,7 @@ const PATCHABLE = new Set([
   "account_name",
   "notes",
   "last_interaction_at",
+  "custom",
 ]);
 
 export async function addProject(groupId: string, name: string) {

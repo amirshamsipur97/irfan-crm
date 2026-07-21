@@ -1,5 +1,12 @@
 "use client";
 
+import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import {
+  addCustomColumn,
+  deleteCustomColumn,
+  renameCustomColumn,
+} from "@/app/(app)/crm/custom-columns-actions";
+
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -29,12 +36,16 @@ export function AccountsBoard({
   accounts,
   contacts,
   deals,
+  customColumns = [],
+  users = [],
 }: {
   profile: CrmUser;
   groups: CrmAccountGroup[];
   accounts: CrmAccount[];
   contacts: CrmContact[];
   deals: CrmDeal[];
+  customColumns?: CrmCustomColumn[];
+  users?: CrmUser[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState("Main View");
@@ -43,6 +54,8 @@ export function AccountsBoard({
   const [localGroups, setLocalGroups] = useState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
 
+  const [localColumns, setLocalColumns] = useState(customColumns);
+  useEffect(() => setLocalColumns(customColumns), [customColumns]);
   useEffect(() => setLocalAccounts(accounts), [accounts]);
   useEffect(() => setLocalGroups(groups), [groups]);
 
@@ -100,6 +113,7 @@ export function AccountsBoard({
         description: null,
         employees_range: null,
         hq_location: null,
+        custom: {},
         group_id: groupId,
         last_interaction_at: null,
         created_by: profile.id,
@@ -114,6 +128,33 @@ export function AccountsBoard({
     const color = GROUP_COLORS[localGroups.length % GROUP_COLORS.length];
     const result = await addAccountGroup("New Group", color);
     if (result.id) setNewGroupId(result.id);
+  };
+
+  const handleAddColumn = async (type: CustomColumnType) => {
+    const result = await addCustomColumn("accounts", type);
+    if (result.error || !result.column) {
+      setToast({ message: result.error ?? "could not add column", tone: "alert" });
+      return;
+    }
+    setLocalColumns((prev) => [...prev, result.column as CrmCustomColumn]);
+    setToast({ message: "Column added — click its name to rename" });
+  };
+
+  const handleRenameColumn = (columnId: string, label: string) => {
+    setLocalColumns((prev) => prev.map((c) => (c.id === columnId ? { ...c, label } : c)));
+    renameCustomColumn(columnId, label, "accounts");
+  };
+
+  const handleDeleteColumn = async (columnId: string) => {
+    const prevCols = localColumns;
+    setLocalColumns((cols) => cols.filter((c) => c.id !== columnId));
+    const result = await deleteCustomColumn(columnId, "accounts");
+    if (result.error) {
+      setLocalColumns(prevCols);
+      setToast({ message: result.error, tone: "alert" });
+    } else {
+      setToast({ message: "Column removed (values kept in history)" });
+    }
   };
 
   return (
@@ -162,6 +203,12 @@ export function AccountsBoard({
                 renameAccountGroup(group.id, name);
               }}
               onPatchAccount={patchAccount}
+              customColumns={localColumns}
+              users={users}
+              profile={profile}
+              onAddColumn={handleAddColumn}
+              onRenameColumn={handleRenameColumn}
+              onDeleteColumn={handleDeleteColumn}
               onLogActivity={(accountId, payload: LogPayload) => {
                 patchAccount(accountId, {
                   last_interaction_at: payload.startAt ?? new Date().toISOString(),

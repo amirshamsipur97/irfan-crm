@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import type { CrmCustomColumn } from "@/lib/custom-columns";
 import { getProfile } from "@/lib/profile";
 import { recordBoardVisit } from "@/lib/visits";
 import { ProjectsBoard } from "@/components/crm/projects/ProjectsBoard";
@@ -7,7 +8,7 @@ import type { CrmProject, CrmProjectGroup, CrmUser } from "@/lib/types";
 export default async function ProjectsBoardPage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient(), recordBoardVisit("projects")]);
 
-  const [{ data: groups }, { data: projects }, { data: users }] = await Promise.all([
+  const [{ data: groups }, { data: projects }, { data: users }, { data: customColumns }] = await Promise.all([
     supabase
       .from("crm_project_groups")
       .select("*")
@@ -20,6 +21,12 @@ export default async function ProjectsBoardPage() {
       .eq("is_active", true)
       .order("full_name")
       .returns<CrmUser[]>(),
+  supabase
+      .from("crm_custom_columns")
+      .select("*")
+      .eq("board_key", "projects")
+      .order("position")
+      .returns<CrmCustomColumn[]>(),
   ]);
 
   return (
@@ -28,6 +35,7 @@ export default async function ProjectsBoardPage() {
       groups={groups ?? []}
       projects={projects ?? []}
       users={users ?? []}
+      customColumns={customColumns ?? []}
     />
   );
 }

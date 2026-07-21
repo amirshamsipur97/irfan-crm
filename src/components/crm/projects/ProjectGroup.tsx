@@ -1,5 +1,14 @@
 "use client";
 
+import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import { CUSTOM_COL_W } from "@/lib/custom-columns";
+import {
+  AddColumnButton,
+  CustomColumnHeader,
+  CustomValueCell,
+} from "@/components/crm/custom/custom-columns";
+import { isFullAccess } from "@/lib/permissions";
+
 import { useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -30,6 +39,11 @@ export function ProjectGroup({
   projects,
   users,
   isNew = false,
+  customColumns,
+  profile,
+  onAddColumn,
+  onRenameColumn,
+  onDeleteColumn,
   onToggleCollapse,
   onRenameGroup,
   onPatchProject,
@@ -39,6 +53,11 @@ export function ProjectGroup({
   projects: CrmProject[];
   users: CrmUser[];
   isNew?: boolean;
+  customColumns: CrmCustomColumn[];
+  profile: CrmUser;
+  onAddColumn: (type: CustomColumnType) => void;
+  onRenameColumn: (columnId: string, label: string) => void;
+  onDeleteColumn: (columnId: string) => void;
   onToggleCollapse: (collapsed: boolean) => void;
   onRenameGroup: (name: string) => void;
   onPatchProject: (projectId: string, patch: Partial<CrmProject>) => void;
@@ -158,9 +177,16 @@ export function ProjectGroup({
                 )}
               </span>
             ))}
-            <span className="flex w-[40px] items-center justify-center border-b border-t border-line bg-white">
-              <Icon name="tlAdd" size={16} />
-            </span>
+            {customColumns.map((col) => (
+              <CustomColumnHeader
+                key={col.id}
+                column={col}
+                canDelete={isFullAccess(profile.role)}
+                onRename={(label) => onRenameColumn(col.id, label)}
+                onDelete={() => onDeleteColumn(col.id)}
+              />
+            ))}
+            <AddColumnButton onAdd={onAddColumn} />
           </div>
 
           {/* rows */}
@@ -288,6 +314,19 @@ export function ProjectGroup({
                     );
                 }
               })}
+              {customColumns.map((col) => (
+                <CustomValueCell
+                  key={col.id}
+                  column={col}
+                  value={(project.custom ?? {})[col.key]}
+                  users={users}
+                  onSave={(next) =>
+                    onPatchProject(project.id, {
+                      custom: { ...(project.custom ?? {}), [col.key]: next },
+                    })
+                  }
+                />
+              ))}
               <span className="w-[40px] border-b border-line bg-white" />
             </div>
           ))}
@@ -322,7 +361,7 @@ export function ProjectGroup({
             </div>
             <span
               className="border-b border-line bg-white"
-              style={{ width: PROJECT_COLUMNS.reduce((s, c) => s + c.w, 0) + 40 }}
+              style={{ width: PROJECT_COLUMNS.reduce((s, c) => s + c.w, 0) + customColumns.length * CUSTOM_COL_W + 40 }}
             />
           </div>
 
@@ -350,6 +389,13 @@ export function ProjectGroup({
                   </>
                 )}
               </span>
+            ))}
+            {customColumns.map((col) => (
+              <span
+                key={col.id}
+                className="border-b border-r border-line bg-white"
+                style={{ width: CUSTOM_COL_W }}
+              />
             ))}
             <span className="w-[40px] border-b border-line bg-white" />
           </div>

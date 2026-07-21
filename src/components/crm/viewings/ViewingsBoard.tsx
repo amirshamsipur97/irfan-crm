@@ -1,5 +1,12 @@
 "use client";
 
+import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import {
+  addCustomColumn,
+  deleteCustomColumn,
+  renameCustomColumn,
+} from "@/app/(app)/crm/custom-columns-actions";
+
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -31,6 +38,7 @@ export function ViewingsBoard({
   users,
   contacts,
   units,
+  customColumns = [],
 }: {
   profile: CrmUser;
   groups: CrmViewingGroup[];
@@ -38,6 +46,7 @@ export function ViewingsBoard({
   users: CrmUser[];
   contacts: CrmContact[];
   units: CrmUnit[];
+  customColumns?: CrmCustomColumn[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState("Main table");
@@ -56,6 +65,8 @@ export function ViewingsBoard({
     sub: u.development_name,
   }));
 
+  const [localColumns, setLocalColumns] = useState(customColumns);
+  useEffect(() => setLocalColumns(customColumns), [customColumns]);
   useEffect(() => setLocalViewings(viewings), [viewings]);
   useEffect(() => setLocalGroups(groups), [groups]);
   useEffect(
@@ -121,6 +132,7 @@ export function ViewingsBoard({
         scheduled_end: null,
         status: "scheduled",
         feedback: null,
+        custom: {},
         created_by: profile.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -133,6 +145,33 @@ export function ViewingsBoard({
     const color = GROUP_COLORS[localGroups.length % GROUP_COLORS.length];
     const result = await addViewingGroup("New Group", color);
     if (result.id) setNewGroupId(result.id);
+  };
+
+  const handleAddColumn = async (type: CustomColumnType) => {
+    const result = await addCustomColumn("viewings", type);
+    if (result.error || !result.column) {
+      setToast({ message: result.error ?? "could not add column", tone: "alert" });
+      return;
+    }
+    setLocalColumns((prev) => [...prev, result.column as CrmCustomColumn]);
+    setToast({ message: "Column added — click its name to rename" });
+  };
+
+  const handleRenameColumn = (columnId: string, label: string) => {
+    setLocalColumns((prev) => prev.map((c) => (c.id === columnId ? { ...c, label } : c)));
+    renameCustomColumn(columnId, label, "viewings");
+  };
+
+  const handleDeleteColumn = async (columnId: string) => {
+    const prevCols = localColumns;
+    setLocalColumns((cols) => cols.filter((c) => c.id !== columnId));
+    const result = await deleteCustomColumn(columnId, "viewings");
+    if (result.error) {
+      setLocalColumns(prevCols);
+      setToast({ message: result.error, tone: "alert" });
+    } else {
+      setToast({ message: "Column removed (values kept in history)" });
+    }
   };
 
   return (
@@ -187,6 +226,11 @@ export function ViewingsBoard({
                 renameViewingGroup(group.id, name);
               }}
               onPatch={patchViewing}
+              customColumns={localColumns}
+              profile={profile}
+              onAddColumn={handleAddColumn}
+              onRenameColumn={handleRenameColumn}
+              onDeleteColumn={handleDeleteColumn}
               onAdd={(name) => handleAdd(group.id, name)}
               onCreateContact={async (viewingId, name) => {
                 setContactOptions((prev) => [...prev, { name }]);
