@@ -59,6 +59,7 @@ export function ContactGroup({
   onAddColumn,
   onRenameColumn,
   onDeleteColumn,
+  onOpenContact,
 }: {
   group: CrmContactGroup;
   contacts: CrmContact[];
@@ -77,6 +78,7 @@ export function ContactGroup({
   onAddColumn: (type: CustomColumnType) => void;
   onRenameColumn: (columnId: string, label: string) => void;
   onDeleteColumn: (columnId: string) => void;
+  onOpenContact?: (contactId: string) => void;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -253,6 +255,7 @@ export function ContactGroup({
                     <button
                       type="button"
                       aria-label={`Open ${contact.name}`}
+                      onClick={() => onOpenContact?.(contact.id)}
                       className="flex size-[24px] shrink-0 items-center justify-center rounded-[4px] opacity-0 transition-opacity hover:bg-[var(--hover-ghost)] group-hover/row:opacity-100"
                     >
                       <Icon name="rowOpen" size={16} />

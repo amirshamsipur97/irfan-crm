@@ -3,12 +3,12 @@ import type { CrmCustomColumn } from "@/lib/custom-columns";
 import { getProfile } from "@/lib/profile";
 import { recordBoardVisit } from "@/lib/visits";
 import { LeadsBoard } from "@/components/crm/leads/LeadsBoard";
-import type { CrmLead, CrmLeadGroup, CrmStage, CrmUser } from "@/lib/types";
+import type { CrmLead, CrmLeadGroup, CrmStage, CrmUnit, CrmUser } from "@/lib/types";
 
 export default async function LeadsBoardPage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient(), recordBoardVisit("leads")]);
 
-  const [{ data: groups }, { data: leads }, { data: stages }, { data: users }, { data: customColumns }] =
+  const [{ data: groups }, { data: leads }, { data: stages }, { data: users }, { data: units }, { data: customColumns }] =
     await Promise.all([
       supabase
         .from("crm_lead_groups")
@@ -28,6 +28,7 @@ export default async function LeadsBoardPage() {
         .eq("is_active", true)
         .order("full_name")
         .returns<CrmUser[]>(),
+      supabase.from("crm_units").select("*").order("name").returns<CrmUnit[]>(),
       supabase
         .from("crm_custom_columns")
         .select("*")
@@ -43,6 +44,7 @@ export default async function LeadsBoardPage() {
       leads={leads ?? []}
       stages={stages ?? []}
       users={users ?? []}
+      units={units ?? []}
       customColumns={customColumns ?? []}
     />
   );

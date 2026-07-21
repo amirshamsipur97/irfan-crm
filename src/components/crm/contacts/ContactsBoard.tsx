@@ -11,6 +11,7 @@ import type { CrmAccount, CrmContact, CrmContactGroup, CrmDeal, CrmUser } from "
 import { BoardHeader } from "@/components/crm/leads/BoardHeader";
 import { GROUP_COLORS } from "@/components/crm/leads/board-config";
 import { ContactGroup } from "./ContactGroup";
+import { ContactDrawer } from "./contact-drawer";
 import {
   addContact,
   logContactActivity,
@@ -54,6 +55,7 @@ export function ContactsBoard({
   const [search, setSearch] = useState("");
   const [localGroups, setLocalGroups] = useState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
+  const [openContactId, setOpenContactId] = useState<string | null>(null);
 
   const [localColumns, setLocalColumns] = useState(customColumns);
 
@@ -247,6 +249,7 @@ export function ContactsBoard({
                 logContactActivity(contactId, payload);
               }}
               onAddContact={(name) => handleAddContact(group.id, name)}
+              onOpenContact={setOpenContactId}
             />
           ))}
 
@@ -270,6 +273,11 @@ export function ContactsBoard({
           onClose={() => setToast(null)}
         />
       )}
+      {openContactId && (() => {
+        const openContact = localContacts.find((c) => c.id === openContactId);
+        if (!openContact) return null;
+        return <ContactDrawer contact={openContact} onClose={() => setOpenContactId(null)} />;
+      })()}
       <AiFloaty />
     </Surface>
   );

@@ -59,6 +59,7 @@ export function LeadGroup({
   onLogActivity,
   onPatchLead,
   onMoveToContacts,
+  onOpenLead,
 }: {
   group: CrmLeadGroup;
   leads: CrmLead[];
@@ -79,6 +80,7 @@ export function LeadGroup({
   onLogActivity: (leadId: string, payload: LogPayload) => void;
   onPatchLead: (leadId: string, patch: Partial<CrmLead>) => void;
   onMoveToContacts: (leadId: string) => void;
+  onOpenLead?: (leadId: string) => void;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -240,6 +242,7 @@ export function LeadGroup({
                     <button
                       type="button"
                       aria-label={`Open ${lead.name}`}
+                      onClick={() => onOpenLead?.(lead.id)}
                       className="flex size-[24px] shrink-0 items-center justify-center rounded-[4px] opacity-0 transition-opacity hover:bg-[var(--hover-ghost)] group-hover/row:opacity-100"
                     >
                       <Icon name="rowOpen" size={16} />

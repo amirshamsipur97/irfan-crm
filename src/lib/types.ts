@@ -496,3 +496,34 @@ export interface CrmTask {
   created_at: string;
   updated_at: string;
 }
+
+export type NotificationType =
+  | "assigned"
+  | "stage"
+  | "reservation"
+  | "offer"
+  | "role";
+
+export interface CrmNotification {
+  id: string;
+  user_id: string;
+  actor_id: string | null;
+  actor_name: string | null;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  link: string | null;
+  entity_table: string | null;
+  entity_id: string | null;
+  read_at: string | null;
+  created_at: string;
+}
+
+export interface CrmLeadStageHistory {
+  id: string;
+  lead_id: string;
+  from_stage_id: string | null;
+  to_stage_id: string | null;
+  changed_by: string | null;
+  changed_at: string;
+}

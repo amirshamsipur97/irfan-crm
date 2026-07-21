@@ -14,9 +14,10 @@ import { Surface } from "@/components/shell/AppChrome";
 import { AiFloaty } from "@/components/shell/AiFloaty";
 import { Icon } from "@/components/ui/Icon";
 import { canAnimate } from "@/lib/motion";
-import type { CrmLead, CrmLeadGroup, CrmStage, CrmUser } from "@/lib/types";
+import type { CrmLead, CrmLeadGroup, CrmStage, CrmUnit, CrmUser } from "@/lib/types";
 import { BoardHeader } from "./BoardHeader";
 import { LeadGroup } from "./LeadGroup";
+import { LeadDrawer } from "./lead-drawer";
 import { GROUP_COLORS } from "./board-config";
 import {
   addGroup,
@@ -41,6 +42,7 @@ export function LeadsBoard({
   leads,
   stages,
   users,
+  units = [],
   customColumns = [],
 }: {
   profile: CrmUser;
@@ -48,6 +50,7 @@ export function LeadsBoard({
   leads: CrmLead[];
   stages: CrmStage[];
   users: CrmUser[];
+  units?: CrmUnit[];
   customColumns?: CrmCustomColumn[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -56,6 +59,7 @@ export function LeadsBoard({
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [personFilter, setPersonFilter] = useState<string | null>(null);
+  const [openLeadId, setOpenLeadId] = useState<string | null>(null);
 
   const [localColumns, setLocalColumns] = useState(customColumns);
   useEffect(() => setLocalColumns(customColumns), [customColumns]);
@@ -298,6 +302,7 @@ export function LeadsBoard({
               onRenameColumn={handleRenameColumn}
               onDeleteColumn={handleDeleteColumn}
               onMoveToContacts={handleMoveToContacts}
+              onOpenLead={setOpenLeadId}
               onLogActivity={(leadId, payload: LogPayload) => {
                 patchLead(leadId, {
                   last_activity_at: payload.startAt ?? new Date().toISOString(),
@@ -327,6 +332,21 @@ export function LeadsBoard({
           onClose={() => setToast(null)}
         />
       )}
+      {openLeadId && (() => {
+        const openLead = localLeads.find((l) => l.id === openLeadId);
+        if (!openLead) return null;
+        return (
+          <LeadDrawer
+            lead={openLead}
+            stages={stages}
+            users={users}
+            units={units}
+            onClose={() => setOpenLeadId(null)}
+            onToast={(message, tone) => setToast({ message, tone })}
+            onConvert={handleMoveToContacts}
+          />
+        );
+      })()}
       <AiFloaty />
     </Surface>
   );

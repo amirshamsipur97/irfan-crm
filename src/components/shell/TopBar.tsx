@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { signOut } from "@/app/(auth)/actions";
+import { NotificationsBell } from "./NotificationsBell";
 import { useRef, useState, useEffect } from "react";
 import type { CrmUser } from "@/lib/types";
 import { ROLE_LABELS } from "@/lib/permissions";
@@ -100,9 +101,9 @@ export function TopBar({ profile }: { profile: CrmUser }) {
 
       {/* right: tools cluster */}
       <div className="flex items-center">
-        <TopIconButton label="Notifications" counter="1" icon={<Icon name="bell" size={20} />} />
+        <NotificationsBell />
         <span className="w-[4px]" />
-        <TopIconButton label="Inbox" counter="1" counterInverted icon={<Icon name="inbox" size={20} />} />
+        <TopIconButton label="Inbox" icon={<Icon name="inbox" size={20} />} />
         <span className="w-[4px]" />
         <TopIconButton label="Invite members" icon={<Icon name="invite" size={20} />} />
         <span className="w-[4px]" />
