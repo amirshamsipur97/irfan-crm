@@ -2,8 +2,8 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-07-21 end of session** (all work committed locally through
-> `ddaa38f`; repo is LOCAL-ONLY, no remote).
+> Updated: **2026-07-21 late session** (all work committed locally through
+> `3b13ae3`; repo is LOCAL-ONLY, no remote).
 
 ## CURRENT STATE SNAPSHOT (2026-07-21)
 
@@ -47,10 +47,25 @@
   developer invites: amirshamsipur1997@gmail.com, a.shamsipour@irfaninvest.com.
 - **DATA IS REAL** (accounts/deals/leads + user-created custom columns on
   deals). Never wipe or reseed without asking.
+- **NOTIFICATIONS LIVE (2026-07-21, migration `crm_notifications`)**: TopBar
+  bell is real — unread badge (60s poll), All/Unread panel, mark one/all read,
+  click-through. DB: `crm_notifications` (RLS own-rows; INSERT only via
+  security-definer `crm_notify`, which never notifies the acting user) +
+  triggers for owner assignment (leads/deals/projects/activities/developments/
+  units), deal stage moves, reservation lifecycle (incl. hourly cron expiry —
+  actor null → "System"), new offers, role changes. Fake Inbox counter removed.
+- **LEAD + CONTACT DRAWERS (2026-07-21)**: row-open buttons now work on Leads
+  and Contacts. LeadDrawer (`leads/lead-drawer.tsx` + `leads/drawer-actions.ts`):
+  details w/ SLA response time, score breakdown (score_components), shortlist
+  units (writes crm_property_interests w/ lead_id → feeds scoring), stage
+  journey (crm_lead_stage_history), activity, Convert-to-contact CTA (reuses
+  moveLeadToContacts). ContactDrawer (`contacts/contact-drawer.tsx` +
+  `contacts/drawer-actions.ts`): details, linked deals (FK match merged with
+  name-cache match, deduped; live count + value sum + stage pills), shortlisted
+  properties, activity. Leads page now also fetches crm_units.
 - **NEXT / REMAINING**:
   1. Supabase Site URL change (user, dashboard) — only open localhost risk.
-  2. Real notifications (TopBar bell is visual), lead/contact detail drawers,
-     payment-plan template UI + schedules, commission-splits UI.
+  2. Payment-plan template UI + schedules, commission-splits UI.
   3. 2 extra Sales Dashboard sections (user will send screenshots).
   4. Custom domain crm.irfaninvest.com + attach to irfanapp/NexProp later.
   5. PRE-HANDOVER CLEANUP: delete preview admin + /preview route + DEMO_* env,
