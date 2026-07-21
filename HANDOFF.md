@@ -104,8 +104,15 @@
   count-checked). Shared kit `components/crm/row-tools.tsx` (`useRowTools`
   factory + `dropTargetProps` + `byPosition`) + `app/(app)/crm/row-actions.ts`
   (boardKey→table allow-list). E2E verified: duplicate/delete/move-to/drag all
-  persisted to DB. ⚠️ optimistic add flows create rows without `position` —
-  byPosition sinks them last until refetch (fine).
+  persisted to DB. Drag is POINTER-EVENT based (not HTML5 DnD — Safari):
+  6px threshold, row-clone ghost at rotate(4deg), dimmed source, teal insert
+  indicator, targets resolved with elementFromPoint over data-drop-group/
+  data-drop-before attributes. ⚠️ never nest position:fixed popovers under a
+  transformed ancestor (containing-block hijack → menu at page bottom) and
+  never leave permanent overflow-hidden on group bodies (clips the gutter
+  handle; overflow is applied via gsap.set only during collapse). Optimistic
+  add flows create rows without `position` — byPosition sinks them last
+  until refetch (fine).
 - **NEXT / REMAINING**:
   1. Supabase Site URL change (user, dashboard) — only open localhost risk.
   2. Payment-plan template UI + schedules, commission-splits UI.
