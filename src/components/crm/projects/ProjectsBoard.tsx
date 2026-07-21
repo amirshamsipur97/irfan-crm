@@ -26,6 +26,7 @@ import {
   setProjectGroupCollapsed,
   updateProject,
 } from "@/app/(app)/crm/projects/actions";
+import { byPosition, useRowTools } from "@/components/crm/row-tools";
 
 export function ProjectsBoard({
   profile,
@@ -49,6 +50,15 @@ export function ProjectsBoard({
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
 
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert" } | null>(null);
+  const rowTools = useRowTools({
+    boardKey: "projects",
+    rows: localProjects,
+    setRows: setLocalProjects,
+    groups: localGroups.map((g) => ({ id: g.id, name: g.name })),
+    profile,
+    onToast: (message, tone) => setToast({ message, tone }),
+  });
+  const sortedRows = [...localProjects].sort(byPosition);
   const [localColumns, setLocalColumns] = useState(customColumns);
   useEffect(() => setLocalColumns(customColumns), [customColumns]);
   useEffect(() => setLocalProjects(projects), [projects]);
@@ -163,7 +173,8 @@ export function ProjectsBoard({
               key={group.id}
               group={group}
               isNew={group.id === newGroupId}
-              projects={localProjects.filter(
+              tools={rowTools}
+              projects={sortedRows.filter(
                 (p) =>
                   p.group_id === group.id &&
                   (!search.trim() ||

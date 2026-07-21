@@ -35,6 +35,7 @@ import {
   setDevelopmentGroupCollapsed,
   updateDevelopment,
 } from "@/app/(app)/crm/developments/actions";
+import { byPosition, useRowTools } from "@/components/crm/row-tools";
 
 export function DevelopmentsBoard({
   profile,
@@ -61,6 +62,15 @@ export function DevelopmentsBoard({
   const [localGroups, setLocalGroups] = useState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+  const rowTools = useRowTools({
+    boardKey: "developments",
+    rows: localDevelopments,
+    setRows: setLocalDevelopments,
+    groups: localGroups.map((g) => ({ id: g.id, name: g.name })),
+    profile,
+    onToast: (message, tone) => setToast({ message, tone }),
+  });
+  const sortedRows = [...localDevelopments].sort(byPosition);
   const [developerOptions, setDeveloperOptions] = useState<PickerOption[]>(
     accounts.map((a) => ({ name: a.name, sub: a.domain }))
   );
@@ -199,7 +209,8 @@ export function DevelopmentsBoard({
               key={group.id}
               group={group}
               isNew={group.id === newGroupId}
-              developments={localDevelopments.filter(
+              tools={rowTools}
+              developments={sortedRows.filter(
                 (d) =>
                   d.group_id === group.id &&
                   (!search.trim() ||

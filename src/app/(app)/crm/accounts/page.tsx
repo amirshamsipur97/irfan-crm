@@ -21,7 +21,7 @@ export default async function AccountsBoardPage() {
         .select("*")
         .order("position")
         .returns<CrmAccountGroup[]>(),
-      supabase.from("crm_accounts").select("*").order("created_at").returns<CrmAccount[]>(),
+      supabase.from("crm_accounts").select("*").order("position").returns<CrmAccount[]>(),
       supabase.from("crm_contacts").select("*").order("created_at").returns<CrmContact[]>(),
       supabase.from("crm_deals").select("*").order("created_at").returns<CrmDeal[]>(),
       supabase

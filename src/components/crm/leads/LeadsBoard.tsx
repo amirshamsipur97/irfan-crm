@@ -35,6 +35,7 @@ import type { LogPayload } from "@/components/crm/deals/activity-log";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { findDuplicateContact } from "@/app/(app)/crm/contacts/actions";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { byPosition, useRowTools } from "@/components/crm/row-tools";
 
 export function LeadsBoard({
   profile,
@@ -82,6 +83,15 @@ export function LeadsBoard({
   );
 
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+  const rowTools = useRowTools({
+    boardKey: "leads",
+    rows: localLeads,
+    setRows: setLocalLeads,
+    groups: localGroups.map((g) => ({ id: g.id, name: g.name })),
+    profile,
+    onToast: (message, tone) => setToast({ message, tone }),
+    onOpen: setOpenLeadId,
+  });
 
   const patchLead = (leadId: string, patch: Partial<CrmLead>) =>
     setLocalLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, ...patch } : l)));
@@ -197,6 +207,8 @@ export function LeadsBoard({
         (l.email ?? "").toLowerCase().includes(q)) &&
       (!personFilter || l.owner_id === personFilter)
   );
+  const sortedRows = [...visibleLeads].sort(byPosition);
+
 
   const handleAddColumn = async (type: CustomColumnType) => {
     const result = await addCustomColumn("leads", type);
@@ -254,7 +266,8 @@ export function LeadsBoard({
               key={group.id}
               group={group}
               isNew={group.id === newGroupId}
-              leads={visibleLeads.filter((l) => l.group_id === group.id)}
+              tools={rowTools}
+              leads={sortedRows.filter((l) => l.group_id === group.id)}
               stages={stages}
               users={users}
               onToggleCollapse={(collapsed) => {

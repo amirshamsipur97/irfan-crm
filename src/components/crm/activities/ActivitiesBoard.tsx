@@ -27,6 +27,7 @@ import {
   setActivityGroupCollapsed,
   updateActivity,
 } from "@/app/(app)/crm/activities/actions";
+import { byPosition, useRowTools } from "@/components/crm/row-tools";
 
 export function ActivitiesBoard({
   profile,
@@ -50,6 +51,15 @@ export function ActivitiesBoard({
   const [itemHeight, setItemHeight] = useState<ItemHeight>("single");
 
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert" } | null>(null);
+  const rowTools = useRowTools({
+    boardKey: "activities",
+    rows: localActivities,
+    setRows: setLocalActivities,
+    groups: localGroups.map((g) => ({ id: g.id, name: g.name })),
+    profile,
+    onToast: (message, tone) => setToast({ message, tone }),
+  });
+  const sortedRows = [...localActivities].sort(byPosition);
   const [localColumns, setLocalColumns] = useState(customColumns);
   useEffect(() => setLocalColumns(customColumns), [customColumns]);
   useEffect(() => setLocalActivities(activities), [activities]);
@@ -164,7 +174,8 @@ export function ActivitiesBoard({
               key={group.id}
               group={group}
               isNew={group.id === newGroupId}
-              activities={localActivities.filter(
+              tools={rowTools}
+              activities={sortedRows.filter(
                 (a) =>
                   a.group_id === group.id &&
                   (!search.trim() ||

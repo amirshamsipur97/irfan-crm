@@ -6,6 +6,7 @@ import { useRef } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Icon } from "@/components/ui/Icon";
+import { LinkSpinner } from "@/components/ui/LinkSpinner";
 import { IconButton } from "@/components/ui/IconButton";
 import type { IconName } from "@/lib/figma-icons";
 import { canAnimate } from "@/lib/motion";
@@ -117,6 +118,7 @@ export function WorkspaceSidebar({ role }: { role?: CrmRole }) {
                   <span className="truncate font-sans text-[14px] leading-[20px] text-ink">
                     {item.label}
                   </span>
+                  <LinkSpinner />
                 </Link>
               </div>
             );

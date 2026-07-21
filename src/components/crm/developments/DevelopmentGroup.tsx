@@ -32,6 +32,7 @@ import {
   DEVELOPMENT_NAME_COL_W,
   DEVELOPMENT_STATUSES,
 } from "./developments-config";
+import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 
 const ROW_H = 36;
 
@@ -52,6 +53,7 @@ export function DevelopmentGroup({
   onPatch,
   onAdd,
   onCreateDeveloper,
+  tools,
 }: {
   group: CrmDevelopmentGroup;
   developments: CrmDevelopment[];
@@ -69,6 +71,7 @@ export function DevelopmentGroup({
   onPatch: (id: string, patch: Partial<CrmDevelopment>) => void;
   onAdd: (name: string) => void;
   onCreateDeveloper: (developmentId: string, name: string) => void;
+  tools?: RowToolsConfig;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -201,9 +204,11 @@ export function DevelopmentGroup({
           {developments.map((dev) => (
             <div
               key={dev.id}
-              className="group/row flex w-fit items-stretch"
+              className="group/row relative flex w-fit items-stretch"
               style={{ height: ROW_H }}
+            {...dropTargetProps(tools, group.id, dev.id)}
             >
+              {tools && <RowTools row={dev} tools={tools} />}
               <div
                 className="sticky left-0 z-10 flex items-stretch bg-white"
                 style={{ width: DEVELOPMENT_NAME_COL_W }}
@@ -345,7 +350,7 @@ export function DevelopmentGroup({
           ))}
 
           {/* add row */}
-          <div className="flex w-fit items-stretch" style={{ height: ROW_H }}>
+          <div className="flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, null)}>
             <div
               className="sticky left-0 z-10 flex items-stretch bg-white"
               style={{ width: DEVELOPMENT_NAME_COL_W }}

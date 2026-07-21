@@ -25,6 +25,7 @@ import { CONNECTED_UNDERLINE } from "@/components/crm/contacts/contacts-config";
 import { ConnectPicker, type PickerOption } from "@/components/crm/deals/connect-picker";
 import { TimeCell } from "@/components/crm/activities/activity-cells";
 import { VIEWING_COLUMNS, VIEWING_NAME_COL_W, VIEWING_STATUSES } from "./viewings-config";
+import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 
 const ROW_H = 36;
 
@@ -46,6 +47,7 @@ export function ViewingGroup({
   onAdd,
   onCreateContact,
   onCreateUnit,
+  tools,
 }: {
   group: CrmViewingGroup;
   viewings: CrmViewing[];
@@ -64,6 +66,7 @@ export function ViewingGroup({
   onAdd: (name: string) => void;
   onCreateContact: (viewingId: string, name: string) => void;
   onCreateUnit: (viewingId: string, name: string) => void;
+  tools?: RowToolsConfig;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -193,9 +196,11 @@ export function ViewingGroup({
           {viewings.map((viewing) => (
             <div
               key={viewing.id}
-              className="group/row flex w-fit items-stretch"
+              className="group/row relative flex w-fit items-stretch"
               style={{ height: ROW_H }}
+            {...dropTargetProps(tools, group.id, viewing.id)}
             >
+              {tools && <RowTools row={viewing} tools={tools} />}
               <div
                 className="sticky left-0 z-10 flex items-stretch bg-white"
                 style={{ width: VIEWING_NAME_COL_W }}
@@ -325,7 +330,7 @@ export function ViewingGroup({
           ))}
 
           {/* add row */}
-          <div className="flex w-fit items-stretch" style={{ height: ROW_H }}>
+          <div className="flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, null)}>
             <div
               className="sticky left-0 z-10 flex items-stretch bg-white"
               style={{ width: VIEWING_NAME_COL_W }}

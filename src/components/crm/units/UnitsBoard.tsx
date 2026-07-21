@@ -29,6 +29,7 @@ import {
   setUnitGroupCollapsed,
   updateUnit,
 } from "@/app/(app)/crm/units/actions";
+import { byPosition, useRowTools } from "@/components/crm/row-tools";
 
 export function UnitsBoard({
   profile,
@@ -53,6 +54,15 @@ export function UnitsBoard({
   const [localGroups, setLocalGroups] = useState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+  const rowTools = useRowTools({
+    boardKey: "units",
+    rows: localUnits,
+    setRows: setLocalUnits,
+    groups: localGroups.map((g) => ({ id: g.id, name: g.name })),
+    profile,
+    onToast: (message, tone) => setToast({ message, tone }),
+  });
+  const sortedRows = [...localUnits].sort(byPosition);
 
   const developmentOptions: PickerOption[] = developments.map((d) => ({
     name: d.name,
@@ -190,7 +200,8 @@ export function UnitsBoard({
               key={group.id}
               group={group}
               isNew={group.id === newGroupId}
-              units={localUnits.filter(
+              tools={rowTools}
+              units={sortedRows.filter(
                 (u) =>
                   u.group_id === group.id &&
                   (!search.trim() ||

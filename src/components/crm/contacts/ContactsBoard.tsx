@@ -32,6 +32,7 @@ import {
   deleteCustomColumn,
   renameCustomColumn,
 } from "@/app/(app)/crm/custom-columns-actions";
+import { byPosition, useRowTools } from "@/components/crm/row-tools";
 
 export function ContactsBoard({
   profile,
@@ -106,6 +107,16 @@ export function ContactsBoard({
   );
 
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+  const rowTools = useRowTools({
+    boardKey: "contacts",
+    rows: localContacts,
+    setRows: setLocalContacts,
+    groups: localGroups.map((g) => ({ id: g.id, name: g.name })),
+    profile,
+    onToast: (message, tone) => setToast({ message, tone }),
+    onOpen: setOpenContactId,
+  });
+  const sortedRows = [...localContacts].sort(byPosition);
   const [accountOptions, setAccountOptions] = useState<PickerOption[]>(
     accounts.map((a) => ({ name: a.name, sub: a.domain }))
   );
@@ -210,7 +221,8 @@ export function ContactsBoard({
               key={group.id}
               group={group}
               isNew={group.id === newGroupId}
-              contacts={localContacts.filter(
+              tools={rowTools}
+              contacts={sortedRows.filter(
                 (c) =>
                   c.group_id === group.id &&
                   (!search.trim() ||

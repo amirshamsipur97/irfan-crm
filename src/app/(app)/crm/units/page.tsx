@@ -15,7 +15,7 @@ export default async function UnitsBoardPage() {
   const [{ data: groups }, { data: units }, { data: users }, { data: developments }, { data: customColumns }] =
     await Promise.all([
       supabase.from("crm_unit_groups").select("*").order("position").returns<CrmUnitGroup[]>(),
-      supabase.from("crm_units").select("*").order("created_at").returns<CrmUnit[]>(),
+      supabase.from("crm_units").select("*").order("position").returns<CrmUnit[]>(),
       supabase
         .from("crm_users")
         .select("*")

@@ -34,6 +34,7 @@ import { CategoryCell, CloseDateCell, NumberCell } from "./deal-cells";
 import { ActivityComposer, ActivityLogMenu, type LogPayload } from "./activity-log";
 import { ConnectPicker, type PickerOption } from "./connect-picker";
 import { TimeCell } from "@/components/crm/activities/activity-cells";
+import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 
 const ROW_H = 36;
 
@@ -100,6 +101,7 @@ export function DealGroup({
   contactOptions,
   onCreateAccount,
   onCreateContact,
+  tools,
 }: {
   group: CrmDealGroup;
   deals: CrmDeal[];
@@ -121,6 +123,7 @@ export function DealGroup({
   contactOptions: PickerOption[];
   onCreateAccount: (dealId: string, name: string) => void;
   onCreateContact: (dealId: string, name: string) => void;
+  tools?: RowToolsConfig;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -255,9 +258,11 @@ export function DealGroup({
             return (
               <div
                 key={deal.id}
-                className="group/row flex w-fit items-stretch"
+                className="group/row relative flex w-fit items-stretch"
                 style={{ height: ROW_H }}
+              {...dropTargetProps(tools, group.id, deal.id)}
               >
+                {tools && <RowTools row={deal} tools={tools} />}
                 <div
                   className="sticky left-0 z-10 flex items-stretch bg-white"
                   style={{ width: DEAL_NAME_COL_W }}
@@ -471,7 +476,7 @@ export function DealGroup({
           })}
 
           {/* add deal row */}
-          <div className="flex w-fit items-stretch" style={{ height: ROW_H }}>
+          <div className="flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, null)}>
             <div
               className="sticky left-0 z-10 flex items-stretch bg-white"
               style={{ width: DEAL_NAME_COL_W }}

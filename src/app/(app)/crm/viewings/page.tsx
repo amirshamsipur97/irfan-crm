@@ -19,7 +19,7 @@ export default async function ViewingsBoardPage() {
         .select("*")
         .order("position")
         .returns<CrmViewingGroup[]>(),
-      supabase.from("crm_viewings").select("*").order("created_at").returns<CrmViewing[]>(),
+      supabase.from("crm_viewings").select("*").order("position").returns<CrmViewing[]>(),
       supabase
         .from("crm_users")
         .select("*")

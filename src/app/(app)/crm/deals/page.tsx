@@ -15,7 +15,7 @@ export default async function DealsBoardPage() {
         .select("*")
         .order("position")
         .returns<CrmDealGroup[]>(),
-      supabase.from("crm_deals").select("*").order("created_at").returns<CrmDeal[]>(),
+      supabase.from("crm_deals").select("*").order("position").returns<CrmDeal[]>(),
       supabase
         .from("crm_deal_stages")
         .select("*")

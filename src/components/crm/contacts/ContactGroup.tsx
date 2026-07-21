@@ -38,6 +38,7 @@ import {
   CustomValueCell,
 } from "@/components/crm/custom/custom-columns";
 import { isFullAccess } from "@/lib/permissions";
+import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 
 const ROW_H = 36;
 
@@ -60,6 +61,7 @@ export function ContactGroup({
   onRenameColumn,
   onDeleteColumn,
   onOpenContact,
+  tools,
 }: {
   group: CrmContactGroup;
   contacts: CrmContact[];
@@ -79,6 +81,7 @@ export function ContactGroup({
   onRenameColumn: (columnId: string, label: string) => void;
   onDeleteColumn: (columnId: string) => void;
   onOpenContact?: (contactId: string) => void;
+  tools?: RowToolsConfig;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -224,9 +227,11 @@ export function ContactGroup({
             return (
               <div
                 key={contact.id}
-                className="group/row flex w-fit items-stretch"
+                className="group/row relative flex w-fit items-stretch"
                 style={{ height: ROW_H }}
+              {...dropTargetProps(tools, group.id, contact.id)}
               >
+                {tools && <RowTools row={contact} tools={tools} />}
                 <div
                   className="sticky left-0 z-10 flex items-stretch bg-white"
                   style={{ width: CONTACT_NAME_COL_W }}
@@ -415,7 +420,7 @@ export function ContactGroup({
           })}
 
           {/* add contact row */}
-          <div className="flex w-fit items-stretch" style={{ height: ROW_H }}>
+          <div className="flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, null)}>
             <div
               className="sticky left-0 z-10 flex items-stretch bg-white"
               style={{ width: CONTACT_NAME_COL_W }}

@@ -5,6 +5,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { signOut } from "@/app/(auth)/actions";
 import { NotificationsBell } from "./NotificationsBell";
+import { LinkSpinner } from "@/components/ui/LinkSpinner";
 import { useRef, useState, useEffect } from "react";
 import type { CrmUser } from "@/lib/types";
 import { isFullAccess, ROLE_LABELS } from "@/lib/permissions";
@@ -121,9 +122,10 @@ export function TopBar({ profile }: { profile: CrmUser }) {
               href="/admin"
               aria-label="Administration"
               title="Administration"
-              className="flex size-[40px] items-center justify-center rounded-[4px] transition-colors duration-150 hover:bg-[var(--hover-ghost)]"
+              className="relative flex size-[40px] items-center justify-center rounded-[4px] transition-colors duration-150 hover:bg-[var(--hover-ghost)]"
             >
               <Icon name="appsGrid" size={20} />
+              <LinkSpinner className="absolute right-[2px] top-[2px]" />
             </Link>
           </>
         )}

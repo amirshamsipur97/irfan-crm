@@ -29,6 +29,7 @@ import { TimeCell } from "@/components/crm/activities/activity-cells";
 import { toLocalDateString } from "@/components/crm/activities/activities-config";
 import { shortDate } from "@/components/crm/leads/board-config";
 import { UNIT_COLUMNS, UNIT_NAME_COL_W, UNIT_STATUSES, UNIT_TYPES } from "./units-config";
+import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 
 const ROW_H = 36;
 
@@ -48,6 +49,7 @@ export function UnitGroup({
   onPatch,
   onAdd,
   onCreateDevelopment,
+  tools,
 }: {
   group: CrmUnitGroup;
   units: CrmUnit[];
@@ -64,6 +66,7 @@ export function UnitGroup({
   onPatch: (id: string, patch: Partial<CrmUnit>) => void;
   onAdd: (name: string) => void;
   onCreateDevelopment: (unitId: string, name: string) => void;
+  tools?: RowToolsConfig;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -193,9 +196,11 @@ export function UnitGroup({
           {units.map((unit) => (
             <div
               key={unit.id}
-              className="group/row flex w-fit items-stretch"
+              className="group/row relative flex w-fit items-stretch"
               style={{ height: ROW_H }}
+            {...dropTargetProps(tools, group.id, unit.id)}
             >
+              {tools && <RowTools row={unit} tools={tools} />}
               <div
                 className="sticky left-0 z-10 flex items-stretch bg-white"
                 style={{ width: UNIT_NAME_COL_W }}
@@ -345,7 +350,7 @@ export function UnitGroup({
           ))}
 
           {/* add row */}
-          <div className="flex w-fit items-stretch" style={{ height: ROW_H }}>
+          <div className="flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, null)}>
             <div
               className="sticky left-0 z-10 flex items-stretch bg-white"
               style={{ width: UNIT_NAME_COL_W }}

@@ -28,6 +28,7 @@ import {
   ACTIVITY_TYPES,
 } from "./activities-config";
 import { RelatedItemCell, TimeCell } from "./activity-cells";
+import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 
 export function ActivityGroup({
   group,
@@ -44,6 +45,7 @@ export function ActivityGroup({
   onRenameGroup,
   onPatchActivity,
   onAddActivity,
+  tools,
 }: {
   group: CrmActivityGroup;
   activities: CrmActivityItem[];
@@ -60,6 +62,7 @@ export function ActivityGroup({
   onRenameGroup: (name: string) => void;
   onPatchActivity: (activityId: string, patch: Partial<CrmActivityItem>) => void;
   onAddActivity: (name: string) => void;
+  tools?: RowToolsConfig;
 }) {
   const ROW_H = rowH;
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
@@ -192,9 +195,11 @@ export function ActivityGroup({
             return (
               <div
                 key={activity.id}
-                className="group/row flex w-fit items-stretch"
+                className="group/row relative flex w-fit items-stretch"
                 style={{ height: ROW_H }}
+              {...dropTargetProps(tools, group.id, activity.id)}
               >
+                {tools && <RowTools row={activity} tools={tools} />}
                 <div
                   className="sticky left-0 z-10 flex items-stretch bg-white"
                   style={{ width: ACTIVITY_NAME_COL_W }}
@@ -323,7 +328,7 @@ export function ActivityGroup({
           })}
 
           {/* add activity row */}
-          <div className="flex w-fit items-stretch" style={{ height: ROW_H }}>
+          <div className="flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, null)}>
             <div
               className="sticky left-0 z-10 flex items-stretch bg-white"
               style={{ width: ACTIVITY_NAME_COL_W }}

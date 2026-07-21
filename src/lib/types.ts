@@ -94,6 +94,7 @@ export interface CrmLead {
   scored_at: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
+  position?: number;
   created_at: string;
   updated_at: string;
 }
@@ -140,6 +141,7 @@ export interface CrmDeal {
   next_step: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
+  position?: number;
   created_at: string;
   updated_at: string;
 }
@@ -170,6 +172,7 @@ export interface CrmContact {
   last_interaction_at: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
+  position?: number;
   created_at: string;
   updated_at: string;
 }
@@ -195,6 +198,7 @@ export interface CrmAccount {
   last_interaction_at: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
+  position?: number;
   created_at: string;
   updated_at: string;
 }
@@ -223,6 +227,7 @@ export interface CrmProject {
   last_interaction_at: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
+  position?: number;
   created_at: string;
   updated_at: string;
 }
@@ -274,6 +279,7 @@ export interface CrmDevelopment {
   currency: string;
   custom: Record<string, unknown>;
   created_by: string | null;
+  position?: number;
   created_at: string;
   updated_at: string;
 }
@@ -304,6 +310,7 @@ export interface CrmUnit {
   handover_date: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
+  position?: number;
   created_at: string;
   updated_at: string;
 }
@@ -334,6 +341,7 @@ export interface CrmViewing {
   feedback: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
+  position?: number;
   created_at: string;
   updated_at: string;
 }
@@ -469,6 +477,7 @@ export interface CrmActivityItem {
   related_item: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
+  position?: number;
   created_at: string;
   updated_at: string;
 }

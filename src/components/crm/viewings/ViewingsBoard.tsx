@@ -30,6 +30,7 @@ import {
   setViewingGroupCollapsed,
   updateViewing,
 } from "@/app/(app)/crm/viewings/actions";
+import { byPosition, useRowTools } from "@/components/crm/row-tools";
 
 export function ViewingsBoard({
   profile,
@@ -56,6 +57,15 @@ export function ViewingsBoard({
   const [localGroups, setLocalGroups] = useState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+  const rowTools = useRowTools({
+    boardKey: "viewings",
+    rows: localViewings,
+    setRows: setLocalViewings,
+    groups: localGroups.map((g) => ({ id: g.id, name: g.name })),
+    profile,
+    onToast: (message, tone) => setToast({ message, tone }),
+  });
+  const sortedRows = [...localViewings].sort(byPosition);
   const [contactOptions, setContactOptions] = useState<PickerOption[]>(
     contacts.map((c) => ({ name: c.name, sub: c.account_name }))
   );
@@ -203,7 +213,8 @@ export function ViewingsBoard({
               key={group.id}
               group={group}
               isNew={group.id === newGroupId}
-              viewings={localViewings.filter(
+              tools={rowTools}
+              viewings={sortedRows.filter(
                 (v) =>
                   v.group_id === group.id &&
                   (!search.trim() ||

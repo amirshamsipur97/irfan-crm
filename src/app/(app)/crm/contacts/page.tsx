@@ -15,7 +15,7 @@ export default async function ContactsBoardPage() {
         .select("*")
         .order("position")
         .returns<CrmContactGroup[]>(),
-      supabase.from("crm_contacts").select("*").order("created_at").returns<CrmContact[]>(),
+      supabase.from("crm_contacts").select("*").order("position").returns<CrmContact[]>(),
       supabase
         .from("crm_deals")
         .select("*")

@@ -17,7 +17,7 @@ export default async function ActivitiesBoardPage() {
     supabase
       .from("crm_activity_items")
       .select("*")
-      .order("created_at")
+      .order("position")
       .returns<CrmActivityItem[]>(),
     supabase
       .from("crm_users")

@@ -29,6 +29,7 @@ import {
 import type { LogPayload } from "@/components/crm/deals/activity-log";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { byPosition, useRowTools } from "@/components/crm/row-tools";
 
 export function AccountsBoard({
   profile,
@@ -75,6 +76,15 @@ export function AccountsBoard({
   );
 
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+  const rowTools = useRowTools({
+    boardKey: "accounts",
+    rows: localAccounts,
+    setRows: setLocalAccounts,
+    groups: localGroups.map((g) => ({ id: g.id, name: g.name })),
+    profile,
+    onToast: (message, tone) => setToast({ message, tone }),
+  });
+  const sortedRows = [...localAccounts].sort(byPosition);
 
   const patchAccount = (accountId: string, patch: Partial<CrmAccount>, silent = false) => {
     const prevRow = localAccounts.find((x) => x.id === accountId);
@@ -183,7 +193,8 @@ export function AccountsBoard({
               key={group.id}
               group={group}
               isNew={group.id === newGroupId}
-              accounts={localAccounts.filter(
+              tools={rowTools}
+              accounts={sortedRows.filter(
                 (a) =>
                   a.group_id === group.id &&
                   (!search.trim() ||

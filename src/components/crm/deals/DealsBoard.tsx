@@ -35,6 +35,7 @@ import {
   deleteCustomColumn,
   renameCustomColumn,
 } from "@/app/(app)/crm/custom-columns-actions";
+import { byPosition, useRowTools } from "@/components/crm/row-tools";
 
 const VIEWS = ["Main table", "Sales report", "Pipeline"];
 
@@ -75,6 +76,15 @@ export function DealsBoard({
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
   const [lostPrompt, setLostPrompt] = useState<{ dealId: string; stageId: string } | null>(null);
   const [openDealId, setOpenDealId] = useState<string | null>(null);
+  const rowTools = useRowTools({
+    boardKey: "deals",
+    rows: localDeals,
+    setRows: setLocalDeals,
+    groups: localGroups.map((g) => ({ id: g.id, name: g.name })),
+    profile,
+    onToast: (message, tone) => setToast({ message, tone }),
+    onOpen: setOpenDealId,
+  });
   const [localColumns, setLocalColumns] = useState(customColumns);
 
   useEffect(() => setLocalDeals(deals), [deals]);
@@ -196,6 +206,8 @@ export function DealsBoard({
         (d.account_name ?? "").toLowerCase().includes(q)) &&
       (!personFilter || d.owner_id === personFilter)
   );
+  const sortedRows = [...visibleDeals].sort(byPosition);
+
 
   const handleAddDeal = async (groupId: string, name: string) => {
     const firstStage = stages[0];
@@ -266,7 +278,8 @@ export function DealsBoard({
                 key={group.id}
                 group={group}
                 isNew={group.id === newGroupId}
-                deals={visibleDeals.filter((d) => d.group_id === group.id)}
+                tools={rowTools}
+                deals={sortedRows.filter((d) => d.group_id === group.id)}
                 stages={stages}
                 users={users}
                 onLogActivity={logActivity}

@@ -25,7 +25,7 @@ export default async function DevelopmentsBoardPage() {
         .select("*")
         .order("position")
         .returns<CrmDevelopmentGroup[]>(),
-      supabase.from("crm_developments").select("*").order("created_at").returns<CrmDevelopment[]>(),
+      supabase.from("crm_developments").select("*").order("position").returns<CrmDevelopment[]>(),
       supabase.from("crm_units").select("*").returns<CrmUnit[]>(),
       supabase
         .from("crm_users")

@@ -25,6 +25,7 @@ import {
   ActivityLogMenu,
   type LogPayload,
 } from "@/components/crm/deals/activity-log";
+import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 
 const ROW_H = 36;
 
@@ -45,6 +46,7 @@ export function AccountGroup({
   onPatchAccount,
   onAddAccount,
   onLogActivity,
+  tools,
 }: {
   group: CrmAccountGroup;
   accounts: CrmAccount[];
@@ -62,6 +64,7 @@ export function AccountGroup({
   onPatchAccount: (accountId: string, patch: Partial<CrmAccount>) => void;
   onAddAccount: (name: string) => void;
   onLogActivity: (accountId: string, payload: LogPayload) => void;
+  tools?: RowToolsConfig;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -194,9 +197,11 @@ export function AccountGroup({
             return (
               <div
                 key={account.id}
-                className="group/row flex w-fit items-stretch"
+                className="group/row relative flex w-fit items-stretch"
                 style={{ height: ROW_H }}
+              {...dropTargetProps(tools, group.id, account.id)}
               >
+                {tools && <RowTools row={account} tools={tools} />}
                 <div
                   className="sticky left-0 z-10 flex items-stretch bg-white"
                   style={{ width: ACCOUNT_NAME_COL_W }}
@@ -357,7 +362,7 @@ export function AccountGroup({
           })}
 
           {/* add account row */}
-          <div className="flex w-fit items-stretch" style={{ height: ROW_H }}>
+          <div className="flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, null)}>
             <div
               className="sticky left-0 z-10 flex items-stretch bg-white"
               style={{ width: ACCOUNT_NAME_COL_W }}

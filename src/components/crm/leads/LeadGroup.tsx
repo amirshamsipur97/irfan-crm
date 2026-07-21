@@ -36,6 +36,7 @@ import {
 } from "@/components/crm/deals/activity-log";
 import { TimeCell } from "@/components/crm/activities/activity-cells";
 import { CenterEditCell, EmailCell, MoveToContactsCell, PhoneCell } from "./lead-cells";
+import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 
 const ROW_H = 36;
 
@@ -60,6 +61,7 @@ export function LeadGroup({
   onPatchLead,
   onMoveToContacts,
   onOpenLead,
+  tools,
 }: {
   group: CrmLeadGroup;
   leads: CrmLead[];
@@ -81,6 +83,7 @@ export function LeadGroup({
   onPatchLead: (leadId: string, patch: Partial<CrmLead>) => void;
   onMoveToContacts: (leadId: string) => void;
   onOpenLead?: (leadId: string) => void;
+  tools?: RowToolsConfig;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -220,7 +223,8 @@ export function LeadGroup({
             const stage = stageById.get(lead.stage_id);
             const owner = lead.owner_id ? userById.get(lead.owner_id) : undefined;
             return (
-              <div key={lead.id} className="group/row flex w-fit items-stretch" style={{ height: ROW_H }}>
+              <div key={lead.id} className="group/row relative flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, lead.id)}>
+                {tools && <RowTools row={lead} tools={tools} />}
                 <div
                   className="sticky left-0 z-10 flex items-stretch bg-white"
                   style={{ width: NAME_COL_W }}
@@ -429,7 +433,7 @@ export function LeadGroup({
           })}
 
           {/* add lead row */}
-          <div className="flex w-fit items-stretch" style={{ height: ROW_H }}>
+          <div className="flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, null)}>
             <div className="sticky left-0 z-10 flex items-stretch bg-white" style={{ width: NAME_COL_W }}>
               <span
                 className="w-[6px] shrink-0 rounded-bl-[6px] opacity-50"

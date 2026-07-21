@@ -19,7 +19,7 @@ export default async function LeadsBoardPage() {
         .from("crm_leads")
         .select("*")
         .eq("is_archived", false)
-        .order("created_at")
+        .order("position")
         .returns<CrmLead[]>(),
       supabase.from("crm_stages").select("*").order("position").returns<CrmStage[]>(),
       supabase

@@ -14,7 +14,7 @@ export default async function ProjectsBoardPage() {
       .select("*")
       .order("position")
       .returns<CrmProjectGroup[]>(),
-    supabase.from("crm_projects").select("*").order("created_at").returns<CrmProject[]>(),
+    supabase.from("crm_projects").select("*").order("position").returns<CrmProject[]>(),
     supabase
       .from("crm_users")
       .select("*")
