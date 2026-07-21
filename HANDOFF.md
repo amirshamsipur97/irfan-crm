@@ -319,6 +319,16 @@ Viewings boards). (4) new find-or-create actions quickCreateDevelopment /
 quickCreateUnit so picker-created developments/units are real rows, not
 dangling names.
 
+HANDOVER UI CLEANUP DONE (2026-07-21, user request): all dead Monday-clone
+chrome removed — Connect-AI banner (AppChrome), IconRail trimmed to Home+CRM,
+BoardHeader lost Integrate/Agents/AI-Agents chips and fake "Automate / N"
+counts (plain "Automate" now), AiFloaty returns null (restore from git when
+Sidekick is real), sidebar "My workspace agents" + fake "Sync completed"
+panel removed, TopBar "Contact sales" removed, Products & Services board
+FULLY REMOVED (routes+components deleted; migration `crm_drop_products_board`
+dropped both tables after verifying only the sample row existed). Import
+button kept for future CSV import.
+
 REMAINING PHASES: P3 financial (transactions, payments, payment plans,
 commissions+splits + Finance/Manager roles per the standard's permission
 matrix); P4 SLA/scoring/automations/role dashboards. Also pending: detail
