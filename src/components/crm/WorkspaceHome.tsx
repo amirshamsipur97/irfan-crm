@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { AiFloaty } from "@/components/shell/AiFloaty";
 import { Surface } from "@/components/shell/AppChrome";
-import { ICONS, type IconName } from "@/lib/figma-icons";
+import { type IconName } from "@/lib/figma-icons";
 import { canAnimate } from "@/lib/motion";
 import { isFullAccess, ROLE_LABELS } from "@/lib/permissions";
 import { toggleBoardFavorite } from "@/app/(app)/crm/actions";
@@ -47,34 +47,7 @@ const TABS: { label: string; icon: IconName; disabled?: boolean }[] = [
   { label: "Recents", icon: "tabRecents" },
   { label: "Content", icon: "tabContent" },
   { label: "Collaborators", icon: "tabCollaborators" },
-  { label: "Permissions", icon: "tabPermissions", disabled: true },
 ];
-
-function Toggle() {
-  const [on, setOn] = useState(false);
-  const knobRef = useRef<HTMLSpanElement>(null);
-  const { contextSafe } = useGSAP({ scope: knobRef });
-
-  const flip = contextSafe(() => {
-    const next = !on;
-    setOn(next);
-    gsap.to(knobRef.current, { x: next ? 12 : 0, duration: 0.2, ease: "power2.out" });
-  });
-
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      onClick={flip}
-      className={`flex h-[16px] w-[28px] items-center rounded-[100px] p-[2px] transition-colors duration-200 ${
-        on ? "bg-teal" : "bg-line-strong"
-      }`}
-    >
-      <span ref={knobRef} className="block size-[12px] rounded-[6px] bg-white" />
-    </button>
-  );
-}
 
 function StarButton({ active, onToggle }: { active: boolean; onToggle: () => void }) {
   return (
@@ -206,14 +179,9 @@ export function WorkspaceHome({ data }: { data: WorkspaceHomeData }) {
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-[8px] pt-[12px]">
-              <Button icon="hdrFeedback" className="text-ink-muted">
-                Feedback
-              </Button>
-              <Button icon="hdrAgents" className="text-ink-muted">
-                Agents
-              </Button>
-              <Button variant="outline">Members</Button>
-              <IconButton icon="hdrDots" size={32} label="More options" />
+              <span onClick={() => setActiveTab("Collaborators")}>
+                <Button variant="outline">Members</Button>
+              </span>
             </div>
           </div>
         </div>
@@ -244,14 +212,6 @@ export function WorkspaceHome({ data }: { data: WorkspaceHomeData }) {
                 </button>
               );
             })}
-            {activeTab === "Content" && (
-              <span className="absolute right-0 top-[8px] flex items-center gap-[4px] rounded-[4px] px-[8px] py-[4px]">
-                <Icon name="tblInfoSmall" size={12} />
-                <span className="font-sans text-[12px] leading-[16px] text-ink-muted">
-                  AI credits won&apos;t be charged
-                </span>
-              </span>
-            )}
           </div>
 
           {/* ------- Recents ------- */}
@@ -313,33 +273,6 @@ export function WorkspaceHome({ data }: { data: WorkspaceHomeData }) {
                       <Button icon="tblSearch">Search</Button>
                     </span>
                   )}
-                  <Button icon="tblFilters">Filters</Button>
-                </div>
-                <div className="flex h-[46px] items-center justify-end gap-[12px] rounded-[8px] pr-[2px]">
-                  <span className="flex items-center gap-[8px]">
-                    <Icon name="tblCheckCircle" size={20} />
-                    <span className="font-sans text-[14px] leading-[20px] text-ink">
-                      No cleanup suggestions found
-                    </span>
-                  </span>
-                  <span
-                    className="flex items-center rounded-[8px] px-[12px] py-[8px]"
-                    style={{
-                      border: "1px solid transparent",
-                      background:
-                        "linear-gradient(white,white) padding-box, linear-gradient(90deg,#00d2d2,#a25ddc) border-box",
-                    }}
-                  >
-                    <span className="flex items-center gap-[8px]">
-                      <Icon name="tblSparkle" size={20} />
-                      <span className="font-sans text-[14px] leading-[20px] text-ink">
-                        Cleanup mode
-                      </span>
-                      <span className="px-[8px]">
-                        <Toggle />
-                      </span>
-                    </span>
-                  </span>
                 </div>
               </div>
 
@@ -377,22 +310,6 @@ export function WorkspaceHome({ data }: { data: WorkspaceHomeData }) {
                             </span>
                           </span>
                         </th>
-                        <th className="w-[140px] px-[16px] text-left">
-                          <span className="flex items-center justify-between">
-                            <span className="flex items-center gap-[2px]">
-                              <span className="whitespace-nowrap font-sans text-[14px] font-semibold leading-[20px] text-ink-muted">
-                                AI summary
-                              </span>
-                              <Icon name="tblInfo" size={14} className="opacity-70" />
-                            </span>
-                            <IconButton
-                              icon="tblSparkle"
-                              size={24}
-                              iconSize={16}
-                              label="Generate all"
-                            />
-                          </span>
-                        </th>
                         <th className="w-[110px] px-[16px] text-left font-sans text-[14px] font-semibold leading-[20px] text-ink-muted">
                           Creator
                         </th>
@@ -401,9 +318,6 @@ export function WorkspaceHome({ data }: { data: WorkspaceHomeData }) {
                         </th>
                         <th className="w-[145px] px-[16px] text-left font-sans text-[14px] font-semibold leading-[20px] text-ink-muted">
                           Last modified
-                        </th>
-                        <th className="px-[16px] text-left font-sans text-[14px] font-semibold leading-[20px] text-ink-muted">
-                          Folder
                         </th>
                       </tr>
                     </thead>
@@ -438,11 +352,6 @@ export function WorkspaceHome({ data }: { data: WorkspaceHomeData }) {
                             </span>
                           </td>
                           <td className="px-[16px]">
-                            <span className="flex justify-center">
-                              <IconButton icon="tblAiSummary" size={32} label="AI summary" />
-                            </span>
-                          </td>
-                          <td className="px-[16px]">
                             <Avatar
                               name={creator?.name ?? data.fullName}
                               src={creator?.avatarUrl ?? data.avatarUrl}
@@ -455,13 +364,12 @@ export function WorkspaceHome({ data }: { data: WorkspaceHomeData }) {
                           <td className="px-[16px] font-sans text-[14px] leading-[20px] text-ink">
                             {board.modified ?? "—"}
                           </td>
-                          <td className="px-[16px]" />
                         </tr>
                       ))}
                       {filteredBoards.length === 0 && (
                         <tr className="h-[64px]">
                           <td
-                            colSpan={6}
+                            colSpan={4}
                             className="px-[16px] text-center font-sans text-[14px] text-ink-muted"
                           >
                             No boards match “{search}”
@@ -478,51 +386,8 @@ export function WorkspaceHome({ data }: { data: WorkspaceHomeData }) {
           {/* ------- Collaborators ------- */}
           {activeTab === "Collaborators" && (
             <div className="flex flex-col pt-[24px]">
-              {/* Agents */}
-              <h2 className="ws-row font-display text-[20px] font-medium leading-[28px] tracking-[-0.1px] text-ink">
-                Agents
-              </h2>
-              <div className="ws-row mt-[12px] flex h-[36px] items-center border-b border-line">
-                <span className="w-[38%] font-sans text-[14px] font-semibold leading-[20px] text-ink-muted">
-                  Agent name &amp; title
-                </span>
-                <span className="w-[22%] font-sans text-[14px] font-semibold leading-[20px] text-ink-muted">
-                  Status
-                </span>
-                <span className="w-[22%] font-sans text-[14px] font-semibold leading-[20px] text-ink-muted">
-                  Owner
-                </span>
-                <span className="flex-1 font-sans text-[14px] font-semibold leading-[20px] text-ink-muted">
-                  Actions
-                </span>
-              </div>
-              <div className="ws-row flex flex-col items-center gap-[8px] py-[32px]">
-                <span className="flex items-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={ICONS.aiAgentAvatar1}
-                    alt=""
-                    width={48}
-                    height={48}
-                    className="relative z-[2] rounded-[12px] border-2 border-white shadow-[0px_2px_8px_rgba(0,0,0,0.15)]"
-                  />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={ICONS.aiAgentAvatar2}
-                    alt=""
-                    width={40}
-                    height={40}
-                    className="-ml-[10px] rounded-[10px] border-2 border-white shadow-[0px_2px_8px_rgba(0,0,0,0.15)]"
-                  />
-                </span>
-                <p className="pt-[4px] font-sans text-[14px] leading-[20px] text-ink">
-                  Build your first agent and start collaborating
-                </p>
-                <Button variant="outline">Add new agent</Button>
-              </div>
-
               {/* Users */}
-              <h2 className="ws-row pt-[24px] font-display text-[20px] font-medium leading-[28px] tracking-[-0.1px] text-ink">
+              <h2 className="ws-row font-display text-[20px] font-medium leading-[28px] tracking-[-0.1px] text-ink">
                 Users
               </h2>
               <div className="ws-row mt-[12px] flex h-[36px] items-center border-b border-line">

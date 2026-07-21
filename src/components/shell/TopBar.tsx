@@ -7,7 +7,7 @@ import { signOut } from "@/app/(auth)/actions";
 import { NotificationsBell } from "./NotificationsBell";
 import { useRef, useState, useEffect } from "react";
 import type { CrmUser } from "@/lib/types";
-import { ROLE_LABELS } from "@/lib/permissions";
+import { isFullAccess, ROLE_LABELS } from "@/lib/permissions";
 
 function TopIconButton({
   icon,
@@ -112,10 +112,21 @@ export function TopBar({ profile }: { profile: CrmUser }) {
         <TopIconButton label="Settings" icon={<Icon name="settings" size={20} />} />
         <span className="w-[4px]" />
         <TopIconButton label="Help" dot icon={<Icon name="help" size={20} />} />
-        <div className="px-[4px]">
-          <span className="block h-[22px] w-px bg-line" />
-        </div>
-        <TopIconButton label="Apps switcher" icon={<Icon name="appsGrid" size={20} />} />
+        {isFullAccess(profile.role) && (
+          <>
+            <div className="px-[4px]">
+              <span className="block h-[22px] w-px bg-line" />
+            </div>
+            <Link
+              href="/admin"
+              aria-label="Administration"
+              title="Administration"
+              className="flex size-[40px] items-center justify-center rounded-[4px] transition-colors duration-150 hover:bg-[var(--hover-ghost)]"
+            >
+              <Icon name="appsGrid" size={20} />
+            </Link>
+          </>
+        )}
         <div className="relative pl-[10px]" ref={menuRef}>
           <button
             type="button"
