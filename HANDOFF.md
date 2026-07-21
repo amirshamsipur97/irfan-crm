@@ -85,13 +85,14 @@
   in every server action); /admin usage numbers come from ONE
   `crm_admin_usage_stats()` RPC (security INVOKER) instead of 18 head-counts;
   board entrance anims softened (y8/0.22s/stagger 0.04 on all 9 boards).
-  ⚠️ **loading.tsx skeletons were tried and REVERTED (07-22)**: the Suspense
-  boundary they introduce NEVER hydrates in the embedded Browser pane
-  (document always hidden → idle hydration never runs) — boards render but
-  are completely dead to clicks, with zero console errors. Click feedback is
-  now `useLinkStatus` spinners (ui/LinkSpinner.tsx) inside sidebar links and
-  the TopBar admin link. Do NOT re-add loading.tsx unless pane-testability is
-  no longer needed. Other pane quirks: transient "Failed to fetch RSC
+  loading.tsx skeletons ((app)/, (app)/crm/, (admin)/admin/) are IN (user
+  explicitly prefers them) plus `useLinkStatus` spinners (ui/LinkSpinner.tsx)
+  on sidebar links and the TopBar admin link.
+  ⚠️ **PANE-TESTING RULE**: the loading.tsx Suspense boundary never hydrates
+  in the embedded Browser pane — boards render but are click-dead with zero
+  console errors. Temporarily rename the 3 loading.tsx files when driving
+  boards from the pane, restore before commit. CSS-only checks (hover,
+  layout, screenshots) work without hydration. Other pane quirks: transient "Failed to fetch RSC
   payload → falling back to browser navigation" errors that can bounce the
   pane to "/" mid-test — environment artifact, not app code.
 - **ROW TOOLS + DRAG-AND-DROP on ALL 9 BOARDS (2026-07-22, migration
