@@ -85,6 +85,12 @@ export interface CrmLead {
   website_lead_id: string | null;
   converted_contact_id: string | null;
   converted_at: string | null;
+  assigned_at: string | null;
+  first_response_at: string | null;
+  lead_score: number | null;
+  score_band: "hot" | "warm" | "cold" | null;
+  score_components: { rule: string; points: number }[] | null;
+  scored_at: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
   created_at: string;

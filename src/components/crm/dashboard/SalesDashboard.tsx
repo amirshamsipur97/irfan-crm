@@ -13,13 +13,30 @@ import {
   BarsWidget,
   FunnelWidget,
   GaugeWidget,
+  ListWidget,
   MonthlyTargetWidget,
   PieWidget,
   StatWidget,
   Widget,
 } from "./widgets";
 
+export interface DashboardRow {
+  primary: string;
+  meta: string;
+  tone?: "alert" | "normal";
+}
+
 export interface DashboardData {
+  myWork: {
+    overdue: DashboardRow[];
+    quiet: DashboardRow[];
+    viewings: DashboardRow[];
+  };
+  team: {
+    avgFirstResponseHours: number | null;
+    leadsByOwner: { label: string; value: number }[];
+    lostReasons: DashboardRow[];
+  } | null;
   annual: { actual: number; target: number };
   monthly: { actual: number; target: number };
   avgDealValue: number;
@@ -53,7 +70,6 @@ export function SalesDashboard({
   data: DashboardData;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
-  void profile;
 
   useGSAP(
     () => {
@@ -149,6 +165,49 @@ export function SalesDashboard({
 
         {/* widget grid */}
         <div className="grid grid-cols-12 gap-[16px] p-[24px] pb-[64px]">
+          {/* my work — SLA follow-through for the signed-in user */}
+          <Widget title="My overdue follow-ups" className="col-span-4">
+            <ListWidget rows={data.myWork.overdue} emptyText="No overdue follow-ups. Clean slate." />
+          </Widget>
+          <Widget title="My quiet leads (7d+)" className="col-span-4">
+            <ListWidget rows={data.myWork.quiet} emptyText="Every lead has recent activity." />
+          </Widget>
+          <Widget title="My upcoming viewings" className="col-span-4">
+            <ListWidget rows={data.myWork.viewings} emptyText="No viewings scheduled this week." />
+          </Widget>
+
+          {/* team health — admin & manager only */}
+          {data.team && (
+            <>
+              <Widget title="Avg. first response" className="col-span-4">
+                <div className="flex flex-1 items-center justify-center py-[24px]">
+                  <p className="m-0 text-center">
+                    <span className="font-display text-[34px] font-semibold leading-[40px] text-ink">
+                      {data.team.avgFirstResponseHours == null
+                        ? "—"
+                        : data.team.avgFirstResponseHours < 1
+                          ? `${Math.round(data.team.avgFirstResponseHours * 60)}m`
+                          : `${data.team.avgFirstResponseHours.toFixed(1)}h`}
+                    </span>
+                    <span className="block pt-[4px] font-sans text-[12px] text-ink-muted">
+                      lead assigned → first logged touch
+                    </span>
+                  </p>
+                </div>
+              </Widget>
+              <Widget title="Open leads by owner" className="col-span-4">
+                {data.team.leadsByOwner.length > 0 ? (
+                  <BarsWidget bars={data.team.leadsByOwner} yLabel="Leads" format={(n) => `${Math.round(n)}`} />
+                ) : (
+                  <p className="py-[36px] text-center font-sans text-[13px] text-ink-muted">No open leads</p>
+                )}
+              </Widget>
+              <Widget title="Lost reasons" className="col-span-4">
+                <ListWidget rows={data.team.lostReasons} emptyText="No lost deals yet — no reasons to learn from." />
+              </Widget>
+            </>
+          )}
+
           <Widget title="Annual Target" className="col-span-5 min-h-[320px]">
             <GaugeWidget actual={data.annual.actual} target={data.annual.target} />
           </Widget>

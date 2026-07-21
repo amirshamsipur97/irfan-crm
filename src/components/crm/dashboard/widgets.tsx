@@ -254,10 +254,13 @@ export function BarsWidget({
   bars,
   goal,
   yLabel,
+  format = (n) => money(Math.round(n)),
 }: {
   bars: { label: string; value: number; color?: string }[];
   goal?: number;
   yLabel?: string;
+  /** tick/value formatter — defaults to OMR money; pass plain counts for non-money bars */
+  format?: (n: number) => string;
 }) {
   const max = Math.max(...bars.map((b) => b.value), goal ?? 0, 1);
   const niceMax = max * 1.15;
@@ -278,7 +281,7 @@ export function BarsWidget({
             style={{ bottom: `${24 + g * (100 - 34)}%` }}
           >
             <span className="w-[60px] shrink-0 text-right font-sans text-[12px] leading-[16px] text-ink-muted">
-              {money(Math.round(niceMax * g))}
+              {format(niceMax * g)}
             </span>
             <span className="h-px flex-1 bg-line-soft" />
           </div>
@@ -297,7 +300,7 @@ export function BarsWidget({
           {bars.map((b) => (
             <div key={b.label} className="flex h-full w-full max-w-[180px] flex-col items-center justify-end">
               <span className="pb-[4px] font-sans text-[14px] font-semibold leading-[20px] text-ink">
-                {money(b.value)}
+                {format(b.value)}
               </span>
               <div
                 className="w-full rounded-t-[4px]"
@@ -535,6 +538,43 @@ export function ActivityTrackerWidget({
           ))}
         </span>
       </div>
+    </div>
+  );
+}
+
+/** Simple list widget for "needs attention" style panels (Phase 4). */
+export function ListWidget({
+  rows,
+  emptyText,
+}: {
+  rows: { primary: string; meta: string; tone?: "alert" | "normal" }[];
+  emptyText: string;
+}) {
+  if (rows.length === 0) {
+    return (
+      <p className="px-[16px] py-[24px] text-center font-sans text-[13px] text-ink-muted">
+        {emptyText}
+      </p>
+    );
+  }
+  return (
+    <div className="thin-scroll max-h-[240px] overflow-y-auto px-[16px] py-[8px]">
+      {rows.map((r, i) => (
+        <div
+          key={`${r.primary}-${i}`}
+          className="flex items-center justify-between border-b border-line-soft py-[8px] last:border-b-0"
+        >
+          <span className="min-w-0 truncate pr-[8px] font-sans text-[13.5px] leading-[20px] text-ink">
+            {r.primary}
+          </span>
+          <span
+            className="shrink-0 font-sans text-[12px] leading-[16px]"
+            style={{ color: r.tone === "alert" ? "#d83a52" : "#676879" }}
+          >
+            {r.meta}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

@@ -10,6 +10,7 @@ export const BOARD_COLUMNS: {
   headerIcon?: IconName;
 }[] = [
   { key: "status", label: "Status", w: 140 },
+  { key: "score", label: "Score", w: 96 },
   { key: "owner", label: "Owner", w: 98 },
   { key: "timeline", label: "Activities timeline", w: 152, headerIcon: "tlHeader" },
   { key: "contact", label: "Create a contact", w: 181 },

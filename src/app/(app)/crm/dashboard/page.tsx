@@ -6,7 +6,7 @@ import {
   type DashboardData,
 } from "@/components/crm/dashboard/SalesDashboard";
 import { forecastValue } from "@/components/crm/deals/deals-config";
-import type { CrmActivityItem, CrmDeal, CrmDealStage, CrmUser } from "@/lib/types";
+import type { CrmActivityItem, CrmDeal, CrmDealStage, CrmLead, CrmUser, CrmViewing } from "@/lib/types";
 
 const MONTH_LABEL = (d: Date) =>
   d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -14,13 +14,15 @@ const MONTH_LABEL = (d: Date) =>
 export default async function SalesDashboardPage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient(), recordBoardVisit("dashboard")]);
 
-  const [{ data: deals }, { data: stages }, { data: activities }, { data: users }, { data: settings }] =
+  const [{ data: deals }, { data: stages }, { data: activities }, { data: users }, { data: settings }, { data: leads }, { data: viewings }] =
     await Promise.all([
       supabase.from("crm_deals").select("*").returns<CrmDeal[]>(),
       supabase.from("crm_deal_stages").select("*").order("position").returns<CrmDealStage[]>(),
       supabase.from("crm_activity_items").select("*").returns<CrmActivityItem[]>(),
       supabase.from("crm_users").select("*").eq("is_active", true).returns<CrmUser[]>(),
       supabase.from("crm_dashboard_settings").select("*").returns<{ key: string; value: number }[]>(),
+      supabase.from("crm_leads").select("*").eq("is_archived", false).returns<CrmLead[]>(),
+      supabase.from("crm_viewings").select("*").returns<CrmViewing[]>(),
     ]);
 
   const allDeals = deals ?? [];
@@ -134,7 +136,82 @@ export default async function SalesDashboardPage() {
     at: a.start_at ?? a.created_at,
   }));
 
+  // ---- Phase 4: SLA / my-work / team sections ----
+  const nowMs = Date.now();
+  const DAY = 86400000;
+  const fmtWhen = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const myLeads = (leads ?? []).filter((l) => l.owner_id === profile.id || l.created_by === profile.id);
+
+  const overdue = myLeads
+    .filter((l) => l.next_followup_at && new Date(l.next_followup_at).getTime() < nowMs)
+    .sort((a, b) => (a.next_followup_at! < b.next_followup_at! ? -1 : 1))
+    .slice(0, 8)
+    .map((l) => ({ primary: l.name, meta: `due ${fmtWhen(l.next_followup_at!)}`, tone: "alert" as const }));
+
+  const quiet = myLeads
+    .filter((l) => {
+      const last = l.last_activity_at ?? l.created_at;
+      return nowMs - new Date(last).getTime() > 7 * DAY && !l.converted_contact_id;
+    })
+    .slice(0, 8)
+    .map((l) => {
+      const last = l.last_activity_at ?? l.created_at;
+      const days = Math.floor((nowMs - new Date(last).getTime()) / DAY);
+      return { primary: l.name, meta: `${days}d quiet` };
+    });
+
+  const upcomingViewings = (viewings ?? [])
+    .filter(
+      (v) =>
+        v.agent_id === profile.id &&
+        v.scheduled_start &&
+        new Date(v.scheduled_start).getTime() > nowMs - DAY &&
+        new Date(v.scheduled_start).getTime() < nowMs + 7 * DAY &&
+        ["requested", "scheduled", "confirmed"].includes(v.status)
+    )
+    .sort((a, b) => (a.scheduled_start! < b.scheduled_start! ? -1 : 1))
+    .slice(0, 8)
+    .map((v) => ({ primary: v.name, meta: fmtWhen(v.scheduled_start!) }));
+
+  let team: DashboardData["team"] = null;
+  if (profile.role === "admin" || profile.role === "manager") {
+    const responded = (leads ?? []).filter((l) => l.first_response_at);
+    const avgMs =
+      responded.length > 0
+        ? responded.reduce((s, l) => {
+            const start = new Date(l.assigned_at ?? l.created_at).getTime();
+            return s + Math.max(0, new Date(l.first_response_at!).getTime() - start);
+          }, 0) / responded.length
+        : null;
+
+    const openLeads = (leads ?? []).filter((l) => !l.converted_contact_id);
+    const byOwner = new Map<string, number>();
+    for (const l of openLeads) {
+      const name = (l.owner_id && userById.get(l.owner_id)?.full_name) || "Unassigned";
+      byOwner.set(name, (byOwner.get(name) ?? 0) + 1);
+    }
+
+    const reasons = new Map<string, number>();
+    for (const d of allDeals) {
+      if (lostStageIds.has(d.stage_id) && d.lost_reason) {
+        reasons.set(d.lost_reason, (reasons.get(d.lost_reason) ?? 0) + 1);
+      }
+    }
+
+    team = {
+      avgFirstResponseHours: avgMs == null ? null : avgMs / 3600000,
+      leadsByOwner: [...byOwner.entries()].map(([label, value]) => ({ label, value })),
+      lostReasons: [...reasons.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .map(([label, count]) => ({ primary: label, meta: `${count}×` })),
+    };
+  }
+
   const data: DashboardData = {
+    myWork: { overdue, quiet, viewings: upcomingViewings },
+    team,
     annual: { actual: yearWon.reduce((s, d) => s + value(d), 0), target: setting("annual_target", 100000) },
     monthly: { actual: monthWon.reduce((s, d) => s + value(d), 0), target: setting("monthly_target", 10000) },
     avgDealValue,

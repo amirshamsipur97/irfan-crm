@@ -4,10 +4,10 @@ import { HomeView, type HomeData } from "@/components/home/HomeView";
 import type { CrmLead, CrmStage } from "@/lib/types";
 
 function compactMoney(value: number): string {
-  return `$${new Intl.NumberFormat("en", {
+  return `${new Intl.NumberFormat("en", {
     notation: "compact",
     maximumFractionDigits: 1,
-  }).format(value)}`;
+  }).format(value)} OMR`;
 }
 
 function greetingFor(hour: number): string {

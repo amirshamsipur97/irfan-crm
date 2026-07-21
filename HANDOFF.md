@@ -355,9 +355,29 @@ admin full loop TX-0001 → payment 10,000 → commission 3% = 3,600 verified in
 drawer AND finance page; test rows cleaned, sequence reset. CrmRole type
 widened (WorkspaceUserRow too).
 
-REMAINING: P4 SLA/scoring/automations/role dashboards; payment-plan template
-UI + schedules; commission splits UI; detail drawers for lead/contact,
-Team page, custom domain crm.irfaninvest.com.
+PHASE 4 DONE (2026-07-21, migration `crm_phase4_sla_scoring_automation`):
+SLA — crm_leads gained assigned_at/first_response_at (BEFORE trigger stamps
+assignment + first logged touch via last_activity_at change; backfilled).
+SCORING — deterministic explainable scorer crm_compute_lead_score()
+(profile-fit/engagement/intent/negative rules, v1; band hot≥70/warm≥40/cold)
+runs INLINE in the same BEFORE trigger on every lead write (no extra UPDATE);
+components stored as jsonb; property-interest changes touch the lead to
+rescore; leads board gained a Score pill column (band color, tooltip = rule
+breakdown from score_components). AUTOMATIONS — pg_cron installed; jobs:
+crm-expire-reservations (hourly :15, expires pending/active past expires_at —
+unit released by the existing sync trigger; idempotent) + crm-rescore-leads
+(nightly 02:00 so 7d/30d decay windows stay fresh). DASHBOARD — new sections
+in /crm/dashboard: "My work" row for every user (My overdue follow-ups /
+My quiet leads 7d+ / My upcoming viewings — ListWidget) + Team row for
+admin/manager only (Avg first response h, Open leads by owner bars, Lost
+reasons list; DashboardData gained myWork/team). FIXES — Home KPIs were
+still "$55K" (compactMoney → "55K OMR"); BarsWidget gained a format prop
+(leads-by-owner axis showed "1 OMR" for counts).
+
+REMAINING: payment-plan template UI + schedules; commission splits UI;
+notifications (TopBar bell is still visual); detail drawers for lead/contact,
+Team page (role management UI), custom domain crm.irfaninvest.com,
+pre-handover cleanup (preview admin + sample rows).
 
 STANDALONE + HANDOVER MODEL (user decision 2026-07-18 late): this CRM is
 INDEPENDENT — do NOT import the website `leads` table (192 rows); the

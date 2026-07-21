@@ -234,6 +234,29 @@ export function LeadGroup({
                           />
                         </span>
                       );
+                    case "score": {
+                      const band = lead.score_band ?? "cold";
+                      const bandColor =
+                        band === "hot" ? "#e2445c" : band === "warm" ? "#fdab3d" : "#c4c4c4";
+                      const explanation = (lead.score_components ?? [])
+                        .map((c) => `${c.rule} (${c.points > 0 ? "+" : ""}${c.points})`)
+                        .join("\n");
+                      return (
+                        <span
+                          key={col.key}
+                          className={`${cellBorder} flex items-center justify-center bg-white`}
+                          style={w}
+                          title={explanation || "No scoring signals yet"}
+                        >
+                          <span
+                            className="inline-flex h-[22px] items-center rounded-[12px] px-[10px] font-sans text-[12px] font-medium leading-[16px] text-white"
+                            style={{ backgroundColor: bandColor }}
+                          >
+                            {lead.lead_score ?? 0}
+                          </span>
+                        </span>
+                      );
+                    }
                     case "owner":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
