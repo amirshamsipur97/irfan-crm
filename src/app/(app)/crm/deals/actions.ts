@@ -21,6 +21,7 @@ const PATCHABLE = new Set([
   "currency",
   "lost_reason",
   "next_step",
+  "custom",
 ]);
 
 /** Log a meeting / call / note / email from a deal's Activities timeline. */

@@ -137,6 +137,7 @@ export interface CrmDeal {
   currency: string;
   lost_reason: string | null;
   next_step: string | null;
+  custom: Record<string, unknown>;
   created_by: string | null;
   created_at: string;
   updated_at: string;

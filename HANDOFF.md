@@ -409,14 +409,15 @@ CUSTOM_COL_W=150) + app/(app)/crm/custom-columns-actions.ts (add/rename/
 delete) + components/crm/custom/custom-columns.tsx (AddColumnButton w/ menu
 popover, CustomColumnHeader w/ InlineEdit rename + full-tier hover-✕ delete,
 CustomValueCell dispatching to the shared cell kit: TextCell/NumberCell/
-OptionCell/TimeCell(local-date!)/OwnerCell/Checkbox). CONTACTS fully wired
+OptionCell/TimeCell(local-date!)/OwnerCell/Checkbox). CONTACTS + DEALS fully wired
 (page fetch, board state+handlers, group header/rows/filler/summary + custom
 in PATCHABLE + CrmContact.custom). E2E: menu → Status column → value
 "Working on it" persisted in custom jsonb → cleaned. TO WIRE NEXT BOARDS:
 copy the 4-spot ContactGroup pattern (header map, row map, filler width,
 summary) + page fetch + board handlers + PATCHABLE 'custom' + type field.
 
-REMAINING: wire custom columns into the other 8 boards (kit is ready);
+REMAINING: wire custom columns into the other 7 boards — leads/accounts/
+projects/activities/developments/units/viewings (kit ready, 4-spot pattern);
 payment-plan template UI + schedules; commission splits UI; notifications
 (TopBar bell is still visual); detail drawers for lead/contact, custom
 domain crm.irfaninvest.com, pre-handover cleanup (preview admin + samples).

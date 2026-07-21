@@ -29,6 +29,12 @@ import type { PickerOption } from "./connect-picker";
 import { LostReasonDialog } from "./lost-reason-dialog";
 import { DealDrawer } from "./deal-drawer";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import {
+  addCustomColumn,
+  deleteCustomColumn,
+  renameCustomColumn,
+} from "@/app/(app)/crm/custom-columns-actions";
 
 const VIEWS = ["Main table", "Sales report", "Pipeline"];
 
@@ -41,6 +47,7 @@ export function DealsBoard({
   accounts,
   contacts,
   units = [],
+  customColumns = [],
 }: {
   profile: CrmUser;
   groups: CrmDealGroup[];
@@ -50,6 +57,7 @@ export function DealsBoard({
   accounts: CrmAccount[];
   contacts: CrmContact[];
   units?: CrmUnit[];
+  customColumns?: CrmCustomColumn[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState("Main table");
@@ -67,8 +75,10 @@ export function DealsBoard({
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
   const [lostPrompt, setLostPrompt] = useState<{ dealId: string; stageId: string } | null>(null);
   const [openDealId, setOpenDealId] = useState<string | null>(null);
+  const [localColumns, setLocalColumns] = useState(customColumns);
 
   useEffect(() => setLocalDeals(deals), [deals]);
+  useEffect(() => setLocalColumns(customColumns), [customColumns]);
   useEffect(() => setLocalGroups(groups), [groups]);
   useEffect(
     () => setAccountOptions(accounts.map((a) => ({ name: a.name, sub: a.domain }))),
@@ -128,6 +138,33 @@ export function DealsBoard({
     }
   };
 
+  const handleAddColumn = async (type: CustomColumnType) => {
+    const result = await addCustomColumn("deals", type);
+    if (result.error || !result.column) {
+      setToast({ message: result.error ?? "could not add column", tone: "alert" });
+      return;
+    }
+    setLocalColumns((prev) => [...prev, result.column as CrmCustomColumn]);
+    setToast({ message: "Column added — click its name to rename" });
+  };
+
+  const handleRenameColumn = (columnId: string, label: string) => {
+    setLocalColumns((prev) => prev.map((c) => (c.id === columnId ? { ...c, label } : c)));
+    renameCustomColumn(columnId, label, "deals");
+  };
+
+  const handleDeleteColumn = async (columnId: string) => {
+    const prev = localColumns;
+    setLocalColumns((cols) => cols.filter((c) => c.id !== columnId));
+    const result = await deleteCustomColumn(columnId, "deals");
+    if (result.error) {
+      setLocalColumns(prev);
+      setToast({ message: result.error, tone: "alert" });
+    } else {
+      setToast({ message: "Column removed (values kept in history)" });
+    }
+  };
+
   const createAndLink = async (kind: "account" | "contact", dealId: string, name: string) => {
     // await the insert first — the FK-resolve trigger on the deal must be able
     // to find the new row, otherwise the link stays name-only
@@ -181,6 +218,7 @@ export function DealsBoard({
         currency: "OMR",
         lost_reason: null,
         next_step: null,
+        custom: {},
         forecast_category: null,
         last_interaction_at: null,
         lead_id: null,
@@ -237,6 +275,11 @@ export function DealsBoard({
                 onCreateAccount={(dealId, name) => createAndLink("account", dealId, name)}
                 onCreateContact={(dealId, name) => createAndLink("contact", dealId, name)}
                 onOpenDeal={setOpenDealId}
+                customColumns={localColumns}
+                profile={profile}
+                onAddColumn={handleAddColumn}
+                onRenameColumn={handleRenameColumn}
+                onDeleteColumn={handleDeleteColumn}
                 onToggleCollapse={(collapsed) => {
                   setDealGroupCollapsed(group.id, collapsed);
                 }}

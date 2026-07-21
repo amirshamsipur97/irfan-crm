@@ -15,6 +15,14 @@ import {
   Popover,
 } from "@/components/crm/leads/cells";
 import { leadHash, shortDate } from "@/components/crm/leads/board-config";
+import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import { CUSTOM_COL_W } from "@/lib/custom-columns";
+import {
+  AddColumnButton,
+  CustomColumnHeader,
+  CustomValueCell,
+} from "@/components/crm/custom/custom-columns";
+import { isFullAccess } from "@/lib/permissions";
 import {
   DEAL_COLUMNS,
   DEAL_NAME_COL_W,
@@ -81,6 +89,11 @@ export function DealGroup({
   onRenameGroup,
   onPatchDeal,
   onOpenDeal,
+  customColumns,
+  profile,
+  onAddColumn,
+  onRenameColumn,
+  onDeleteColumn,
   onAddDeal,
   onLogActivity,
   accountOptions,
@@ -97,6 +110,11 @@ export function DealGroup({
   onRenameGroup: (name: string) => void;
   onPatchDeal: (dealId: string, patch: Partial<CrmDeal>) => void;
   onOpenDeal?: (dealId: string) => void;
+  customColumns: CrmCustomColumn[];
+  profile: CrmUser;
+  onAddColumn: (type: CustomColumnType) => void;
+  onRenameColumn: (columnId: string, label: string) => void;
+  onDeleteColumn: (columnId: string) => void;
   onAddDeal: (name: string) => void;
   onLogActivity: (dealId: string, payload: LogPayload) => void;
   accountOptions: PickerOption[];
@@ -217,9 +235,16 @@ export function DealGroup({
                 {col.label}
               </span>
             ))}
-            <span className="flex w-[40px] items-center justify-center border-b border-t border-line bg-white">
-              <Icon name="tlAdd" size={16} />
-            </span>
+            {customColumns.map((col) => (
+              <CustomColumnHeader
+                key={col.id}
+                column={col}
+                canDelete={isFullAccess(profile.role)}
+                onRename={(label) => onRenameColumn(col.id, label)}
+                onDelete={() => onDeleteColumn(col.id)}
+              />
+            ))}
+            <AddColumnButton onAdd={onAddColumn} />
           </div>
 
           {/* rows */}
@@ -427,6 +452,19 @@ export function DealGroup({
                       );
                   }
                 })}
+                {customColumns.map((col) => (
+                  <CustomValueCell
+                    key={col.id}
+                    column={col}
+                    value={(deal.custom ?? {})[col.key]}
+                    users={users}
+                    onSave={(next) =>
+                      onPatchDeal(deal.id, {
+                        custom: { ...(deal.custom ?? {}), [col.key]: next },
+                      })
+                    }
+                  />
+                ))}
                 <span className="w-[40px] border-b border-line bg-white" />
               </div>
             );
@@ -462,7 +500,7 @@ export function DealGroup({
             </div>
             <span
               className="border-b border-line bg-white"
-              style={{ width: DEAL_COLUMNS.reduce((s, c) => s + c.w, 0) + 40 }}
+              style={{ width: DEAL_COLUMNS.reduce((s, c) => s + c.w, 0) + customColumns.length * CUSTOM_COL_W + 40 }}
             />
           </div>
 
@@ -490,6 +528,13 @@ export function DealGroup({
                   </>
                 )}
               </span>
+            ))}
+            {customColumns.map((col) => (
+              <span
+                key={col.id}
+                className="border-b border-r border-line bg-white"
+                style={{ width: CUSTOM_COL_W }}
+              />
             ))}
             <span className="w-[40px] border-b border-line bg-white" />
           </div>
