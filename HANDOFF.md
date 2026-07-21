@@ -79,16 +79,32 @@
   cleanup-mode toggle, AI-credits note, inert Filters button and Folder
   column REMOVED (Monday-only chrome — don't re-add). Members button now
   switches to the Collaborators tab.
-- **NAV PERFORMANCE PASS (2026-07-21)**: loading.tsx skeletons at
-  `(app)/crm`, `(admin)/admin` and `(app)` (Home) give instant click
-  feedback; `next.config.ts` sets experimental.staleTimes {dynamic:30,
-  static:300} so board revisits hit the client cache (revalidatePath still
-  purges after writes — keep using it in every server action); /admin usage
-  numbers come from ONE `crm_admin_usage_stats()` RPC (security INVOKER —
-  respects RLS) instead of 18 head-counts; board entrance anims softened
-  (y8/0.22s/stagger 0.04 on all 9 boards). ⚠️ next.config changes need a dev
-  server RESTART, and a just-restarted dev server throws transient "Failed to
-  fetch RSC payload" console errors — not a bug.
+- **NAV PERFORMANCE PASS (2026-07-21, revised 07-22)**: `next.config.ts`
+  sets experimental.staleTimes {dynamic:30, static:300} so board revisits hit
+  the client cache (revalidatePath still purges after writes — keep using it
+  in every server action); /admin usage numbers come from ONE
+  `crm_admin_usage_stats()` RPC (security INVOKER) instead of 18 head-counts;
+  board entrance anims softened (y8/0.22s/stagger 0.04 on all 9 boards).
+  ⚠️ **loading.tsx skeletons were tried and REVERTED (07-22)**: the Suspense
+  boundary they introduce NEVER hydrates in the embedded Browser pane
+  (document always hidden → idle hydration never runs) — boards render but
+  are completely dead to clicks, with zero console errors. Click feedback is
+  now `useLinkStatus` spinners (ui/LinkSpinner.tsx) inside sidebar links and
+  the TopBar admin link. Do NOT re-add loading.tsx unless pane-testability is
+  no longer needed. Other pane quirks: transient "Failed to fetch RSC
+  payload → falling back to browser navigation" errors that can bounce the
+  pane to "/" mid-test — environment artifact, not app code.
+- **ROW TOOLS + DRAG-AND-DROP on ALL 9 BOARDS (2026-07-22, migration
+  `crm_row_positions`)**: every row has a hover ⋮⋮ handle in the left gutter —
+  drag it to reorder within/across groups (fractional `position` column,
+  seeded from created_at; boards order by position now), click it for the
+  menu: Open (leads/deals/contacts), Duplicate ("<name> (copy)" inserted
+  below, generated/SLA cols stripped), Move to <group>, Delete (RLS-guarded,
+  count-checked). Shared kit `components/crm/row-tools.tsx` (`useRowTools`
+  factory + `dropTargetProps` + `byPosition`) + `app/(app)/crm/row-actions.ts`
+  (boardKey→table allow-list). E2E verified: duplicate/delete/move-to/drag all
+  persisted to DB. ⚠️ optimistic add flows create rows without `position` —
+  byPosition sinks them last until refetch (fine).
 - **NEXT / REMAINING**:
   1. Supabase Site URL change (user, dashboard) — only open localhost risk.
   2. Payment-plan template UI + schedules, commission-splits UI.
