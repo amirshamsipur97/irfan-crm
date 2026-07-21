@@ -79,6 +79,16 @@
   cleanup-mode toggle, AI-credits note, inert Filters button and Folder
   column REMOVED (Monday-only chrome — don't re-add). Members button now
   switches to the Collaborators tab.
+- **NAV PERFORMANCE PASS (2026-07-21)**: loading.tsx skeletons at
+  `(app)/crm`, `(admin)/admin` and `(app)` (Home) give instant click
+  feedback; `next.config.ts` sets experimental.staleTimes {dynamic:30,
+  static:300} so board revisits hit the client cache (revalidatePath still
+  purges after writes — keep using it in every server action); /admin usage
+  numbers come from ONE `crm_admin_usage_stats()` RPC (security INVOKER —
+  respects RLS) instead of 18 head-counts; board entrance anims softened
+  (y8/0.22s/stagger 0.04 on all 9 boards). ⚠️ next.config changes need a dev
+  server RESTART, and a just-restarted dev server throws transient "Failed to
+  fetch RSC payload" console errors — not a bug.
 - **NEXT / REMAINING**:
   1. Supabase Site URL change (user, dashboard) — only open localhost risk.
   2. Payment-plan template UI + schedules, commission-splits UI.
