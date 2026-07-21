@@ -20,6 +20,7 @@ export interface CrmUser {
   phone: string | null;
   title: string | null;
   role: CrmRole;
+  requested_role: "agent" | "media" | "manager" | "finance" | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

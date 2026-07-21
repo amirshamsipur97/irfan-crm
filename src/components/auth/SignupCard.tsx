@@ -93,8 +93,15 @@ export function SignupCard() {
           />
         </div>
         <div>
-          <FieldLabel htmlFor="job_title">Job title</FieldLabel>
-          <input id="job_title" name="job_title" autoComplete="organization-title" className={inputCls} />
+          <FieldLabel htmlFor="field_role" required>
+            Field / Position
+          </FieldLabel>
+          <select id="field_role" name="field_role" required defaultValue="agent" className={inputCls}>
+            <option value="agent">Sales Agent</option>
+            <option value="media">Media Team</option>
+            <option value="manager">Sales Manager</option>
+            <option value="finance">Finance</option>
+          </select>
         </div>
 
         <div className="col-span-2">

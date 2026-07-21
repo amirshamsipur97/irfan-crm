@@ -145,6 +145,11 @@ export function TeamView({
                           </option>
                         ))}
                       </select>
+                      {m.requested_role && m.requested_role !== m.role && (
+                        <p className="m-0 pt-[4px] font-sans text-[11px] leading-[14px] text-[#e8853d]">
+                          Requested at signup: {ROLE_LABELS[m.requested_role]} — pick it above to approve
+                        </p>
+                      )}
                     </td>
                     <td className="max-w-[280px] px-[14px] py-[9px] text-[12px] text-ink-muted">{hint}</td>
                     <td className="px-[14px] py-[9px]">

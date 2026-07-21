@@ -44,7 +44,22 @@ export async function signUp(_prev: AuthState, formData: FormData) {
   }
 
   const h = await headers();
-  const origin = h.get("origin") ?? `http://${h.get("host") ?? "localhost:3070"}`;
+  // canonical site URL wins so email links never point at a dev host
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    h.get("origin") ??
+    `http://${h.get("host") ?? "localhost:3070"}`;
+
+  // self-declared field: privileged tiers are only a REQUEST — everyone starts
+  // as agent and Developer/CEO approves the requested role from /crm/team
+  const FIELD_LABELS: Record<string, string> = {
+    agent: "Sales Agent",
+    media: "Media Team",
+    manager: "Sales Manager",
+    finance: "Finance",
+  };
+  const fieldRole = String(formData.get("field_role") ?? "agent");
+  const safeField = fieldRole in FIELD_LABELS ? fieldRole : "agent";
 
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -58,7 +73,8 @@ export async function signUp(_prev: AuthState, formData: FormData) {
         app: "crm",
         full_name: `${firstName} ${lastName}`.trim(),
         phone: phone ? `${dial} ${phone}`.trim() : "",
-        title: String(formData.get("job_title") ?? "").trim(),
+        title: FIELD_LABELS[safeField],
+        requested_role: safeField,
       },
     },
   });

@@ -11,7 +11,10 @@ const ROLES: CrmRole[] = ["developer", "ceo", "media", "manager", "agent", "fina
 export async function updateMemberRole(userId: string, role: CrmRole) {
   if (!ROLES.includes(role)) return { error: "invalid role" };
   const supabase = await createClient();
-  const { error } = await supabase.from("crm_users").update({ role }).eq("id", userId);
+  const { error } = await supabase
+    .from("crm_users")
+    .update({ role, requested_role: null })
+    .eq("id", userId);
   if (error) return { error: error.message };
   revalidatePath(PAGE);
   return {};
