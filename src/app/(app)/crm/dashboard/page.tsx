@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
+import { canManageBoards } from "@/lib/permissions";
 import { recordBoardVisit } from "@/lib/visits";
 import {
   SalesDashboard,
@@ -175,7 +176,7 @@ export default async function SalesDashboardPage() {
     .map((v) => ({ primary: v.name, meta: fmtWhen(v.scheduled_start!) }));
 
   let team: DashboardData["team"] = null;
-  if (profile.role === "admin" || profile.role === "manager") {
+  if (canManageBoards(profile.role)) {
     const responded = (leads ?? []).filter((l) => l.first_response_at);
     const avgMs =
       responded.length > 0

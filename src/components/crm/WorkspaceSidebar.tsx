@@ -9,6 +9,8 @@ import { Icon } from "@/components/ui/Icon";
 import { IconButton } from "@/components/ui/IconButton";
 import type { IconName } from "@/lib/figma-icons";
 import { canAnimate } from "@/lib/motion";
+import { canViewFinance, isFullAccess } from "@/lib/permissions";
+import type { CrmRole } from "@/lib/types";
 
 export const WORKSPACE_NAV: { label: string; icon: IconName; href: string }[] = [
   { label: "Workspace home", icon: "navHome", href: "/crm" },
@@ -24,12 +26,17 @@ export const WORKSPACE_NAV: { label: string; icon: IconName; href: string }[] = 
   { label: "Sales Dashboard", icon: "navDashboard", href: "/crm/dashboard" },
 ];
 
-/** Finance board is only listed for admin/finance roles. */
+/** Finance is listed for the finance tier; Team for the full tier. */
 const FINANCE_NAV = { label: "Finance", icon: "navDashboard" as IconName, href: "/crm/finance" };
+const TEAM_NAV = { label: "Team", icon: "navContacts" as IconName, href: "/crm/team" };
 
-export function WorkspaceSidebar({ role }: { role?: string }) {
+export function WorkspaceSidebar({ role }: { role?: CrmRole }) {
   const pathname = usePathname();
-  const nav = role === "admin" || role === "finance" ? [...WORKSPACE_NAV, FINANCE_NAV] : WORKSPACE_NAV;
+  const nav = [
+    ...WORKSPACE_NAV,
+    ...(role && canViewFinance(role) ? [FINANCE_NAV] : []),
+    ...(role && isFullAccess(role) ? [TEAM_NAV] : []),
+  ];
   const rootRef = useRef<HTMLElement>(null);
   useGSAP(
     () => {

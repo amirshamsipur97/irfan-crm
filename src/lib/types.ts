@@ -1,6 +1,6 @@
 // Row types for the CRM tables (public schema, crm_ prefix)
 
-export type CrmRole = "admin" | "manager" | "agent" | "finance";
+export type CrmRole = "developer" | "ceo" | "media" | "manager" | "agent" | "finance";
 export type LeadPriority = "low" | "medium" | "high";
 export type TaskStatus = "open" | "done" | "cancelled";
 export type ActivityType =

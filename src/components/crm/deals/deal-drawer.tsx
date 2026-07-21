@@ -19,6 +19,7 @@ import type {
   CrmViewing,
 } from "@/lib/types";
 import { DealFinancials } from "./deal-financials";
+import { canViewFinance } from "@/lib/permissions";
 import {
   addDealInterest,
   addDealOffer,
@@ -461,7 +462,7 @@ export function DealDrawer({
               </button>
 
               {/* financials — finance/admin only (tables are RLS-gated too) */}
-              {(profile.role === "admin" || profile.role === "finance") && (
+              {canViewFinance(profile.role) && (
                 <DealFinancials deal={deal} onToast={onToast} />
               )}
 

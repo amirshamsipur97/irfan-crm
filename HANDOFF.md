@@ -374,10 +374,31 @@ reasons list; DashboardData gained myWork/team). FIXES — Home KPIs were
 still "$55K" (compactMoney → "55K OMR"); BarsWidget gained a format prop
 (leads-by-owner axis showed "1 OMR" for counts).
 
+ROLE MATRIX + TEAM PAGE DONE (2026-07-21, migration `crm_phase5_role_matrix`):
+roles are now developer | ceo | media | manager | agent | finance ('admin'
+value MIGRATED to 'developer' everywhere incl. invites; privilege-guard
+trigger had to be disabled around the data migration — it correctly blocks
+even postgres-context role updates). Tiers (all enforced by redefining the
+3 helper fns, so every policy updated at once): crm_is_admin() = developer+ceo
+(deletes, invites, audit, role mgmt); crm_can_manage() = +media+manager
+(edit ALL operational rows); crm_is_finance() = developer+ceo+finance.
+First-signup bootstrap literal → 'developer'. Verified by impersonation:
+media edits others' leads ✓, sees 0 payments ✓, blocked from role changes ✓.
+FRONTEND: lib/permissions.ts is now the single source (FULL/MANAGE/FINANCE
+role sets + ROLE_LABELS + isFullAccess/canManageBoards/canViewFinance);
+every role gate routed through it (drawer financials, finance page, dashboard
+team row, sidebar, TopBar label, WorkspaceHome collaborators). NEW /crm/team
+page (Developer/CEO only; sidebar item gated): members table w/ role select
+(self-change disabled; DB guard enforces anyway) + active toggle + pending
+invites w/ create/revoke. Bugfix during E2E: optimistic invite row used a
+temp id so Revoke deleted nothing — createInvite now returns the real id and
+TeamView syncs props→state. Assign media-team/CEO roles from /crm/team now
+(current members: user's 3 accounts = developer, koroosh = agent).
+
 REMAINING: payment-plan template UI + schedules; commission splits UI;
 notifications (TopBar bell is still visual); detail drawers for lead/contact,
-Team page (role management UI), custom domain crm.irfaninvest.com,
-pre-handover cleanup (preview admin + sample rows).
+custom domain crm.irfaninvest.com, pre-handover cleanup (preview admin +
+sample rows).
 
 STANDALONE + HANDOVER MODEL (user decision 2026-07-18 late): this CRM is
 INDEPENDENT — do NOT import the website `leads` table (192 rows); the

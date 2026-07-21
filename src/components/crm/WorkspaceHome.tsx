@@ -12,6 +12,7 @@ import { AiFloaty } from "@/components/shell/AiFloaty";
 import { Surface } from "@/components/shell/AppChrome";
 import { ICONS, type IconName } from "@/lib/figma-icons";
 import { canAnimate } from "@/lib/motion";
+import { isFullAccess, ROLE_LABELS } from "@/lib/permissions";
 import { toggleBoardFavorite } from "@/app/(app)/crm/actions";
 
 export interface WorkspaceBoardRow {
@@ -166,7 +167,7 @@ export function WorkspaceHome({ data }: { data: WorkspaceHomeData }) {
     b.name.toLowerCase().includes(search.trim().toLowerCase())
   );
 
-  const admins = data.users.filter((u) => u.role === "admin");
+  const admins = data.users.filter((u) => isFullAccess(u.role));
   const creator = admins[0] ?? data.users[0];
 
   return (
@@ -559,7 +560,7 @@ export function WorkspaceHome({ data }: { data: WorkspaceHomeData }) {
                       />
                     </svg>
                     <span className="font-sans text-[14px] leading-[20px] text-ink">
-                      {user.role === "admin" ? "Admin" : "Member"}
+                      {ROLE_LABELS[user.role]}
                     </span>
                   </span>
                 </div>

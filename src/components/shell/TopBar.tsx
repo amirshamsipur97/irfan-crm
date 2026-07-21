@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { signOut } from "@/app/(auth)/actions";
 import { useRef, useState, useEffect } from "react";
 import type { CrmUser } from "@/lib/types";
+import { ROLE_LABELS } from "@/lib/permissions";
 
 function TopIconButton({
   icon,
@@ -130,7 +131,7 @@ export function TopBar({ profile }: { profile: CrmUser }) {
                   {profile.full_name || profile.email}
                 </p>
                 <p className="font-sans text-[12px] leading-[16px] text-ink-muted">
-                  {profile.role === "admin" ? "Admin" : "Agent"}
+                  {ROLE_LABELS[profile.role]}
                 </p>
               </div>
               <form action={signOut}>

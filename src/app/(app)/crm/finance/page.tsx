@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
+import { canViewFinance } from "@/lib/permissions";
 import { Surface } from "@/components/shell/AppChrome";
 import { money } from "@/components/crm/deals/deals-config";
 import type { CrmDeal, CrmDealCommission, CrmPayment, CrmTransaction } from "@/lib/types";
@@ -17,7 +18,7 @@ const TX_STATUS_META: Record<string, { label: string; color: string }> = {
 /** Finance overview — transactions with paid-to-date and commission health. */
 export default async function FinancePage() {
   const profile = await getProfile();
-  const allowed = profile.role === "admin" || profile.role === "finance";
+  const allowed = canViewFinance(profile.role);
 
   if (!allowed) {
     return (
