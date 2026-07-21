@@ -7,13 +7,11 @@
  * Persistence goes through app/(app)/crm/row-actions.ts (fractional `position`).
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Popover } from "@/components/crm/leads/cells";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import type { CrmUser } from "@/lib/types";
 import { deleteRow, duplicateRow, moveRow } from "@/app/(app)/crm/row-actions";
-
-export const ROW_MIME = "application/x-crm-row";
 
 /** Sort comparator for board rows (manual order; rows without position sink last). */
 export function byPosition<T extends { position?: number }>(a: T, b: T) {
@@ -132,7 +130,13 @@ export function useRowTools<T extends BoardRowLike>(opts: {
   };
 }
 
-/** Spread onto every row container so it accepts drops (insert BEFORE this row). */
+/**
+ * Spread onto every row container (and the add-row footer) so the pointer-based
+ * drag can find drop targets via elementFromPoint. Insert happens BEFORE this
+ * row; empty data-drop-before means "end of group".
+ * (HTML5 drag-and-drop was replaced with pointer events — Safari support and
+ * the Monday-style tilted ghost both need manual dragging.)
+ */
 export function dropTargetProps(
   tools: RowToolsConfig | undefined,
   groupId: string,
@@ -140,30 +144,17 @@ export function dropTargetProps(
 ) {
   if (!tools) return {};
   return {
-    onDragOver: (e: React.DragEvent) => {
-      if (e.dataTransfer.types.includes(ROW_MIME)) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-        (e.currentTarget as HTMLElement).style.boxShadow = "inset 0 2px 0 0 #00a0a0";
-      }
-    },
-    onDragLeave: (e: React.DragEvent) => {
-      (e.currentTarget as HTMLElement).style.boxShadow = "";
-    },
-    onDrop: (e: React.DragEvent) => {
-      (e.currentTarget as HTMLElement).style.boxShadow = "";
-      const dragId = e.dataTransfer.getData(ROW_MIME);
-      if (!dragId) return;
-      e.preventDefault();
-      tools.onDropBefore(dragId, groupId, beforeId);
-    },
+    "data-drop-group": groupId,
+    "data-drop-before": beforeId ?? "",
   };
 }
+
+const INDICATOR = "inset 0 2px 0 0 #00a0a0";
 
 const ITEM_CLS =
   "flex w-full items-center gap-[10px] px-[14px] py-[7px] text-left font-sans text-[14px] leading-[20px] text-ink transition-colors hover:bg-[var(--hover-ghost)] disabled:cursor-not-allowed disabled:opacity-40";
 
-/** The left-gutter handle: drag to reorder, click for the row menu. */
+/** The left-gutter handle: drag (pointer-based) to reorder, click for the row menu. */
 export function RowTools({
   row,
   tools,
@@ -174,21 +165,107 @@ export function RowTools({
   const [open, setOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
   const editable = tools.canEdit(row.id);
+  const draggedRef = useRef(false);
+
+  const startDrag = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!editable || e.button !== 0) return;
+    e.preventDefault(); // no text selection while dragging
+    const handle = e.currentTarget;
+    const rowEl = handle.closest("[data-drop-group]") as HTMLElement | null;
+    if (!rowEl) return;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let ghost: HTMLElement | null = null;
+    let lastTarget: HTMLElement | null = null;
+    draggedRef.current = false;
+
+    const clearIndicator = () => {
+      if (lastTarget) lastTarget.style.boxShadow = "";
+      lastTarget = null;
+    };
+
+    const beginGhost = () => {
+      draggedRef.current = true;
+      ghost = rowEl.cloneNode(true) as HTMLElement;
+      const w = Math.min(rowEl.offsetWidth || 560, 560);
+      const h = rowEl.offsetHeight || 36;
+      ghost.style.cssText =
+        `position:fixed;left:0;top:0;width:${w}px;height:${h}px;margin:0;` +
+        `pointer-events:none;z-index:9999;background:#fff;opacity:0.95;` +
+        `border:1px solid #d0d4e4;border-radius:6px;overflow:hidden;` +
+        `box-shadow:0 10px 28px rgba(0,0,0,0.25);display:flex;align-items:stretch;`;
+      document.body.appendChild(ghost);
+      rowEl.style.opacity = "0.4";
+      document.body.style.cursor = "grabbing";
+    };
+
+    const moveGhost = (x: number, y: number) => {
+      if (!ghost) return;
+      // slight Monday-style tilt while the row is being carried
+      ghost.style.transform = `translate(${x + 10}px, ${y - 16}px) rotate(4deg)`;
+    };
+
+    const findTarget = (x: number, y: number): HTMLElement | null => {
+      const el = document.elementFromPoint(x, y) as HTMLElement | null;
+      const target = el?.closest("[data-drop-group]") as HTMLElement | null;
+      if (!target || target === rowEl) return null;
+      return target;
+    };
+
+    const onMove = (ev: PointerEvent) => {
+      if (!draggedRef.current) {
+        if (Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) < 6) return;
+        beginGhost();
+      }
+      moveGhost(ev.clientX, ev.clientY);
+      const target = findTarget(ev.clientX, ev.clientY);
+      if (target !== lastTarget) {
+        clearIndicator();
+        if (target) {
+          target.style.boxShadow = INDICATOR;
+          lastTarget = target;
+        }
+      }
+    };
+
+    const onUp = (ev: PointerEvent) => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      clearIndicator();
+      if (ghost) ghost.remove();
+      rowEl.style.opacity = "";
+      document.body.style.cursor = "";
+      if (!draggedRef.current || ev.type === "pointercancel") return;
+      const target = findTarget(ev.clientX, ev.clientY);
+      if (!target) return;
+      const groupId = target.getAttribute("data-drop-group");
+      if (!groupId) return;
+      const before = target.getAttribute("data-drop-before");
+      tools.onDropBefore(row.id, groupId, before || null);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  };
 
   return (
-    <span className="absolute -left-[32px] top-1/2 z-20 -translate-y-1/2">
+    <span className="absolute -left-[32px] inset-y-0 z-20 flex items-center">
       <button
         type="button"
         aria-label={`Row options for ${row.name}`}
-        draggable={editable}
-        onDragStart={(e) => {
-          e.dataTransfer.setData(ROW_MIME, row.id);
-          e.dataTransfer.effectAllowed = "move";
-        }}
+        onPointerDown={startDrag}
         onClick={() => {
+          if (draggedRef.current) {
+            draggedRef.current = false;
+            return; // this click ends a drag, not a menu request
+          }
           setMoveOpen(false);
           setOpen((v) => !v);
         }}
+        style={{ touchAction: "none" }}
         className={`flex h-[24px] w-[24px] items-center justify-center rounded-[4px] border border-line bg-white text-ink-muted opacity-0 shadow-sm transition-opacity hover:bg-canvas group-hover/row:opacity-100 ${
           open ? "opacity-100" : ""
         } ${editable ? "cursor-grab active:cursor-grabbing" : ""}`}
