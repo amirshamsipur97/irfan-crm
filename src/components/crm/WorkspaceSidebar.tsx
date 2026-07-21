@@ -24,8 +24,12 @@ export const WORKSPACE_NAV: { label: string; icon: IconName; href: string }[] = 
   { label: "Sales Dashboard", icon: "navDashboard", href: "/crm/dashboard" },
 ];
 
-export function WorkspaceSidebar() {
+/** Finance board is only listed for admin/finance roles. */
+const FINANCE_NAV = { label: "Finance", icon: "navDashboard" as IconName, href: "/crm/finance" };
+
+export function WorkspaceSidebar({ role }: { role?: string }) {
   const pathname = usePathname();
+  const nav = role === "admin" || role === "finance" ? [...WORKSPACE_NAV, FINANCE_NAV] : WORKSPACE_NAV;
   const rootRef = useRef<HTMLElement>(null);
   useGSAP(
     () => {
@@ -91,7 +95,7 @@ export function WorkspaceSidebar() {
 
         {/* board list */}
         <nav className="mt-[4px] flex flex-col">
-          {WORKSPACE_NAV.map((item) => {
+          {nav.map((item) => {
             const active =
               item.href === "/crm" ? pathname === "/crm" : pathname.startsWith(item.href);
             return (

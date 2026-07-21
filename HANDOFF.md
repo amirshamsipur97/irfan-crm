@@ -329,10 +329,35 @@ FULLY REMOVED (routes+components deleted; migration `crm_drop_products_board`
 dropped both tables after verifying only the sample row existed). Import
 button kept for future CSV import.
 
-REMAINING PHASES: P3 financial (transactions, payments, payment plans,
-commissions+splits + Finance/Manager roles per the standard's permission
-matrix); P4 SLA/scoring/automations/role dashboards. Also pending: detail
-drawers for lead/contact (deal done), Team page, custom domain.
+PHASE 3 DONE (2026-07-21, migration `crm_phase3_financial_layer` + UI):
+ROLES — crm_users.role now admin|manager|agent|finance; crm_can_manage()
+(admin+manager) replaced crm_is_admin() in all operational UPDATE policies
+(managers edit everything, agents still owner-only); crm_is_finance()
+(admin+finance) gates ALL financial tables (agents get zero rows via RLS —
+verified by impersonation). DB — crm_transactions (auto ref TX-0001 via
+sequence; ONE open tx per deal via partial unique index; statuses draft→
+completed/cancelled), crm_payment_plans + installments (templates, UI later),
+crm_payment_schedules, crm_payments (immutability trigger: confirmed payments
+raise on amount/currency/date change — refund & re-enter), commission chain
+crm_commission_agreements → crm_deal_commissions (net = generated column) →
+crm_commission_splits. RPCs: crm_start_transaction(deal) (finance-gated,
+idempotent, pulls buyer/unit from deal + reservation), crm_calc_deal_commission
+(deal, pct) (upsert, base = tx price else deal value). Full-row audit triggers
+on payments/commissions/transactions (to_jsonb old/new into crm_audit_log).
+UI — deal drawer gained finance-only Transaction/Payments/Commission sections
+(components/crm/deals/deal-financials.tsx + finance-actions.ts): start tx,
+status select, record payment (type+method), refund, calc commission from %,
+commission status. NEW /crm/finance page (admin/finance only; sidebar item
+role-gated via CrmLayout passing profile.role to WorkspaceSidebar): 4 KPIs
+(open tx value, collected, commission expected/received) + transactions table
+w/ paid/balance/commission. E2E: agent sees 0 payments + start-tx denied;
+admin full loop TX-0001 → payment 10,000 → commission 3% = 3,600 verified in
+drawer AND finance page; test rows cleaned, sequence reset. CrmRole type
+widened (WorkspaceUserRow too).
+
+REMAINING: P4 SLA/scoring/automations/role dashboards; payment-plan template
+UI + schedules; commission splits UI; detail drawers for lead/contact,
+Team page, custom domain crm.irfaninvest.com.
 
 STANDALONE + HANDOVER MODEL (user decision 2026-07-18 late): this CRM is
 INDEPENDENT — do NOT import the website `leads` table (192 rows); the

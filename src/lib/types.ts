@@ -1,6 +1,6 @@
 // Row types for the CRM tables (public schema, crm_ prefix)
 
-export type CrmRole = "admin" | "agent";
+export type CrmRole = "admin" | "manager" | "agent" | "finance";
 export type LeadPriority = "low" | "medium" | "high";
 export type TaskStatus = "open" | "done" | "cancelled";
 export type ActivityType =
@@ -374,6 +374,64 @@ export interface CrmReservation {
   updated_at: string;
   /** joined for display */
   unit_name?: string | null;
+}
+
+export interface CrmTransaction {
+  id: string;
+  reference: string;
+  deal_id: string | null;
+  transaction_type: string | null;
+  buyer_contact_id: string | null;
+  seller_account_id: string | null;
+  development_id: string | null;
+  unit_id: string | null;
+  agreed_price: number | null;
+  currency: string;
+  contract_date: string | null;
+  expected_completion_date: string | null;
+  completed_at: string | null;
+  status: string;
+  cancellation_reason: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CrmPayment {
+  id: string;
+  transaction_id: string | null;
+  deal_id: string | null;
+  payer_contact_id: string | null;
+  amount: number;
+  currency: string;
+  payment_type: string | null;
+  method: string | null;
+  reference: string | null;
+  status: string;
+  payment_date: string;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CrmDealCommission {
+  id: string;
+  deal_id: string;
+  transaction_id: string | null;
+  agreement_id: string | null;
+  gross_commission: number | null;
+  adjustment: number;
+  tax: number;
+  net_commission: number | null;
+  currency: string;
+  expected_payment_date: string | null;
+  received_amount: number;
+  received_at: string | null;
+  status: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CrmActivityGroup {

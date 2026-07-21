@@ -18,6 +18,7 @@ import type {
   CrmUser,
   CrmViewing,
 } from "@/lib/types";
+import { DealFinancials } from "./deal-financials";
 import {
   addDealInterest,
   addDealOffer,
@@ -74,6 +75,7 @@ function Pill({ label, color }: { label: string; color: string }) {
 
 export function DealDrawer({
   deal,
+  profile,
   stages,
   users,
   units,
@@ -81,6 +83,7 @@ export function DealDrawer({
   onToast,
 }: {
   deal: CrmDeal;
+  profile: CrmUser;
   stages: CrmDealStage[];
   users: CrmUser[];
   units: CrmUnit[];
@@ -456,6 +459,11 @@ export function DealDrawer({
               >
                 + Request viewing
               </button>
+
+              {/* financials — finance/admin only (tables are RLS-gated too) */}
+              {(profile.role === "admin" || profile.role === "finance") && (
+                <DealFinancials deal={deal} onToast={onToast} />
+              )}
 
               {/* activity timeline */}
               <SectionTitle>Latest activity</SectionTitle>

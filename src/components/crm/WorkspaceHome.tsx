@@ -27,7 +27,7 @@ export interface WorkspaceUserRow {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "agent";
+  role: import("@/lib/types").CrmRole;
   avatarUrl: string | null;
 }
 

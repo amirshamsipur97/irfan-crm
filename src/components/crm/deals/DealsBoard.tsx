@@ -296,6 +296,7 @@ export function DealsBoard({
         return (
           <DealDrawer
             deal={openDeal}
+            profile={profile}
             stages={stages}
             users={users}
             units={units}
