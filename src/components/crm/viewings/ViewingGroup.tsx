@@ -81,6 +81,9 @@ export function ViewingGroup({
       setCollapsed(next);
       return;
     }
+    // clip only while the collapse/expand animation runs — a permanent
+    // overflow-hidden would clip the row-tools handle in the left gutter
+    gsap.set(bodyRef.current, { overflow: "hidden" });
     if (next) {
       gsap.to(bodyRef.current, {
         height: 0,
@@ -137,7 +140,7 @@ export function ViewingGroup({
       </div>
 
       {!collapsed && (
-        <div ref={bodyRef} className="w-fit overflow-hidden">
+        <div ref={bodyRef} className="w-fit">
           {/* column headers */}
           <div className="flex h-[36px] w-fit items-stretch">
             <div
