@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Icon } from "@/components/ui/Icon";
@@ -17,7 +17,6 @@ export const WORKSPACE_NAV: { label: string; icon: IconName; href: string }[] = 
   { label: "Leads", icon: "navLeads", href: "/crm/leads" },
   { label: "Accounts", icon: "navAccounts", href: "/crm/accounts" },
   { label: "Client Projects", icon: "navProjects", href: "/crm/projects" },
-  { label: "Products & Services", icon: "navProducts", href: "/crm/products" },
   { label: "Developments", icon: "navProjects", href: "/crm/developments" },
   { label: "Units", icon: "navAccounts", href: "/crm/units" },
   { label: "Viewings", icon: "navActivities", href: "/crm/viewings" },
@@ -25,18 +24,10 @@ export const WORKSPACE_NAV: { label: string; icon: IconName; href: string }[] = 
   { label: "Sales Dashboard", icon: "navDashboard", href: "/crm/dashboard" },
 ];
 
-const SYNC_ITEMS: { label: string; icon: IconName; count: number }[] = [
-  { label: "Contacts", icon: "navContacts", count: 2 },
-  { label: "Companies", icon: "navAccounts", count: 1 },
-  { label: "Activities", icon: "syncActivities", count: 5 },
-];
-
 export function WorkspaceSidebar() {
   const pathname = usePathname();
   const rootRef = useRef<HTMLElement>(null);
-  const syncRef = useRef<HTMLDivElement>(null);
-  const [syncGone, setSyncGone] = useState(false);
-  const { contextSafe } = useGSAP(
+  useGSAP(
     () => {
       if (!canAnimate()) return;
       gsap.from(".ws-nav-item", {
@@ -50,16 +41,6 @@ export function WorkspaceSidebar() {
     },
     { scope: rootRef }
   );
-
-  const closeSync = contextSafe(() => {
-    gsap.to(syncRef.current, {
-      height: 0,
-      opacity: 0,
-      duration: 0.35,
-      ease: "power2.inOut",
-      onComplete: () => setSyncGone(true),
-    });
-  });
 
   return (
     <aside
@@ -104,15 +85,6 @@ export function WorkspaceSidebar() {
           type="button"
           className="ws-nav-item mx-[16px] flex h-[32px] w-[236px] items-center gap-[8px] rounded-[4px] px-[6px] transition-colors hover:bg-[var(--hover-ghost)]"
         >
-          <span className="font-sans text-[14px] font-medium leading-[20px] text-ink">
-            My workspace agents
-          </span>
-          <Icon name="wsAgentsChevron" size={16} />
-        </button>
-        <button
-          type="button"
-          className="ws-nav-item mx-[16px] mt-[12px] flex h-[32px] w-[236px] items-center gap-[8px] rounded-[4px] px-[6px] transition-colors hover:bg-[var(--hover-ghost)]"
-        >
           <span className="font-sans text-[14px] font-medium leading-[20px] text-ink">Content</span>
           <Icon name="wsContentChevron" size={16} />
         </button>
@@ -141,46 +113,6 @@ export function WorkspaceSidebar() {
         </nav>
       </div>
 
-      {/* sync completed panel */}
-      {!syncGone && (
-        <div ref={syncRef} className="shrink-0 overflow-hidden">
-          <div className="border-t border-line bg-gradient-to-b from-cyan-soft to-white px-[12px] pb-[12px] pt-[13px] backdrop-blur-[20px]">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-[8px]">
-                <Icon name="syncCheck" size={20} />
-                <p className="font-sans text-[14px] font-semibold leading-[22px] text-ink">
-                  Sync completed
-                </p>
-              </div>
-              <div className="flex items-center">
-                <IconButton icon="syncChevron" size={24} iconSize={10} label="Collapse" />
-                <IconButton icon="syncClose" size={24} iconSize={20} label="Dismiss" onClick={closeSync} />
-              </div>
-            </div>
-            <p className="pt-[12px] font-sans text-[12px] leading-[16px] text-ink-muted">
-              Here are the items that were imported.
-            </p>
-            <div className="mt-[8px] flex flex-col gap-[8px]">
-              {SYNC_ITEMS.map((item) => (
-                <div
-                  key={item.label}
-                  className="flex h-[36px] items-center justify-between rounded-[4px] bg-[rgba(255,255,255,0.4)] px-[12px] shadow-[0_0_0_1px_rgba(208,212,228,0.5)]"
-                >
-                  <span className="flex items-center gap-[8px]">
-                    <Icon name={item.icon} size={16} />
-                    <span className="font-sans text-[12px] leading-[16px] text-ink">
-                      {item.label}
-                    </span>
-                  </span>
-                  <span className="font-sans text-[14px] leading-[20px] text-ink">
-                    {item.count}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </aside>
   );
 }

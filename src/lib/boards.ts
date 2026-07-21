@@ -16,7 +16,6 @@ export const BOARD_META: {
   { key: "leads", name: "Leads", icon: "rowLeads", href: "/crm/leads", table: "crm_leads" },
   { key: "deals", name: "Deals", icon: "rowDeals", href: "/crm/deals", table: "crm_deals" },
   { key: "accounts", name: "Accounts", icon: "rowAccounts", href: "/crm/accounts", table: "crm_accounts" },
-  { key: "products", name: "Products & Services", icon: "rowProducts", href: "/crm/products", table: "crm_products" },
   { key: "developments", name: "Developments", icon: "rowProjects", href: "/crm/developments", table: "crm_developments" },
   { key: "units", name: "Units", icon: "rowAccounts", href: "/crm/units", table: "crm_units" },
   { key: "viewings", name: "Viewings", icon: "rowActivities", href: "/crm/viewings", table: "crm_viewings" },

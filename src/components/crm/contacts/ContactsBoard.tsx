@@ -155,7 +155,6 @@ export function ContactsBoard({
             newLabel="New contact"
             searchValue={search}
             onSearch={setSearch}
-            automateLabel="Automate / 3"
             onNew={() => {
               const first = localGroups[0];
               if (first) handleAddContact(first.id, "New Contact");

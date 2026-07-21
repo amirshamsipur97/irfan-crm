@@ -188,7 +188,6 @@ export function LeadsBoard({
             activeTab="Main table"
             onTabChange={() => {}}
             newLabel="New lead"
-            showAiAgents
             searchValue={search}
             onSearch={setSearch}
             users={users}

@@ -200,8 +200,7 @@ export function BoardHeader({
   onTabChange,
   newLabel,
   onNew,
-  automateLabel = "Automate / 6",
-  showAiAgents = false,
+  automateLabel = "Automate",
   showImport = true,
   itemHeight,
   onItemHeight,
@@ -219,7 +218,6 @@ export function BoardHeader({
   newLabel: string;
   onNew: () => void;
   automateLabel?: string;
-  showAiAgents?: boolean;
   showImport?: boolean;
   /** when provided (with onItemHeight), the toolbar "…" opens the board-options menu */
   itemHeight?: ItemHeight;
@@ -262,48 +260,10 @@ export function BoardHeader({
         </button>
 
         <div className="flex items-center gap-[4px]">
-          {showAiAgents && (
-            <button
-              type="button"
-              className="flex h-[32px] items-center rounded-[4px] px-[8px] py-[4px] transition-colors hover:bg-[var(--hover-ghost)]"
-            >
-              <span className="flex items-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={ICONS.aiAgentAvatar1}
-                  alt=""
-                  width={28}
-                  height={28}
-                  className="relative z-[2] rounded-full border border-white"
-                />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={ICONS.aiAgentAvatar2}
-                  alt=""
-                  width={28}
-                  height={28}
-                  className="-ml-[8px] rounded-full border border-white"
-                />
-              </span>
-              <span className="whitespace-nowrap pl-[8px] font-sans text-[14px] leading-[24px] text-ink">
-                AI Agents
-              </span>
-              <span className="pl-[8px]">
-                <Icon name="bhAiChevron" size={20} />
-              </span>
-            </button>
-          )}
           {showImport && (
             <GhostAction icon={<Icon name="bhImport" size={20} />}>Import</GhostAction>
           )}
-          <GhostAction icon={<Icon name="bhIntegrate" size={18} />}>Integrate</GhostAction>
           <GhostAction icon={<Icon name="bhAutomate" size={20} />}>{automateLabel}</GhostAction>
-          <div className="relative">
-            <GhostAction icon={<Icon name="bhAgents" size={20} />}>Agents</GhostAction>
-            <span className="absolute -right-[2px] -top-[2px] flex rounded-[16px] border-2 border-white p-[2px]">
-              <span className="size-[8px] rounded-[4px] bg-teal-deep" />
-            </span>
-          </div>
           <IconButton icon="bhChat" size={32} label="Board discussion" />
           <button type="button" className="flex h-[32px] items-center rounded-[4px] px-[8px] py-[4px] transition-colors hover:bg-[var(--hover-ghost)]">
             <Avatar name={profile.full_name || profile.email} src={profile.avatar_url} size={28} />

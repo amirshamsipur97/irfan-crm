@@ -109,7 +109,6 @@ export function ProjectsBoard({
             users={users}
             personFilter={personFilter}
             onPersonFilter={setPersonFilter}
-            automateLabel="Automate / 1"
             onNew={() => {
               const first = localGroups[0];
               if (first) handleAddProject(first.id, "New project");

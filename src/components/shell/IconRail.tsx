@@ -12,11 +12,6 @@ import { canAnimate } from "@/lib/motion";
 const ITEMS: { label: string; icon: IconName; href?: string }[] = [
   { label: "Home", icon: "railHome", href: "/" },
   { label: "CRM", icon: "railCrm", href: "/crm" },
-  { label: "Sidekick", icon: "railSidekick" },
-  { label: "Agents", icon: "railAgents" },
-  { label: "Tools", icon: "railTools" },
-  { label: "Notetaker", icon: "railNotetaker" },
-  { label: "More", icon: "railMore" },
 ];
 
 export function IconRail() {

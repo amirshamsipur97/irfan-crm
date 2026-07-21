@@ -129,7 +129,6 @@ export function AccountsBoard({
             newLabel="New account"
             searchValue={search}
             onSearch={setSearch}
-            automateLabel="Automate / 1"
             onNew={() => {
               const first = localGroups[0];
               if (first) handleAddAccount(first.id, "New account");

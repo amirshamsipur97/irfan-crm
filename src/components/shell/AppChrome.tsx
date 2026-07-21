@@ -1,15 +1,13 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { TopBar } from "./TopBar";
 import { IconRail } from "./IconRail";
-import { AnnouncementBanner } from "./AnnouncementBanner";
 import type { CrmUser } from "@/lib/types";
 
 /**
  * Global application chrome per the design:
- * announcement strip (workspace pages) → 48px top bar → 72px icon rail +
- * white content surface (rounded top-left, hairline border).
+ * 48px top bar → 72px icon rail + white content surface
+ * (rounded top-left, hairline border).
  */
 export function AppChrome({
   profile,
@@ -18,12 +16,8 @@ export function AppChrome({
   profile: CrmUser;
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const showBanner = pathname.startsWith("/crm");
-
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-canvas">
-      {showBanner && <AnnouncementBanner />}
       <TopBar profile={profile} />
       <div className="flex min-h-0 flex-1">
         <IconRail />

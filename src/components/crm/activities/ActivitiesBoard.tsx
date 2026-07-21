@@ -107,7 +107,6 @@ export function ActivitiesBoard({
             users={users}
             personFilter={personFilter}
             onPersonFilter={setPersonFilter}
-            automateLabel="Automate / 1"
             showImport={false}
             itemHeight={itemHeight}
             onItemHeight={setItemHeight}

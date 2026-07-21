@@ -7,7 +7,16 @@ import { Icon } from "@/components/ui/Icon";
 import { canAnimate } from "@/lib/motion";
 
 /** Floating AI assistant button (bottom-right) with hover label, per design "Component 20". */
+/**
+ * AI Sidekick launcher — REMOVED from the product for handover (no backing
+ * feature yet). Kept as a null component so board renders stay untouched;
+ * restore from git history when Sidekick becomes real.
+ */
 export function AiFloaty() {
+  return null;
+}
+
+function AiFloatyDisabled() {
   const rootRef = useRef<HTMLDivElement>(null);
   const labelRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP(

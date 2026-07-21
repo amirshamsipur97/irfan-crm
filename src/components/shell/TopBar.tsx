@@ -80,14 +80,6 @@ export function TopBar({ profile }: { profile: CrmUser }) {
             </span>
           </span>
         </Link>
-        <div className="pl-[8px]">
-          <button
-            type="button"
-            className="flex h-[32px] items-center rounded-[4px] px-[8px] py-[4px] font-sans text-[14px] leading-[24px] text-ink transition-colors hover:bg-[var(--hover-ghost)]"
-          >
-            Contact sales
-          </button>
-        </div>
       </div>
 
       {/* center: global search */}

@@ -214,7 +214,6 @@ export function DealsBoard({
             users={users}
             personFilter={personFilter}
             onPersonFilter={setPersonFilter}
-            automateLabel="Automate / 8"
             onNew={() => {
               const first = localGroups[0];
               if (first) handleAddDeal(first.id, "New Deal");
