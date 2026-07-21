@@ -3,7 +3,7 @@
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
 > Updated: **2026-07-21 late session** (all work committed locally through
-> `3b13ae3`; repo is LOCAL-ONLY, no remote).
+> `437f49e`; repo is LOCAL-ONLY, no remote).
 
 ## CURRENT STATE SNAPSHOT (2026-07-21)
 
@@ -63,6 +63,22 @@
   `contacts/drawer-actions.ts`): details, linked deals (FK match merged with
   name-cache match, deduped; live count + value sum + stage pills), shortlisted
   properties, activity. Leads page now also fetches crm_units.
+- **ADMINISTRATION AREA (/admin, 2026-07-21)**: full-screen dark takeover
+  (own route group `app/(admin)`, NO app chrome — Back button returns to
+  /crm), Developer/CEO only (page redirects others; proxy auth-guards it).
+  Entry = TopBar 9-dot grid icon (admin tier only; hidden otherwise).
+  Sections, ALL functional on real CRM data: General (registration
+  allowed-domains chips + agent seat cap → crm_registration_settings; sales
+  targets → crm_dashboard_settings; actions in `app/(admin)/admin/actions.ts`),
+  Directory (role select/active toggle/requested-role hints + invites,
+  reusing team actions), Customization (custom columns rename/delete),
+  Security (crm_audit_log viewer w/ entity filter), Usage stats (live row
+  counts + 7-day board opens from crm_board_visits).
+- **WORKSPACE HOME CLEANED (2026-07-21)**: Permissions tab, Feedback/Agents
+  header buttons, Collaborators "Agents" empty-state, AI-summary column,
+  cleanup-mode toggle, AI-credits note, inert Filters button and Folder
+  column REMOVED (Monday-only chrome — don't re-add). Members button now
+  switches to the Collaborators tab.
 - **NEXT / REMAINING**:
   1. Supabase Site URL change (user, dashboard) — only open localhost risk.
   2. Payment-plan template UI + schedules, commission-splits UI.
