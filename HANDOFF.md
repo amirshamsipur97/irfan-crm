@@ -160,6 +160,22 @@
   RESEND_API_KEY=...` (optionally EMAIL_FORCE_FROM for pre-verification
   testing). Until then sends return a clear 503 and log status=failed.
   Alternative provider: Zoho's ZeptoMail (same architecture, swap the fetch).
+- **NOTIFICATIONS CENTER v2 + DIRECT MESSAGES (2026-07-22, migration
+  `crm_notification_levels_messages`)**: bell panel is Monday-style — tabs
+  All/Messages/Assigned-to-me, search, Unread-only toggle, Today/Yesterday
+  day sections, board chip (derived from link in NotificationsBell
+  boardChip()), `level` column (info|notice|critical; reservation expiry/
+  cancel + role changes = ⚠ Notice). Agent→agent messages via
+  `crm_send_message(p_to, p_text)` RPC (security definer, active-member
+  checks, 2000-char cap, delivered as type 'message'); New-message composer
+  lives in the panel (lazy member fetch). crm_notify now takes p_level (8th
+  arg, default 'info').
+- **EMAIL SENDER IDENTITY (2026-07-22)**: `crm_users.sender_email` = work
+  address CRM emails are sent AS (edit per member in /admin Directory).
+  Edge fn crm-send-email v2 order: FORCE_FROM → sender_email → login email
+  if on EMAIL_SENDING_DOMAIN (default irfaninvest.com) → EMAIL_DEFAULT_FROM
+  secret → clear error. Reply-To = sender_email ?? login email. Gmail-login
+  members (amirali/koroosh) NEED sender_email set before they can send.
 - **NEXT / REMAINING**:
   1. Supabase Site URL change (user, dashboard) — only open localhost risk.
   3. 2 extra Sales Dashboard sections (user will send screenshots).
