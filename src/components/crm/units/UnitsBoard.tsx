@@ -30,6 +30,7 @@ import {
   updateUnit,
 } from "@/app/(app)/crm/units/actions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
+import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 
 export function UnitsBoard({
   profile,
@@ -62,7 +63,16 @@ export function UnitsBoard({
     profile,
     onToast: (message, tone) => setToast({ message, tone }),
   });
-  const sortedRows = [...localUnits].sort(byPosition);
+  const qf = useQuickFilters();
+
+  const filterDims: QuickFilterDim<CrmUnit>[] = [
+    { key: "group", label: "Group", get: (r) => r.group_id, format: (v) => localGroups.find((g) => g.id === v)?.name ?? "—", color: (v) => localGroups.find((g) => g.id === v)?.color },
+    { key: "development", label: "Development", get: (r) => r.development_name },
+    { key: "status", label: "Status", get: (r) => r.status },
+    { key: "type", label: "Type", get: (r) => r.unit_type },
+    { key: "bedrooms", label: "Bedrooms", get: (r) => (r.bedrooms == null ? null : String(r.bedrooms)) },
+  ];
+  const sortedRows = applyQuickFilters([...localUnits].sort(byPosition), filterDims, qf.state);
 
   const developmentOptions: PickerOption[] = developments.map((d) => ({
     name: d.name,
@@ -176,6 +186,7 @@ export function UnitsBoard({
       <div ref={rootRef} className="flex h-full flex-col">
         <div className="board-anim">
           <BoardHeader
+            quickFilters={{ dims: filterDims, rows: localUnits, state: qf.state, onToggle: qf.toggle, onClear: qf.clear, visible: sortedRows.length, noun: "units" }}
             profile={profile}
             title="Units"
             tabs={["Main table"]}

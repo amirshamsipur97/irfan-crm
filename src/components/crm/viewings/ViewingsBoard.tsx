@@ -31,6 +31,7 @@ import {
   updateViewing,
 } from "@/app/(app)/crm/viewings/actions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
+import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 
 export function ViewingsBoard({
   profile,
@@ -65,7 +66,15 @@ export function ViewingsBoard({
     profile,
     onToast: (message, tone) => setToast({ message, tone }),
   });
-  const sortedRows = [...localViewings].sort(byPosition);
+  const qf = useQuickFilters();
+
+  const filterDims: QuickFilterDim<CrmViewing>[] = [
+    { key: "group", label: "Group", get: (r) => r.group_id, format: (v) => localGroups.find((g) => g.id === v)?.name ?? "—", color: (v) => localGroups.find((g) => g.id === v)?.color },
+    { key: "status", label: "Status", get: (r) => r.status },
+    { key: "contact", label: "Contact", get: (r) => r.contact_name },
+    { key: "unit", label: "Unit", get: (r) => r.unit_name },
+  ];
+  const sortedRows = applyQuickFilters([...localViewings].sort(byPosition), filterDims, qf.state);
   const [contactOptions, setContactOptions] = useState<PickerOption[]>(
     contacts.map((c) => ({ name: c.name, sub: c.account_name }))
   );
@@ -189,6 +198,7 @@ export function ViewingsBoard({
       <div ref={rootRef} className="flex h-full flex-col">
         <div className="board-anim">
           <BoardHeader
+            quickFilters={{ dims: filterDims, rows: localViewings, state: qf.state, onToggle: qf.toggle, onClear: qf.clear, visible: sortedRows.length, noun: "viewings" }}
             profile={profile}
             title="Viewings"
             tabs={["Main table"]}

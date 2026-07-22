@@ -36,6 +36,7 @@ import {
   updateDevelopment,
 } from "@/app/(app)/crm/developments/actions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
+import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 
 export function DevelopmentsBoard({
   profile,
@@ -70,7 +71,16 @@ export function DevelopmentsBoard({
     profile,
     onToast: (message, tone) => setToast({ message, tone }),
   });
-  const sortedRows = [...localDevelopments].sort(byPosition);
+  const qf = useQuickFilters();
+
+  const filterDims: QuickFilterDim<CrmDevelopment>[] = [
+    { key: "group", label: "Group", get: (r) => r.group_id, format: (v) => localGroups.find((g) => g.id === v)?.name ?? "—", color: (v) => localGroups.find((g) => g.id === v)?.color },
+    { key: "owner", label: "Owner", get: (r) => r.owner_id, format: (v) => users.find((u) => u.id === v)?.full_name ?? "—" },
+    { key: "developer", label: "Developer", get: (r) => r.developer_name },
+    { key: "status", label: "Status", get: (r) => r.status },
+    { key: "location", label: "Location", get: (r) => r.location },
+  ];
+  const sortedRows = applyQuickFilters([...localDevelopments].sort(byPosition), filterDims, qf.state);
   const [developerOptions, setDeveloperOptions] = useState<PickerOption[]>(
     accounts.map((a) => ({ name: a.name, sub: a.domain }))
   );
@@ -185,6 +195,7 @@ export function DevelopmentsBoard({
       <div ref={rootRef} className="flex h-full flex-col">
         <div className="board-anim">
           <BoardHeader
+            quickFilters={{ dims: filterDims, rows: localDevelopments, state: qf.state, onToggle: qf.toggle, onClear: qf.clear, visible: sortedRows.length, noun: "developments" }}
             profile={profile}
             title="Developments"
             tabs={["Main table"]}

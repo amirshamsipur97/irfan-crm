@@ -36,6 +36,7 @@ import {
   renameCustomColumn,
 } from "@/app/(app)/crm/custom-columns-actions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
+import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 
 const VIEWS = ["Main table", "Sales report", "Pipeline"];
 
@@ -206,7 +207,16 @@ export function DealsBoard({
         (d.account_name ?? "").toLowerCase().includes(q)) &&
       (!personFilter || d.owner_id === personFilter)
   );
-  const sortedRows = [...visibleDeals].sort(byPosition);
+  const qf = useQuickFilters();
+
+  const filterDims: QuickFilterDim<CrmDeal>[] = [
+    { key: "group", label: "Group", get: (r) => r.group_id, format: (v) => localGroups.find((g) => g.id === v)?.name ?? "—", color: (v) => localGroups.find((g) => g.id === v)?.color },
+    { key: "stage", label: "Stage", get: (r) => r.stage_id, format: (v) => stages.find((s) => s.id === v)?.name ?? "—", color: (v) => stages.find((s) => s.id === v)?.color },
+    { key: "owner", label: "Owner", get: (r) => r.owner_id, format: (v) => users.find((u) => u.id === v)?.full_name ?? "—" },
+    { key: "contact", label: "Contact", get: (r) => r.contact_name },
+    { key: "account", label: "Account", get: (r) => r.account_name },
+  ];
+  const sortedRows = applyQuickFilters([...visibleDeals].sort(byPosition), filterDims, qf.state);
 
 
   const handleAddDeal = async (groupId: string, name: string) => {
@@ -253,6 +263,7 @@ export function DealsBoard({
       <div ref={rootRef} className="flex h-full flex-col">
         <div className="board-anim">
           <BoardHeader
+            quickFilters={{ dims: filterDims, rows: localDeals, state: qf.state, onToggle: qf.toggle, onClear: qf.clear, visible: sortedRows.length, noun: "deals" }}
             profile={profile}
             title="Deals"
             tabs={VIEWS}

@@ -30,6 +30,7 @@ import type { LogPayload } from "@/components/crm/deals/activity-log";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
+import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 
 export function AccountsBoard({
   profile,
@@ -84,7 +85,15 @@ export function AccountsBoard({
     profile,
     onToast: (message, tone) => setToast({ message, tone }),
   });
-  const sortedRows = [...localAccounts].sort(byPosition);
+  const qf = useQuickFilters();
+
+  const filterDims: QuickFilterDim<CrmAccount>[] = [
+    { key: "group", label: "Group", get: (r) => r.group_id, format: (v) => localGroups.find((g) => g.id === v)?.name ?? "—", color: (v) => localGroups.find((g) => g.id === v)?.color },
+    { key: "industry", label: "Industry", get: (r) => r.industries },
+    { key: "employees", label: "Employees", get: (r) => r.employees_range },
+    { key: "location", label: "HQ location", get: (r) => r.hq_location },
+  ];
+  const sortedRows = applyQuickFilters([...localAccounts].sort(byPosition), filterDims, qf.state);
 
   const patchAccount = (accountId: string, patch: Partial<CrmAccount>, silent = false) => {
     const prevRow = localAccounts.find((x) => x.id === accountId);
@@ -172,6 +181,7 @@ export function AccountsBoard({
       <div ref={rootRef} className="flex h-full flex-col">
         <div className="board-anim">
           <BoardHeader
+            quickFilters={{ dims: filterDims, rows: localAccounts, state: qf.state, onToggle: qf.toggle, onClear: qf.clear, visible: sortedRows.length, noun: "accounts" }}
             profile={profile}
             title="Accounts"
             tabs={["Main View", "Main table"]}

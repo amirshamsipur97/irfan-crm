@@ -27,6 +27,7 @@ import {
   updateProject,
 } from "@/app/(app)/crm/projects/actions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
+import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 
 export function ProjectsBoard({
   profile,
@@ -58,7 +59,16 @@ export function ProjectsBoard({
     profile,
     onToast: (message, tone) => setToast({ message, tone }),
   });
-  const sortedRows = [...localProjects].sort(byPosition);
+  const qf = useQuickFilters();
+
+  const filterDims: QuickFilterDim<CrmProject>[] = [
+    { key: "group", label: "Group", get: (r) => r.group_id, format: (v) => localGroups.find((g) => g.id === v)?.name ?? "—", color: (v) => localGroups.find((g) => g.id === v)?.color },
+    { key: "owner", label: "Owner", get: (r) => r.owner_id, format: (v) => users.find((u) => u.id === v)?.full_name ?? "—" },
+    { key: "status", label: "Status", get: (r) => r.status },
+    { key: "priority", label: "Priority", get: (r) => r.priority },
+    { key: "account", label: "Account", get: (r) => r.account_name },
+  ];
+  const sortedRows = applyQuickFilters([...localProjects].sort(byPosition), filterDims, qf.state);
   const [localColumns, setLocalColumns] = useState(customColumns);
   useEffect(() => setLocalColumns(customColumns), [customColumns]);
   useEffect(() => setLocalProjects(projects), [projects]);
@@ -149,6 +159,7 @@ export function ProjectsBoard({
       <div ref={rootRef} className="flex h-full flex-col">
         <div className="board-anim">
           <BoardHeader
+            quickFilters={{ dims: filterDims, rows: localProjects, state: qf.state, onToggle: qf.toggle, onClear: qf.clear, visible: sortedRows.length, noun: "projects" }}
             profile={profile}
             title="Client Projects"
             tabs={["Main table"]}

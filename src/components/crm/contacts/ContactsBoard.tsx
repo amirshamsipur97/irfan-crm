@@ -33,6 +33,7 @@ import {
   renameCustomColumn,
 } from "@/app/(app)/crm/custom-columns-actions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
+import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 
 export function ContactsBoard({
   profile,
@@ -116,7 +117,16 @@ export function ContactsBoard({
     onToast: (message, tone) => setToast({ message, tone }),
     onOpen: setOpenContactId,
   });
-  const sortedRows = [...localContacts].sort(byPosition);
+  const qf = useQuickFilters();
+
+  const filterDims: QuickFilterDim<CrmContact>[] = [
+    { key: "group", label: "Group", get: (r) => r.group_id, format: (v) => localGroups.find((g) => g.id === v)?.name ?? "—", color: (v) => localGroups.find((g) => g.id === v)?.color },
+    { key: "type", label: "Type", get: (r) => r.contact_type },
+    { key: "priority", label: "Priority", get: (r) => r.priority },
+    { key: "account", label: "Account", get: (r) => r.account_name },
+    { key: "title", label: "Title", get: (r) => r.title },
+  ];
+  const sortedRows = applyQuickFilters([...localContacts].sort(byPosition), filterDims, qf.state);
   const [accountOptions, setAccountOptions] = useState<PickerOption[]>(
     accounts.map((a) => ({ name: a.name, sub: a.domain }))
   );
@@ -200,6 +210,7 @@ export function ContactsBoard({
       <div ref={rootRef} className="flex h-full flex-col">
         <div className="board-anim">
           <BoardHeader
+            quickFilters={{ dims: filterDims, rows: localContacts, state: qf.state, onToggle: qf.toggle, onClear: qf.clear, visible: sortedRows.length, noun: "contacts" }}
             profile={profile}
             title="Contacts"
             tabs={["Main table"]}

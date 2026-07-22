@@ -36,6 +36,7 @@ import { SuccessToast } from "@/components/ui/SuccessToast";
 import { findDuplicateContact } from "@/app/(app)/crm/contacts/actions";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
+import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 
 export function LeadsBoard({
   profile,
@@ -207,7 +208,16 @@ export function LeadsBoard({
         (l.email ?? "").toLowerCase().includes(q)) &&
       (!personFilter || l.owner_id === personFilter)
   );
-  const sortedRows = [...visibleLeads].sort(byPosition);
+  const qf = useQuickFilters();
+
+  const filterDims: QuickFilterDim<CrmLead>[] = [
+    { key: "group", label: "Group", get: (r) => r.group_id, format: (v) => localGroups.find((g) => g.id === v)?.name ?? "—", color: (v) => localGroups.find((g) => g.id === v)?.color },
+    { key: "stage", label: "Status", get: (r) => r.stage_id, format: (v) => stages.find((s) => s.id === v)?.name ?? "—", color: (v) => stages.find((s) => s.id === v)?.color },
+    { key: "owner", label: "Owner", get: (r) => r.owner_id, format: (v) => users.find((u) => u.id === v)?.full_name ?? "—" },
+    { key: "source", label: "Source", get: (r) => r.source },
+    { key: "priority", label: "Priority", get: (r) => r.priority },
+  ];
+  const sortedRows = applyQuickFilters([...visibleLeads].sort(byPosition), filterDims, qf.state);
 
 
   const handleAddColumn = async (type: CustomColumnType) => {
@@ -242,6 +252,7 @@ export function LeadsBoard({
       <div ref={rootRef} className="flex h-full flex-col">
         <div className="board-anim">
           <BoardHeader
+            quickFilters={{ dims: filterDims, rows: localLeads, state: qf.state, onToggle: qf.toggle, onClear: qf.clear, visible: sortedRows.length, noun: "leads" }}
             profile={profile}
             title="Leads"
             tabs={["Main table", "Lead submission form"]}

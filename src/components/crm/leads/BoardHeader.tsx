@@ -6,6 +6,11 @@ import { IconButton } from "@/components/ui/IconButton";
 import { Avatar } from "@/components/ui/Avatar";
 import { ICONS } from "@/lib/figma-icons";
 import type { CrmUser } from "@/lib/types";
+import {
+  countActiveFilters,
+  QuickFiltersPanel,
+  type QuickFiltersProp,
+} from "@/components/crm/quick-filters";
 
 export type ItemHeight = "single" | "double" | "triple";
 
@@ -209,6 +214,7 @@ export function BoardHeader({
   users,
   personFilter,
   onPersonFilter,
+  quickFilters,
 }: {
   profile: CrmUser;
   title: string;
@@ -229,10 +235,14 @@ export function BoardHeader({
   users?: CrmUser[];
   personFilter?: string | null;
   onPersonFilter?: (ownerId: string | null) => void;
+  /** when provided, the Filter button opens the Monday-style quick-filters panel */
+  quickFilters?: QuickFiltersProp;
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [personOpen, setPersonOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const personRef = useRef<HTMLSpanElement>(null);
+  const filterRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (!personOpen) return;
@@ -243,7 +253,21 @@ export function BoardHeader({
     return () => document.removeEventListener("mousedown", handler);
   }, [personOpen]);
 
+  const filterPanelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!filterOpen) return;
+    const handler = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (!filterRef.current?.contains(t) && !filterPanelRef.current?.contains(t))
+        setFilterOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [filterOpen]);
+
   const activePerson = users?.find((u) => u.id === personFilter);
+  const activeFilterCount = quickFilters ? countActiveFilters(quickFilters.state) : 0;
 
   return (
     <div className="shrink-0 border-b border-transparent bg-white pl-[38px] pr-[30px] pt-[18px]">
@@ -333,7 +357,7 @@ export function BoardHeader({
       </div>
 
       {/* row 3 — board toolbar */}
-      <div className="flex items-center justify-between py-[16px]">
+      <div className="relative flex items-center justify-between py-[16px]">
         <div className="flex items-center">
           <span className="flex items-center pr-[14px]">
             <button
@@ -454,17 +478,40 @@ export function BoardHeader({
               </div>
             )}
           </span>
-          <span className="pr-[6px]">
+          <span ref={filterRef} className="relative pr-[6px]">
             <button
               type="button"
-              className="flex h-[32px] items-center overflow-hidden rounded-[4px] transition-colors hover:bg-[var(--hover-ghost)]"
+              onClick={quickFilters ? () => setFilterOpen((v) => !v) : undefined}
+              className={`flex h-[32px] items-center overflow-hidden rounded-[4px] transition-colors ${
+                filterOpen || activeFilterCount > 0
+                  ? "bg-[var(--active-nav)]"
+                  : "hover:bg-[var(--hover-ghost)]"
+              }`}
             >
               <Icon name="bhFilter" size={20} className="w-[32px]" />
-              <span className="font-sans text-[14px] leading-[21px] text-ink">Filter</span>
-              <span className="ml-[6px] flex h-full items-center border-l border-white pl-px pr-[4px]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={ICONS.bhFilterCaret} alt="" width={9} height={12} />
+              <span className="font-sans text-[14px] leading-[21px] text-ink">
+                Filter
+                {activeFilterCount > 0 ? ` / ${activeFilterCount}` : ""}
               </span>
+              {activeFilterCount > 0 ? (
+                <span
+                  role="button"
+                  aria-label="Clear filters"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    quickFilters?.onClear();
+                    setFilterOpen(false);
+                  }}
+                  className="flex h-full items-center px-[6px] font-sans text-[13px] text-ink-muted hover:text-ink"
+                >
+                  ✕
+                </span>
+              ) : (
+                <span className="ml-[6px] flex h-full items-center border-l border-white pl-px pr-[4px]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={ICONS.bhFilterCaret} alt="" width={9} height={12} />
+                </span>
+              )}
             </button>
           </span>
           <span className="pr-[6px]">
@@ -497,6 +544,11 @@ export function BoardHeader({
         >
           <Icon name="bhCollapse" size={16} />
         </button>
+        {filterOpen && quickFilters && (
+          <div ref={filterPanelRef}>
+            <QuickFiltersPanel {...quickFilters} />
+          </div>
+        )}
       </div>
     </div>
   );
