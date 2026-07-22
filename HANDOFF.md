@@ -147,6 +147,19 @@
   overflowed the viewport); outside-click close knows about the panel ref.
   Each board declares its own QuickFilterDim list and applies filters at its
   `sortedRows` single point, composing with toolbar Search and Person.
+- **EMAIL INFRASTRUCTURE (2026-07-22)**: /crm/emails (sidebar item) = send
+  log + composer; Send email buttons in contact/lead drawers; Accounts board
+  gained an Email column (migration `crm_emails` also added
+  crm_accounts.email/email_label). Edge function `crm-send-email` (deployed):
+  JWT + active-membership check, validation, Resend API, From = agent's
+  address / Reply-To agent (replies land in Zoho), logs to `crm_emails`
+  (team-read RLS, service-role writes only). ⚠️ NOT LIVE until the user:
+  (1) creates a Resend account, verifies domain irfaninvest.com (add
+  Resend's DKIM + SPF-include DNS records — coexists with Zoho MX/SPF, Zoho
+  keeps receiving), (2) we set secrets: `supabase secrets set
+  RESEND_API_KEY=...` (optionally EMAIL_FORCE_FROM for pre-verification
+  testing). Until then sends return a clear 503 and log status=failed.
+  Alternative provider: Zoho's ZeptoMail (same architecture, swap the fetch).
 - **NEXT / REMAINING**:
   1. Supabase Site URL change (user, dashboard) — only open localhost risk.
   3. 2 extra Sales Dashboard sections (user will send screenshots).
