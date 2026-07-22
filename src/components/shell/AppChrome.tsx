@@ -20,7 +20,7 @@ export function AppChrome({
     <div className="flex h-screen flex-col overflow-hidden bg-canvas">
       <TopBar profile={profile} />
       <div className="flex min-h-0 flex-1">
-        <IconRail />
+        <IconRail role={profile.role} />
         <div className="relative flex min-w-0 flex-1">{children}</div>
       </div>
     </div>

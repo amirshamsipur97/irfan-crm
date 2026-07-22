@@ -10,7 +10,6 @@ import { LinkSpinner } from "@/components/ui/LinkSpinner";
 import { IconButton } from "@/components/ui/IconButton";
 import type { IconName } from "@/lib/figma-icons";
 import { canAnimate } from "@/lib/motion";
-import { canViewFinance, isFullAccess } from "@/lib/permissions";
 import type { CrmRole } from "@/lib/types";
 
 export const WORKSPACE_NAV: { label: string; icon: IconName; href: string }[] = [
@@ -25,20 +24,13 @@ export const WORKSPACE_NAV: { label: string; icon: IconName; href: string }[] = 
   { label: "Viewings", icon: "navActivities", href: "/crm/viewings" },
   { label: "Activities", icon: "navActivities", href: "/crm/activities" },
   { label: "Sales Dashboard", icon: "navDashboard", href: "/crm/dashboard" },
-  { label: "Emails", icon: "navActivities", href: "/crm/emails" },
 ];
 
-/** Finance is listed for the finance tier; Team for the full tier. */
-const FINANCE_NAV = { label: "Finance", icon: "navDashboard" as IconName, href: "/crm/finance" };
-const TEAM_NAV = { label: "Team", icon: "navContacts" as IconName, href: "/crm/team" };
-
-export function WorkspaceSidebar({ role }: { role?: CrmRole }) {
+// Emails / Finance / Team moved to the left icon rail (IconRail) so the
+// workspace sidebar stays a pure board list.
+export function WorkspaceSidebar({ role: _role }: { role?: CrmRole }) {
   const pathname = usePathname();
-  const nav = [
-    ...WORKSPACE_NAV,
-    ...(role && canViewFinance(role) ? [FINANCE_NAV] : []),
-    ...(role && isFullAccess(role) ? [TEAM_NAV] : []),
-  ];
+  const nav = WORKSPACE_NAV;
   const rootRef = useRef<HTMLElement>(null);
   useGSAP(
     () => {
