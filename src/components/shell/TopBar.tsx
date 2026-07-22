@@ -102,7 +102,7 @@ export function TopBar({ profile }: { profile: CrmUser }) {
 
       {/* right: tools cluster */}
       <div className="flex items-center">
-        <NotificationsBell />
+        <NotificationsBell profile={profile} />
         <span className="w-[4px]" />
         <TopIconButton label="Inbox" icon={<Icon name="inbox" size={20} />} />
         <span className="w-[4px]" />

@@ -23,6 +23,20 @@ export async function updateRegistrationSettings(allowedDomains: string[], maxAg
   return { domains };
 }
 
+/** Work address a member's CRM emails are sent from (e.g. name@irfaninvest.com). */
+export async function updateMemberSender(userId: string, senderEmail: string) {
+  const clean = senderEmail.trim().toLowerCase();
+  if (clean && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(clean)) return { error: "invalid email" };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("crm_users")
+    .update({ sender_email: clean || null })
+    .eq("id", userId);
+  if (error) return { error: error.message };
+  revalidatePath(PAGE);
+  return {};
+}
+
 /** Workspace currency (OMR | USD) — updates settings + column defaults via RPC. */
 export async function setDefaultCurrency(currency: "OMR" | "USD") {
   const supabase = await createClient();

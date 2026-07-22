@@ -19,6 +19,7 @@ export interface CrmUser {
   avatar_url: string | null;
   phone: string | null;
   title: string | null;
+  sender_email: string | null;
   role: CrmRole;
   requested_role: "agent" | "media" | "manager" | "finance" | null;
   is_active: boolean;
@@ -513,7 +514,8 @@ export type NotificationType =
   | "stage"
   | "reservation"
   | "offer"
-  | "role";
+  | "role"
+  | "message";
 
 export interface CrmNotification {
   id: string;
@@ -526,6 +528,7 @@ export interface CrmNotification {
   link: string | null;
   entity_table: string | null;
   entity_id: string | null;
+  level: "info" | "notice" | "critical";
   read_at: string | null;
   created_at: string;
 }

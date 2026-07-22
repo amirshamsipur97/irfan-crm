@@ -19,6 +19,7 @@ import {
 import {
   setDashboardTargets,
   setDefaultCurrency,
+  updateMemberSender,
   updateRegistrationSettings,
 } from "@/app/(admin)/admin/actions";
 
@@ -401,6 +402,25 @@ export function AdminView({
                           </span>
                         )}
                       </span>
+                      <input
+                        defaultValue={m.sender_email ?? ""}
+                        placeholder="sends email as… e.g. name@irfaninvest.com"
+                        onBlur={async (e) => {
+                          const value = e.target.value.trim().toLowerCase();
+                          if (value === (m.sender_email ?? "")) return;
+                          const result = await updateMemberSender(m.id, value);
+                          if (result.error) say(`⚠ ${result.error}`);
+                          else {
+                            setLocalMembers((prev) =>
+                              prev.map((x) =>
+                                x.id === m.id ? { ...x, sender_email: value || null } : x
+                              )
+                            );
+                            say(`${m.full_name || m.email} now sends as ${value || m.email}`);
+                          }
+                        }}
+                        className="mt-[4px] h-[26px] w-[260px] rounded-[4px] border border-white/15 bg-white/[0.05] px-[8px] font-sans text-[12px] text-white outline-none placeholder:text-[#6b7095] focus:border-[#579bfc]"
+                      />
                     </span>
                     <select
                       value={m.role}
