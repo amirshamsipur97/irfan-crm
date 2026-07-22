@@ -107,6 +107,7 @@ export default async function CrmWorkspacePage() {
   return (
     <WorkspaceHome
       data={{
+        currentUserId: profile.id,
         fullName: profile.full_name || profile.email,
         avatarUrl: profile.avatar_url,
         createdLabel,

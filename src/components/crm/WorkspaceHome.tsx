@@ -14,6 +14,8 @@ import { type IconName } from "@/lib/figma-icons";
 import { canAnimate } from "@/lib/motion";
 import { isFullAccess, ROLE_LABELS } from "@/lib/permissions";
 import { toggleBoardFavorite } from "@/app/(app)/crm/actions";
+import { MessageDialog } from "@/components/crm/message-dialog";
+import { SuccessToast } from "@/components/ui/SuccessToast";
 
 export interface WorkspaceBoardRow {
   key: string;
@@ -33,6 +35,7 @@ export interface WorkspaceUserRow {
 }
 
 export interface WorkspaceHomeData {
+  currentUserId: string;
   fullName: string;
   avatarUrl: string | null;
   createdLabel: string;
@@ -82,6 +85,8 @@ export function WorkspaceHome({ data }: { data: WorkspaceHomeData }) {
   const [favorites, setFavorites] = useState<Set<string>>(new Set(data.favorites));
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [msgTarget, setMsgTarget] = useState<WorkspaceUserRow | null>(null);
+  const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert" } | null>(null);
 
   useGSAP(
     () => {
@@ -427,6 +432,15 @@ export function WorkspaceHome({ data }: { data: WorkspaceHomeData }) {
                     <span className="font-sans text-[14px] leading-[20px] text-ink">
                       {ROLE_LABELS[user.role]}
                     </span>
+                    {user.id !== data.currentUserId && (
+                      <button
+                        type="button"
+                        onClick={() => setMsgTarget(user)}
+                        className="ml-auto rounded-[4px] border border-line-strong px-[10px] py-[3px] font-sans text-[12px] text-ink transition-colors hover:bg-[var(--hover-ghost)]"
+                      >
+                        Message
+                      </button>
+                    )}
                   </span>
                 </div>
               ))}
@@ -437,6 +451,18 @@ export function WorkspaceHome({ data }: { data: WorkspaceHomeData }) {
           )}
         </div>
       </div>
+      {msgTarget && (
+        <MessageDialog
+          toId={msgTarget.id}
+          toName={msgTarget.name}
+          toAvatar={msgTarget.avatarUrl}
+          onClose={() => setMsgTarget(null)}
+          onDone={(message, tone) => setToast({ message, tone })}
+        />
+      )}
+      {toast && (
+        <SuccessToast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} />
+      )}
       <AiFloaty />
     </Surface>
   );
