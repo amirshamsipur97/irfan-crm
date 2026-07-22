@@ -3,11 +3,11 @@ import { getProfile } from "@/lib/profile";
 import { HomeView, type HomeData } from "@/components/home/HomeView";
 import type { CrmLead, CrmStage } from "@/lib/types";
 
-function compactMoney(value: number): string {
+function compactMoney(value: number, currency = "OMR"): string {
   return `${new Intl.NumberFormat("en", {
     notation: "compact",
     maximumFractionDigits: 1,
-  }).format(value)} OMR`;
+  }).format(value)} ${currency}`;
 }
 
 function greetingFor(hour: number): string {
@@ -23,7 +23,7 @@ export default async function HomePage() {
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
 
-  const [{ data: stages }, { data: leads }, { data: wonThisMonth }] = await Promise.all([
+  const [{ data: stages }, { data: leads }, { data: wonThisMonth }, { data: reg }] = await Promise.all([
     supabase.from("crm_stages").select("id, is_won, is_lost").returns<
       Pick<CrmStage, "id" | "is_won" | "is_lost">[]
     >(),
@@ -36,6 +36,10 @@ export default async function HomePage() {
       .from("crm_lead_stage_history")
       .select("lead_id, to_stage_id, changed_at")
       .gte("changed_at", monthStart.toISOString()),
+    supabase
+      .from("crm_registration_settings")
+      .select("default_currency")
+      .maybeSingle<{ default_currency: string }>(),
   ]);
 
   const wonStages = new Set((stages ?? []).filter((s) => s.is_won).map((s) => s.id));
@@ -67,9 +71,9 @@ export default async function HomePage() {
       year: "numeric",
     }),
     greeting: greetingFor(now.getHours()),
-    totalPipelineLabel: compactMoney(totalPipeline),
+    totalPipelineLabel: compactMoney(totalPipeline, reg?.default_currency ?? "OMR"),
     openDealsLabel: `${openLeads.length} open deal${openLeads.length === 1 ? "" : "s"}`,
-    closedWonLabel: compactMoney(closedWon),
+    closedWonLabel: compactMoney(closedWon, reg?.default_currency ?? "OMR"),
   };
 
   return <HomeView data={data} />;

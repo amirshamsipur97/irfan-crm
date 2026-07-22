@@ -15,7 +15,7 @@ const MONTH_LABEL = (d: Date) =>
 export default async function SalesDashboardPage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient(), recordBoardVisit("dashboard")]);
 
-  const [{ data: deals }, { data: stages }, { data: activities }, { data: users }, { data: settings }, { data: leads }, { data: viewings }] =
+  const [{ data: deals }, { data: stages }, { data: activities }, { data: users }, { data: settings }, { data: leads }, { data: viewings }, { data: reg }] =
     await Promise.all([
       supabase.from("crm_deals").select("*").returns<CrmDeal[]>(),
       supabase.from("crm_deal_stages").select("*").order("position").returns<CrmDealStage[]>(),
@@ -24,6 +24,10 @@ export default async function SalesDashboardPage() {
       supabase.from("crm_dashboard_settings").select("*").returns<{ key: string; value: number }[]>(),
       supabase.from("crm_leads").select("*").eq("is_archived", false).returns<CrmLead[]>(),
       supabase.from("crm_viewings").select("*").returns<CrmViewing[]>(),
+      supabase
+        .from("crm_registration_settings")
+        .select("default_currency")
+        .maybeSingle<{ default_currency: string }>(),
     ]);
 
   const allDeals = deals ?? [];
@@ -227,5 +231,5 @@ export default async function SalesDashboardPage() {
     activityEvents,
   };
 
-  return <SalesDashboard profile={profile} data={data} />;
+  return <SalesDashboard profile={profile} data={data} currency={reg?.default_currency ?? "OMR"} />;
 }

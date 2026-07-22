@@ -10,6 +10,7 @@ import type { CrmInvite, CrmUser } from "@/lib/types";
 interface RegistrationSettings {
   allowed_domains: string[];
   max_agents: number;
+  default_currency: "OMR" | "USD";
   updated_at: string;
 }
 
@@ -69,6 +70,7 @@ export default async function AdminPage() {
       registration={{
         allowedDomains: regSettings?.allowed_domains ?? [],
         maxAgents: regSettings?.max_agents ?? 20,
+        defaultCurrency: regSettings?.default_currency ?? "OMR",
       }}
       targets={Object.fromEntries((targets ?? []).map((t) => [t.key, Number(t.value)]))}
       members={members ?? []}

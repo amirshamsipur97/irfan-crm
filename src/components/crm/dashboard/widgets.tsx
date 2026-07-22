@@ -187,11 +187,11 @@ export function MonthlyTargetWidget({ actual, target }: { actual: number; target
 }
 
 /** Big single-number widget. */
-export function StatWidget({ value }: { value: number }) {
+export function StatWidget({ value, currency = "OMR" }: { value: number; currency?: string }) {
   return (
     <div className="flex flex-1 items-center justify-center py-[16px]">
       <p className="font-display text-[36px] font-light leading-[44px] tracking-[-0.5px] text-ink">
-        {money(Math.round(value))}
+        {money(Math.round(value), currency)}
       </p>
     </div>
   );
@@ -254,14 +254,18 @@ export function BarsWidget({
   bars,
   goal,
   yLabel,
-  format = (n) => money(Math.round(n)),
+  currency = "OMR",
+  format,
 }: {
   bars: { label: string; value: number; color?: string }[];
   goal?: number;
   yLabel?: string;
-  /** tick/value formatter — defaults to OMR money; pass plain counts for non-money bars */
+  /** workspace currency used by the default money formatter */
+  currency?: string;
+  /** tick/value formatter — defaults to workspace money; pass plain counts for non-money bars */
   format?: (n: number) => string;
 }) {
+  const fmt = format ?? ((n: number) => money(Math.round(n), currency));
   const max = Math.max(...bars.map((b) => b.value), goal ?? 0, 1);
   const niceMax = max * 1.15;
   const gridSteps = [0, 0.25, 0.5, 0.75, 1];
@@ -281,7 +285,7 @@ export function BarsWidget({
             style={{ bottom: `${24 + g * (100 - 34)}%` }}
           >
             <span className="w-[60px] shrink-0 text-right font-sans text-[12px] leading-[16px] text-ink-muted">
-              {format(niceMax * g)}
+              {fmt(niceMax * g)}
             </span>
             <span className="h-px flex-1 bg-line-soft" />
           </div>
@@ -300,7 +304,7 @@ export function BarsWidget({
           {bars.map((b) => (
             <div key={b.label} className="flex h-full w-full max-w-[180px] flex-col items-center justify-end">
               <span className="pb-[4px] font-sans text-[14px] font-semibold leading-[20px] text-ink">
-                {format(b.value)}
+                {fmt(b.value)}
               </span>
               <div
                 className="w-full rounded-t-[4px]"

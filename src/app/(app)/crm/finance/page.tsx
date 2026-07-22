@@ -48,6 +48,7 @@ export default async function FinancePage() {
     { data: deals },
     { data: plans },
     { data: upcoming },
+    { data: reg },
   ] = await Promise.all([
     supabase
       .from("crm_transactions")
@@ -70,6 +71,10 @@ export default async function FinancePage() {
       .order("due_date")
       .limit(10)
       .returns<CrmPaymentSchedule[]>(),
+    supabase
+      .from("crm_registration_settings")
+      .select("default_currency")
+      .maybeSingle<{ default_currency: string }>(),
   ]);
 
   const txs = transactions ?? [];
@@ -93,11 +98,12 @@ export default async function FinancePage() {
     0
   );
 
+  const workspaceCurrency = reg?.default_currency ?? "OMR";
   const kpis = [
-    { label: "Open transactions value", value: money(totalPipeline) },
-    { label: "Collected payments", value: money(totalCollected) },
-    { label: "Commission expected", value: money(commissionExpected) },
-    { label: "Commission received", value: money(commissionReceived) },
+    { label: "Open transactions value", value: money(totalPipeline, workspaceCurrency) },
+    { label: "Collected payments", value: money(totalCollected, workspaceCurrency) },
+    { label: "Commission expected", value: money(commissionExpected, workspaceCurrency) },
+    { label: "Commission received", value: money(commissionReceived, workspaceCurrency) },
   ];
 
   return (

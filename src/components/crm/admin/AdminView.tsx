@@ -16,7 +16,11 @@ import {
   deleteCustomColumn,
   renameCustomColumn,
 } from "@/app/(app)/crm/custom-columns-actions";
-import { setDashboardTargets, updateRegistrationSettings } from "@/app/(admin)/admin/actions";
+import {
+  setDashboardTargets,
+  setDefaultCurrency,
+  updateRegistrationSettings,
+} from "@/app/(admin)/admin/actions";
 
 export interface AdminAuditRow {
   id: number;
@@ -112,7 +116,7 @@ export function AdminView({
   boardStats,
 }: {
   profile: CrmUser;
-  registration: { allowedDomains: string[]; maxAgents: number };
+  registration: { allowedDomains: string[]; maxAgents: number; defaultCurrency: "OMR" | "USD" };
   targets: Record<string, number>;
   members: CrmUser[];
   invites: CrmInvite[];
@@ -132,6 +136,7 @@ export function AdminView({
   const [domains, setDomains] = useState(registration.allowedDomains);
   const [domainDraft, setDomainDraft] = useState("");
   const [maxAgents, setMaxAgents] = useState(String(registration.maxAgents));
+  const [currency, setCurrency] = useState<"OMR" | "USD">(registration.defaultCurrency);
   const [annual, setAnnual] = useState(String(targets.annual_target ?? 0));
   const [monthly, setMonthly] = useState(String(targets.monthly_target ?? 0));
   const [forecast, setForecast] = useState(String(targets.forecast_goal ?? 0));
@@ -288,13 +293,50 @@ export function AdminView({
                 </div>
               </Panel>
 
+              <Panel title="Currency">
+                <p className="m-0 pb-[10px] font-sans text-[13px] text-[#9ba0c0]">
+                  Default currency for new leads, deals, units, transactions and payments.
+                  Existing rows keep the currency they were entered with.
+                </p>
+                <div className="flex gap-[8px]">
+                  {(
+                    [
+                      { key: "OMR", label: "OMR — Omani Rial" },
+                      { key: "USD", label: "USD — US Dollar" },
+                    ] as const
+                  ).map((c) => (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onClick={async () => {
+                        if (c.key === currency) return;
+                        const prev = currency;
+                        setCurrency(c.key);
+                        const result = await setDefaultCurrency(c.key);
+                        if (result.error) {
+                          setCurrency(prev);
+                          say(`⚠ ${result.error}`);
+                        } else say(`Default currency is now ${c.key}`);
+                      }}
+                      className={`h-[36px] rounded-[4px] border px-[16px] font-sans text-[13px] transition-colors ${
+                        currency === c.key
+                          ? "border-[#579bfc] bg-[#579bfc]/20 text-[#8ab4ff]"
+                          : "border-white/20 text-[#c3c6d4] hover:bg-white/[0.06]"
+                      }`}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </Panel>
+
               <Panel title="Sales targets">
                 <div className="flex flex-wrap items-end gap-[16px]">
                   {(
                     [
-                      ["Annual target (OMR)", annual, setAnnual],
-                      ["Monthly target (OMR)", monthly, setMonthly],
-                      ["Forecast goal (OMR)", forecast, setForecast],
+                      [`Annual target (${currency})`, annual, setAnnual],
+                      [`Monthly target (${currency})`, monthly, setMonthly],
+                      [`Forecast goal (${currency})`, forecast, setForecast],
                     ] as const
                   ).map(([label, value, set]) => (
                     <label key={label} className="flex flex-col gap-[4px]">

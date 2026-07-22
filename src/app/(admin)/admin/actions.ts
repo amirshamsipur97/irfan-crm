@@ -23,6 +23,20 @@ export async function updateRegistrationSettings(allowedDomains: string[], maxAg
   return { domains };
 }
 
+/** Workspace currency (OMR | USD) — updates settings + column defaults via RPC. */
+export async function setDefaultCurrency(currency: "OMR" | "USD") {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("crm_set_default_currency", {
+    p_currency: currency,
+  });
+  if (error) return { error: error.message };
+  const result = (data ?? {}) as { error?: string; currency?: string };
+  if (result.error) return { error: result.error };
+  revalidatePath(PAGE);
+  revalidatePath("/crm");
+  return { currency: result.currency };
+}
+
 /** Sales Dashboard targets (annual_target / monthly_target / forecast_goal). */
 export async function setDashboardTargets(targets: Record<string, number>) {
   const ALLOWED = ["annual_target", "monthly_target", "forecast_goal"];

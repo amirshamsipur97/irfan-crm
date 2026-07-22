@@ -65,9 +65,11 @@ function HeaderButton({ children }: { children: React.ReactNode }) {
 export function SalesDashboard({
   profile,
   data,
+  currency = "OMR",
 }: {
   profile: CrmUser;
   data: DashboardData;
+  currency?: string;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -216,10 +218,10 @@ export function SalesDashboard({
           </Widget>
           <div className="col-span-3 flex flex-col gap-[16px]">
             <Widget title="Average Deal Value" className="flex-1">
-              <StatWidget value={data.avgDealValue} />
+              <StatWidget value={data.avgDealValue} currency={currency} />
             </Widget>
             <Widget title="Active deals - Forecast" className="flex-1">
-              <StatWidget value={data.activeForecast} />
+              <StatWidget value={data.activeForecast} currency={currency} />
             </Widget>
           </div>
 
@@ -232,7 +234,7 @@ export function SalesDashboard({
           </Widget>
           <Widget title="Actual Revenue by Month (Deals won)" className="col-span-6 min-h-[320px]">
             {data.revenueByMonth.length > 0 ? (
-              <BarsWidget bars={data.revenueByMonth} yLabel="Deal Value" />
+              <BarsWidget bars={data.revenueByMonth} yLabel="Deal Value" currency={currency} />
             ) : (
               <p className="py-[48px] text-center font-sans text-[14px] text-ink-muted">No won deals yet</p>
             )}
@@ -248,7 +250,7 @@ export function SalesDashboard({
 
           <Widget title="Forecasted Revenue by month" className="col-span-6 min-h-[320px]">
             {data.forecastByMonth.length > 0 ? (
-              <BarsWidget bars={data.forecastByMonth} goal={data.forecastGoal} yLabel="Forecast Value" />
+              <BarsWidget bars={data.forecastByMonth} goal={data.forecastGoal} yLabel="Forecast Value" currency={currency} />
             ) : (
               <p className="py-[48px] text-center font-sans text-[14px] text-ink-muted">No active deals yet</p>
             )}
@@ -258,6 +260,7 @@ export function SalesDashboard({
               <BarsWidget
                 bars={data.forecastByStage.map((s) => ({ label: s.label, value: s.value, color: s.color === "#579bfc" ? "#579bfc" : "#66ccff" }))}
                 yLabel="Forecast Value"
+                currency={currency}
               />
             ) : (
               <p className="py-[48px] text-center font-sans text-[14px] text-ink-muted">No active deals yet</p>
