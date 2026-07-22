@@ -138,6 +138,15 @@
   Aggregate displays follow the setting (Home KPIs, Sales Dashboard widget
   formatters via a `currency` prop, Finance KPIs); row-level cells always
   render their own row.currency. Currently set to OMR.
+- **QUICK FILTERS on ALL 9 BOARDS (2026-07-22)**: the toolbar Filter button
+  opens a functional Monday-style panel (`components/crm/quick-filters.tsx`):
+  per-column value chips with live counts (colored dots for group/stage),
+  OR within a column / AND across columns, Blank matches empty values,
+  "Showing X of N" header, Clear all, and a "Filter / N ✕" active chip.
+  Panel anchors to the toolbar row (full width — anchoring to the chip
+  overflowed the viewport); outside-click close knows about the panel ref.
+  Each board declares its own QuickFilterDim list and applies filters at its
+  `sortedRows` single point, composing with toolbar Search and Person.
 - **NEXT / REMAINING**:
   1. Supabase Site URL change (user, dashboard) — only open localhost risk.
   3. 2 extra Sales Dashboard sections (user will send screenshots).
