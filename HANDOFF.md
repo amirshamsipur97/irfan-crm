@@ -181,6 +181,11 @@
   if on EMAIL_SENDING_DOMAIN (default irfaninvest.com) → EMAIL_DEFAULT_FROM
   secret → clear error. Reply-To = sender_email ?? login email. Gmail-login
   members (amirali/koroosh) NEED sender_email set before they can send.
+- **NAV REORG (2026-07-22)**: Emails / Finance / Team live on the LEFT icon
+  rail (IconRail takes `role`; Finance = finance tier, Team = dev/ceo; new
+  inline rail glyphs; longest-href-match active state so CRM doesn't stay lit
+  on /crm/emails etc.). WorkspaceSidebar is a pure board list again — don't
+  re-add role-gated rows there.
 - **NEXT / REMAINING**:
   1. Supabase Site URL change (user, dashboard) — only open localhost risk.
   3. 2 extra Sales Dashboard sections (user will send screenshots).
