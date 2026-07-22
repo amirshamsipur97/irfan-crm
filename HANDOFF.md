@@ -169,7 +169,12 @@
   `crm_send_message(p_to, p_text)` RPC (security definer, active-member
   checks, 2000-char cap, delivered as type 'message'); New-message composer
   lives in the panel (lazy member fetch). crm_notify now takes p_level (8th
-  arg, default 'info').
+  arg, default 'info'). Messaging access: shared MessageDialog
+  (components/crm/message-dialog.tsx) + a Message button on every Users row
+  in Workspace-home Collaborators (all member tiers; self excluded via
+  WorkspaceHomeData.currentUserId). A real Persian test message was sent to
+  amiralishamsipur@gmail.com and left UNREAD on purpose (user's requested
+  test — do not delete it).
 - **EMAIL SENDER IDENTITY (2026-07-22)**: `crm_users.sender_email` = work
   address CRM emails are sent AS (edit per member in /admin Directory).
   Edge fn crm-send-email v2 order: FORCE_FROM → sender_email → login email
