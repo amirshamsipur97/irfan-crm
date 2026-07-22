@@ -23,7 +23,17 @@ export default async function HomePage() {
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
 
-  const [{ data: stages }, { data: leads }, { data: wonThisMonth }, { data: reg }] = await Promise.all([
+  const [
+    { data: stages },
+    { data: leads },
+    { data: wonThisMonth },
+    { data: reg },
+    { data: layoutRow },
+    { count: accountsTotal },
+    { count: accountsContacted },
+    { count: contactsTotal },
+    { count: contactsEngaged },
+  ] = await Promise.all([
     supabase.from("crm_stages").select("id, is_won, is_lost").returns<
       Pick<CrmStage, "id" | "is_won" | "is_lost">[]
     >(),
@@ -40,6 +50,21 @@ export default async function HomePage() {
       .from("crm_registration_settings")
       .select("default_currency")
       .maybeSingle<{ default_currency: string }>(),
+    supabase
+      .from("crm_home_layout")
+      .select("sections")
+      .eq("user_id", profile.id)
+      .maybeSingle<{ sections: string[] }>(),
+    supabase.from("crm_accounts").select("id", { count: "exact", head: true }),
+    supabase
+      .from("crm_accounts")
+      .select("id", { count: "exact", head: true })
+      .gte("last_interaction_at", monthStart.toISOString()),
+    supabase.from("crm_contacts").select("id", { count: "exact", head: true }),
+    supabase
+      .from("crm_contacts")
+      .select("id", { count: "exact", head: true })
+      .gte("last_interaction_at", monthStart.toISOString()),
   ]);
 
   const wonStages = new Set((stages ?? []).filter((s) => s.is_won).map((s) => s.id));
@@ -74,7 +99,11 @@ export default async function HomePage() {
     totalPipelineLabel: compactMoney(totalPipeline, reg?.default_currency ?? "OMR"),
     openDealsLabel: `${openLeads.length} open deal${openLeads.length === 1 ? "" : "s"}`,
     closedWonLabel: compactMoney(closedWon, reg?.default_currency ?? "OMR"),
+    accountsTotal: accountsTotal ?? 0,
+    accountsContacted: accountsContacted ?? 0,
+    contactsTotal: contactsTotal ?? 0,
+    contactsEngaged: contactsEngaged ?? 0,
   };
 
-  return <HomeView data={data} />;
+  return <HomeView data={data} layout={layoutRow?.sections ?? null} />;
 }
