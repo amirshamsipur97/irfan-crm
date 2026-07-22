@@ -129,6 +129,15 @@
   10/40/50" (booking/+90d/handover) — it's config, keep it. Full loop
   E2E-verified on Sample Deal then residue cleaned (tx/payments/schedule/
   commission/splits all back to 0).
+- **WORKSPACE CURRENCY (2026-07-22, migration `crm_default_currency`)**:
+  /admin General has a Currency panel (OMR — Omani Rial | USD — US Dollar).
+  Setting lives in `crm_registration_settings.default_currency`; the
+  admin-gated security-definer RPC `crm_set_default_currency` also rewrites
+  the `currency` column DEFAULT on all 13 money tables, so new rows inherit
+  the choice while existing rows keep their stored currency (no conversion).
+  Aggregate displays follow the setting (Home KPIs, Sales Dashboard widget
+  formatters via a `currency` prop, Finance KPIs); row-level cells always
+  render their own row.currency. Currently set to OMR.
 - **NEXT / REMAINING**:
   1. Supabase Site URL change (user, dashboard) — only open localhost risk.
   3. 2 extra Sales Dashboard sections (user will send screenshots).
