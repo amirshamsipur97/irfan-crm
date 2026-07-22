@@ -186,6 +186,14 @@
   inline rail glyphs; longest-href-match active state so CRM doesn't stay lit
   on /crm/emails etc.). WorkspaceSidebar is a pure board list again — don't
   re-add role-gated rows there.
+- **HOME CUSTOMIZE (2026-07-23, migration `crm_home_layout`)**: Home is
+  widget-based (registry HOME_WIDGETS in HomeView: pipeline/meetings/recents
+  + real-data metric widgets accounts/contacts). Customize mode = dashed
+  frames + ⋮⋮ pointer-drag reorder (data-home-section targets) + ✕ Remove +
+  teal Done; '+' opens the Widget Center drawer (cards w/ Added ✓ state).
+  Layout persists per user via saveHomeLayout ("use server" file — exports
+  must stay async-only; the key allow-list is a private const). Default
+  layout ['pipeline','meetings','recents'] when no row exists.
 - **NEXT / REMAINING**:
   1. Supabase Site URL change (user, dashboard) — only open localhost risk.
   3. 2 extra Sales Dashboard sections (user will send screenshots).
