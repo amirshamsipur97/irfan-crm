@@ -536,3 +536,57 @@ export interface CrmLeadStageHistory {
   changed_by: string | null;
   changed_at: string;
 }
+
+export interface CrmPaymentPlan {
+  id: string;
+  development_id: string | null;
+  name: string;
+  description: string | null;
+  currency: string;
+  active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  /** joined for display */
+  installments?: CrmPaymentPlanInstallment[];
+}
+
+/** due_rule convention: "booking" | "days:<n>" (after contract date) | "handover" */
+export interface CrmPaymentPlanInstallment {
+  id: string;
+  plan_id: string;
+  sequence: number;
+  label: string;
+  percentage: number;
+  due_rule: string;
+  created_at: string;
+}
+
+export interface CrmPaymentSchedule {
+  id: string;
+  transaction_id: string;
+  installment_number: number;
+  title: string;
+  expected_amount: number;
+  currency: string;
+  due_date: string | null;
+  status: string;
+  paid_amount: number | null;
+  paid_at: string | null;
+  payment_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CrmCommissionSplit {
+  id: string;
+  deal_commission_id: string;
+  recipient_user_id: string | null;
+  split_type: string;
+  percentage: number | null;
+  fixed_amount: number | null;
+  calculated_amount: number | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}

@@ -463,7 +463,7 @@ export function DealDrawer({
 
               {/* financials — finance/admin only (tables are RLS-gated too) */}
               {canViewFinance(profile.role) && (
-                <DealFinancials deal={deal} onToast={onToast} />
+                <DealFinancials deal={deal} users={users} onToast={onToast} />
               )}
 
               {/* activity timeline */}

@@ -1,9 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
-import { canViewFinance } from "@/lib/permissions";
+import { canViewFinance, isFullAccess } from "@/lib/permissions";
 import { Surface } from "@/components/shell/AppChrome";
 import { money } from "@/components/crm/deals/deals-config";
-import type { CrmDeal, CrmDealCommission, CrmPayment, CrmTransaction } from "@/lib/types";
+import { PaymentPlans } from "@/components/crm/finance/PaymentPlans";
+import type {
+  CrmDeal,
+  CrmDealCommission,
+  CrmPayment,
+  CrmPaymentPlan,
+  CrmPaymentSchedule,
+  CrmTransaction,
+} from "@/lib/types";
 
 const TX_STATUS_META: Record<string, { label: string; color: string }> = {
   draft: { label: "Draft", color: "#c4c4c4" },
@@ -33,17 +41,36 @@ export default async function FinancePage() {
   }
 
   const supabase = await createClient();
-  const [{ data: transactions }, { data: payments }, { data: commissions }, { data: deals }] =
-    await Promise.all([
-      supabase
-        .from("crm_transactions")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .returns<CrmTransaction[]>(),
-      supabase.from("crm_payments").select("*").eq("status", "confirmed").returns<CrmPayment[]>(),
-      supabase.from("crm_deal_commissions").select("*").returns<CrmDealCommission[]>(),
-      supabase.from("crm_deals").select("id, name").returns<Pick<CrmDeal, "id" | "name">[]>(),
-    ]);
+  const [
+    { data: transactions },
+    { data: payments },
+    { data: commissions },
+    { data: deals },
+    { data: plans },
+    { data: upcoming },
+  ] = await Promise.all([
+    supabase
+      .from("crm_transactions")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .returns<CrmTransaction[]>(),
+    supabase.from("crm_payments").select("*").eq("status", "confirmed").returns<CrmPayment[]>(),
+    supabase.from("crm_deal_commissions").select("*").returns<CrmDealCommission[]>(),
+    supabase.from("crm_deals").select("id, name").returns<Pick<CrmDeal, "id" | "name">[]>(),
+    supabase
+      .from("crm_payment_plans")
+      .select("*, installments:crm_payment_plan_installments(*)")
+      .order("created_at")
+      .returns<CrmPaymentPlan[]>(),
+    supabase
+      .from("crm_payment_schedules")
+      .select("*")
+      .neq("status", "paid")
+      .not("due_date", "is", null)
+      .order("due_date")
+      .limit(10)
+      .returns<CrmPaymentSchedule[]>(),
+  ]);
 
   const txs = transactions ?? [];
   const paidByTx = new Map<string, number>();
@@ -149,6 +176,61 @@ export default async function FinancePage() {
             </tbody>
           </table>
         </div>
+
+        {/* upcoming installments */}
+        {(upcoming ?? []).length > 0 && (
+          <div className="mt-[28px]">
+            <h2 className="m-0 font-display text-[18px] font-medium leading-[24px] text-ink">
+              Upcoming installments
+            </h2>
+            <div className="mt-[10px] overflow-x-auto rounded-[8px] border border-line bg-white">
+              <table className="w-full min-w-[560px] border-collapse font-sans text-[13.5px]">
+                <thead>
+                  <tr>
+                    {["Due", "Installment", "Deal", "Amount", "Status"].map((h) => (
+                      <th
+                        key={h}
+                        className="border-b border-line bg-canvas px-[14px] py-[10px] text-left text-[12px] font-bold text-ink-muted"
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(upcoming ?? []).map((s) => {
+                    const tx = txs.find((t) => t.id === s.transaction_id);
+                    const overdue = (s.due_date ?? "") < new Date().toISOString().slice(0, 10);
+                    return (
+                      <tr key={s.id} className="border-b border-line-soft last:border-b-0">
+                        <td className="px-[14px] py-[9px] text-ink">{s.due_date}</td>
+                        <td className="px-[14px] py-[9px] text-ink">
+                          {s.installment_number}. {s.title}
+                        </td>
+                        <td className="px-[14px] py-[9px] text-ink">
+                          {tx?.deal_id ? dealName.get(tx.deal_id) ?? tx.reference : tx?.reference ?? "—"}
+                        </td>
+                        <td className="px-[14px] py-[9px] text-ink">
+                          {money(s.expected_amount, s.currency)}
+                        </td>
+                        <td className="px-[14px] py-[9px]">
+                          <span
+                            className="inline-flex h-[22px] items-center rounded-[12px] px-[10px] text-[12px] text-white"
+                            style={{ backgroundColor: overdue ? "#e2445c" : "#fdab3d" }}
+                          >
+                            {overdue ? "Overdue" : "Pending"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        <PaymentPlans plans={plans ?? []} isAdmin={isFullAccess(profile.role)} />
       </div>
     </Surface>
   );

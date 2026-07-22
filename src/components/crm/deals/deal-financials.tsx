@@ -3,13 +3,28 @@
 import { useEffect, useState } from "react";
 import { money } from "./deals-config";
 import { shortDate } from "@/components/crm/leads/board-config";
-import type { CrmDeal, CrmDealCommission, CrmPayment, CrmTransaction } from "@/lib/types";
+import type {
+  CrmCommissionSplit,
+  CrmDeal,
+  CrmDealCommission,
+  CrmPayment,
+  CrmPaymentPlan,
+  CrmPaymentSchedule,
+  CrmTransaction,
+  CrmUser,
+} from "@/lib/types";
 import {
+  addCommissionSplit,
   addPayment,
+  applyPaymentPlan,
   calcCommission,
+  clearPendingSchedule,
+  deleteSplit,
   getDealFinancials,
+  markInstallmentPaid,
   refundPayment,
   setCommissionStatus,
+  setSplitStatus,
   startTransaction,
   updateTransaction,
 } from "@/app/(app)/crm/deals/finance-actions";
@@ -59,25 +74,36 @@ function Pill({ label, color }: { label: string; color: string }) {
  */
 export function DealFinancials({
   deal,
+  users = [],
   onToast,
 }: {
   deal: CrmDeal;
+  users?: CrmUser[];
   onToast: (message: string, tone?: "success" | "alert") => void;
 }) {
   const [transaction, setTransaction] = useState<CrmTransaction | null>(null);
   const [payments, setPayments] = useState<CrmPayment[]>([]);
+  const [schedule, setSchedule] = useState<CrmPaymentSchedule[]>([]);
+  const [plans, setPlans] = useState<CrmPaymentPlan[]>([]);
   const [commission, setCommission] = useState<CrmDealCommission | null>(null);
+  const [splits, setSplits] = useState<CrmCommissionSplit[]>([]);
   const [loading, setLoading] = useState(true);
   const [payAmount, setPayAmount] = useState("");
   const [payType, setPayType] = useState("down_payment");
   const [payMethod, setPayMethod] = useState("bank_transfer");
   const [commissionPct, setCommissionPct] = useState("3");
+  const [planPick, setPlanPick] = useState("");
+  const [splitUser, setSplitUser] = useState("");
+  const [splitPct, setSplitPct] = useState("");
 
   const reload = async () => {
     const data = await getDealFinancials(deal.id);
     setTransaction(data.transaction);
     setPayments(data.payments);
+    setSchedule(data.schedule);
+    setPlans(data.plans);
     setCommission(data.commission);
+    setSplits(data.splits);
     setLoading(false);
   };
 
@@ -246,6 +272,118 @@ export function DealFinancials({
         </>
       )}
 
+      {/* payment schedule */}
+      {transaction && (
+        <>
+          <SectionTitle>Payment schedule</SectionTitle>
+          {schedule.length === 0 ? (
+            <div className="flex gap-[6px]">
+              <select
+                value={planPick}
+                onChange={(e) => setPlanPick(e.target.value)}
+                className="h-[32px] min-w-0 flex-1 rounded-[4px] border border-line-strong px-[8px] font-sans text-[13px] text-ink outline-none focus:border-teal-deep"
+              >
+                <option value="">Pick a payment plan…</option>
+                {plans.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({(p.installments ?? []).length} installments)
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={!planPick}
+                onClick={async () => {
+                  const result = await applyPaymentPlan(transaction.id, planPick);
+                  if (result.error) onToast(result.error, "alert");
+                  else onToast(`Schedule generated — ${result.count} installments`);
+                  setPlanPick("");
+                  reload();
+                }}
+                className="h-[32px] shrink-0 rounded-[4px] bg-teal-deep px-[12px] font-sans text-[13px] text-white transition-opacity disabled:opacity-40"
+              >
+                Apply
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-[6px] border border-line">
+              {schedule.map((s, i) => (
+                <div
+                  key={s.id}
+                  className={`flex items-center justify-between px-[12px] py-[8px] ${
+                    i === schedule.length - 1 ? "" : "border-b border-line"
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <p className="m-0 truncate font-sans text-[13px] leading-[19px] text-ink">
+                      {s.installment_number}. {s.title}
+                    </p>
+                    <p className="m-0 font-sans text-[12px] leading-[16px] text-ink-muted">
+                      {money(s.expected_amount, s.currency)}
+                      {s.due_date ? ` · due ${shortDate(s.due_date)}` : " · no due date"}
+                    </p>
+                  </div>
+                  {s.status === "paid" ? (
+                    <Pill label="Paid" color="#00c875" />
+                  ) : (
+                    <div className="flex shrink-0 items-center gap-[6px]">
+                      <Pill
+                        label={
+                          s.due_date && s.due_date < new Date().toISOString().slice(0, 10)
+                            ? "Overdue"
+                            : "Pending"
+                        }
+                        color={
+                          s.due_date && s.due_date < new Date().toISOString().slice(0, 10)
+                            ? "#e2445c"
+                            : "#fdab3d"
+                        }
+                      />
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const result = await markInstallmentPaid(s.id, "bank_transfer");
+                          if (result.error) onToast(result.error, "alert");
+                          else onToast(`"${s.title}" marked paid`);
+                          reload();
+                        }}
+                        className="rounded-[4px] px-[6px] py-[2px] font-sans text-[12px] text-brand transition-colors hover:bg-[var(--hover-ghost)]"
+                      >
+                        Mark paid
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              <div className="flex items-center justify-between border-t border-line px-[12px] py-[6px]">
+                <p className="m-0 font-sans text-[12px] leading-[16px] text-ink-muted">
+                  {schedule.filter((s) => s.status === "paid").length}/{schedule.length} paid ·{" "}
+                  {money(
+                    schedule.reduce((sum, s) => sum + Number(s.paid_amount ?? 0), 0),
+                    transaction.currency
+                  )}{" "}
+                  collected
+                </p>
+                {schedule.some((s) => s.status === "pending") && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const result = await clearPendingSchedule(transaction.id);
+                      if (result.error) onToast(result.error, "alert");
+                      else onToast("Pending installments removed");
+                      reload();
+                    }}
+                    className="rounded-[4px] px-[6px] py-[2px] font-sans text-[12px] text-ink-muted transition-colors hover:bg-[var(--hover-ghost)]"
+                  >
+                    Remove pending
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
       {/* commission */}
       <SectionTitle>Commission</SectionTitle>
       {commission ? (
@@ -307,6 +445,108 @@ export function DealFinancials({
             Calculate from {money(deal.deal_value, deal.currency)}
           </button>
         </div>
+      )}
+
+      {/* commission splits */}
+      {commission && (
+        <>
+          <SectionTitle>
+            Commission splits
+            {splits.length > 0 && (
+              <span className="pl-[6px] font-sans text-[12px] font-normal text-ink-muted">
+                {splits.reduce((s, x) => s + Number(x.percentage ?? 0), 0)}% allocated
+              </span>
+            )}
+          </SectionTitle>
+          {splits.length === 0 && (
+            <p className="m-0 font-sans text-[13px] text-ink-muted">No splits yet.</p>
+          )}
+          {splits.map((s) => {
+            const who = users.find((u) => u.id === s.recipient_user_id);
+            return (
+              <div
+                key={s.id}
+                className="mt-[6px] flex items-center justify-between rounded-[6px] border border-line px-[12px] py-[8px]"
+              >
+                <div className="min-w-0">
+                  <p className="m-0 truncate font-sans text-[14px] leading-[20px] text-ink">
+                    {who?.full_name ?? "Member"}
+                    <span className="pl-[6px] font-sans text-[12px] text-ink-muted">
+                      {Number(s.percentage ?? 0)}%
+                    </span>
+                  </p>
+                  <p className="m-0 font-sans text-[12px] leading-[16px] text-ink-muted">
+                    {money(s.calculated_amount ?? 0, commission.currency)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-[6px]">
+                  <select
+                    value={s.status}
+                    onChange={async (e) => {
+                      const status = e.target.value as "pending" | "approved" | "paid";
+                      setSplits((prev) => prev.map((x) => (x.id === s.id ? { ...x, status } : x)));
+                      const result = await setSplitStatus(s.id, status);
+                      if (result.error) onToast(result.error, "alert");
+                    }}
+                    className="h-[28px] rounded-[4px] border border-line-strong px-[6px] font-sans text-[12px] text-ink outline-none focus:border-teal-deep"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="paid">Paid</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const result = await deleteSplit(s.id);
+                      if (result.error) onToast(result.error, "alert");
+                      else onToast("Split removed");
+                      reload();
+                    }}
+                    className="rounded-[4px] px-[6px] py-[2px] font-sans text-[12px] text-ink-muted transition-colors hover:bg-[var(--hover-ghost)]"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+          <div className="mt-[8px] flex gap-[6px]">
+            <select
+              value={splitUser}
+              onChange={(e) => setSplitUser(e.target.value)}
+              className="h-[32px] min-w-0 flex-1 rounded-[4px] border border-line-strong px-[8px] font-sans text-[13px] text-ink outline-none focus:border-teal-deep"
+            >
+              <option value="">Team member…</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.full_name || u.email}
+                </option>
+              ))}
+            </select>
+            <input
+              value={splitPct}
+              onChange={(e) => setSplitPct(e.target.value.replace(/[^0-9.]/g, ""))}
+              placeholder="%"
+              inputMode="decimal"
+              className="h-[32px] w-[64px] rounded-[4px] border border-line-strong px-[8px] font-sans text-[13px] text-ink outline-none focus:border-teal-deep"
+            />
+            <button
+              type="button"
+              disabled={!splitUser || !splitPct || Number(splitPct) <= 0}
+              onClick={async () => {
+                const result = await addCommissionSplit(commission.id, splitUser, Number(splitPct));
+                if (result.error) onToast(result.error, "alert");
+                else onToast("Split added");
+                setSplitUser("");
+                setSplitPct("");
+                reload();
+              }}
+              className="h-[32px] shrink-0 rounded-[4px] bg-teal-deep px-[12px] font-sans text-[13px] text-white transition-opacity disabled:opacity-40"
+            >
+              Add
+            </button>
+          </div>
+        </>
       )}
     </>
   );
