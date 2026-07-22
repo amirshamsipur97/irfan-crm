@@ -113,9 +113,24 @@
   handle; overflow is applied via gsap.set only during collapse). Optimistic
   add flows create rows without `position` — byPosition sinks them last
   until refetch (fine).
+- **FINANCIAL LAYER UI COMPLETE (2026-07-22)**: /crm/finance gained the
+  Payment plans manager (templates w/ installments: label + % + due rule
+  `booking`|`days:N`|`handover`, 100% badge, active toggle; delete =
+  Developer/CEO) and an Upcoming installments table (next 10 unpaid by due
+  date, overdue red). Deal drawer finance section gained Payment schedule
+  (apply a plan to the TX → rows computed from agreed_price + contract/
+  completion dates; Mark paid inserts a confirmed crm_payment and links it
+  via payment_id; Remove pending) and Commission splits (percentage per
+  member, calculated from net, 100% allocation guard, pending/approved/paid).
+  Actions: finance/actions.ts (plan CRUD) + extended deals/finance-actions.ts
+  (applyPaymentPlan/markInstallmentPaid/clearPendingSchedule/
+  addCommissionSplit/setSplitStatus/deleteSplit). DealFinancials now takes a
+  `users` prop (drawer passes it). One REAL template exists: "Standard
+  10/40/50" (booking/+90d/handover) — it's config, keep it. Full loop
+  E2E-verified on Sample Deal then residue cleaned (tx/payments/schedule/
+  commission/splits all back to 0).
 - **NEXT / REMAINING**:
   1. Supabase Site URL change (user, dashboard) — only open localhost risk.
-  2. Payment-plan template UI + schedules, commission-splits UI.
   3. 2 extra Sales Dashboard sections (user will send screenshots).
   4. Custom domain crm.irfaninvest.com + attach to irfanapp/NexProp later.
   5. PRE-HANDOVER CLEANUP: delete preview admin + /preview route + DEMO_* env,
