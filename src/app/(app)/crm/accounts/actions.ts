@@ -9,6 +9,8 @@ const BOARD_PATH = "/crm/accounts";
 const PATCHABLE = new Set([
   "name",
   "domain",
+  "email",
+  "email_label",
   "industries",
   "description",
   "employees_range",

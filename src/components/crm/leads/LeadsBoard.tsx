@@ -362,6 +362,7 @@ export function LeadsBoard({
         return (
           <LeadDrawer
             lead={openLead}
+            profile={profile}
             stages={stages}
             users={users}
             units={units}

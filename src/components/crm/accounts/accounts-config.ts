@@ -8,6 +8,7 @@ export const ACCOUNT_COLUMNS: {
   connected?: boolean;
 }[] = [
   { key: "domain", label: "Domain", w: 189 },
+  { key: "email", label: "Email", w: 200 },
   { key: "industry", label: "Industry", w: 230 },
   { key: "description", label: "Description", w: 280 },
   { key: "employees", label: "No. of employees", w: 160 },

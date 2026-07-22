@@ -190,6 +190,8 @@ export interface CrmAccount {
   id: string;
   name: string;
   domain: string | null;
+  email: string | null;
+  email_label: string | null;
   industries: string[];
   description: string | null;
   employees_range: string | null;
@@ -589,4 +591,24 @@ export interface CrmCommissionSplit {
   status: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface CrmEmail {
+  id: string;
+  sender_user_id: string | null;
+  from_email: string;
+  from_name: string | null;
+  to_emails: string[];
+  cc_emails: string[];
+  subject: string;
+  body_text: string;
+  related_type: string | null;
+  related_id: string | null;
+  related_name: string | null;
+  status: "queued" | "sent" | "failed";
+  provider: string | null;
+  provider_id: string | null;
+  error: string | null;
+  sent_at: string | null;
+  created_at: string;
 }

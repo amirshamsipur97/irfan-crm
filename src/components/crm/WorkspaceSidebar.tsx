@@ -25,6 +25,7 @@ export const WORKSPACE_NAV: { label: string; icon: IconName; href: string }[] = 
   { label: "Viewings", icon: "navActivities", href: "/crm/viewings" },
   { label: "Activities", icon: "navActivities", href: "/crm/activities" },
   { label: "Sales Dashboard", icon: "navDashboard", href: "/crm/dashboard" },
+  { label: "Emails", icon: "navActivities", href: "/crm/emails" },
 ];
 
 /** Finance is listed for the finance tier; Team for the full tier. */

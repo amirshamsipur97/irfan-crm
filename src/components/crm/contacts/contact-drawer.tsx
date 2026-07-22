@@ -7,7 +7,8 @@ import { canAnimate } from "@/lib/motion";
 import { money } from "@/components/crm/deals/deals-config";
 import { shortDate } from "@/components/crm/leads/board-config";
 import { activityTime } from "@/components/crm/activities/activities-config";
-import type { CrmActivityItem, CrmContact, CrmDeal, CrmPropertyInterest } from "@/lib/types";
+import type { CrmActivityItem, CrmContact, CrmDeal, CrmPropertyInterest, CrmUser } from "@/lib/types";
+import { EmailComposer } from "@/components/crm/email/EmailComposer";
 import { getContactRelations } from "@/app/(app)/crm/contacts/drawer-actions";
 
 type DrawerDeal = CrmDeal & { stage_name: string | null; stage_color: string | null };
@@ -48,11 +49,16 @@ const PRIORITY_COLORS: Record<string, string> = {
 
 export function ContactDrawer({
   contact,
+  profile,
   onClose,
+  onToast,
 }: {
   contact: CrmContact;
+  profile: CrmUser;
   onClose: () => void;
+  onToast?: (message: string, tone?: "success" | "alert") => void;
 }) {
+  const [composerOpen, setComposerOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const [deals, setDeals] = useState<DrawerDeal[]>([]);
   const [interests, setInterests] = useState<CrmPropertyInterest[]>([]);
@@ -121,9 +127,18 @@ export function ContactDrawer({
           <SectionTitle>Details</SectionTitle>
           <DetailRow label="Email">
             {contact.email ? (
-              <a href={`mailto:${contact.email}`} className="text-[#0073ea] hover:underline">
-                {contact.email}
-              </a>
+              <span className="flex items-center gap-[8px]">
+                <a href={`mailto:${contact.email}`} className="truncate text-[#0073ea] hover:underline">
+                  {contact.email}
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setComposerOpen(true)}
+                  className="shrink-0 rounded-[4px] border border-line-strong px-[8px] py-[2px] font-sans text-[12px] text-ink transition-colors hover:bg-[var(--hover-ghost)]"
+                >
+                  Send email
+                </button>
+              </span>
             ) : (
               "—"
             )}
@@ -227,6 +242,15 @@ export function ContactDrawer({
           )}
         </div>
       </div>
+      {composerOpen && contact.email && (
+        <EmailComposer
+          profile={profile}
+          to={[contact.email]}
+          target={{ type: "contact", id: contact.id, name: contact.name }}
+          onClose={() => setComposerOpen(false)}
+          onDone={(message, tone) => onToast?.(message, tone)}
+        />
+      )}
     </div>
   );
 }

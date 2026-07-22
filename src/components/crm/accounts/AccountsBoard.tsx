@@ -128,6 +128,8 @@ export function AccountsBoard({
         id: `temp-${prev.length}-${name}`,
         name: name.trim() || "New account",
         domain: null,
+        email: null,
+        email_label: null,
         industries: [],
         description: null,
         employees_range: null,

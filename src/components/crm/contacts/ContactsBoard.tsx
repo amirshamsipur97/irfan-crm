@@ -299,7 +299,14 @@ export function ContactsBoard({
       {openContactId && (() => {
         const openContact = localContacts.find((c) => c.id === openContactId);
         if (!openContact) return null;
-        return <ContactDrawer contact={openContact} onClose={() => setOpenContactId(null)} />;
+        return (
+          <ContactDrawer
+            contact={openContact}
+            profile={profile}
+            onClose={() => setOpenContactId(null)}
+            onToast={(message, tone) => setToast({ message, tone })}
+          />
+        );
       })()}
       <AiFloaty />
     </Surface>

@@ -21,6 +21,7 @@ import {
   getLeadRelations,
   setLeadInterestStatus,
 } from "@/app/(app)/crm/leads/drawer-actions";
+import { EmailComposer } from "@/components/crm/email/EmailComposer";
 
 const BAND_COLORS: Record<string, string> = {
   hot: "#e2445c",
@@ -68,6 +69,7 @@ function responseTime(assigned: string | null, first: string | null) {
 
 export function LeadDrawer({
   lead,
+  profile,
   stages,
   users,
   units,
@@ -76,6 +78,7 @@ export function LeadDrawer({
   onConvert,
 }: {
   lead: CrmLead;
+  profile: CrmUser;
   stages: CrmStage[];
   users: CrmUser[];
   units: CrmUnit[];
@@ -83,6 +86,7 @@ export function LeadDrawer({
   onToast: (message: string, tone?: "success" | "alert") => void;
   onConvert: (leadId: string) => void;
 }) {
+  const [composerOpen, setComposerOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const [interests, setInterests] = useState<CrmPropertyInterest[]>([]);
   const [history, setHistory] = useState<CrmLeadStageHistory[]>([]);
@@ -163,9 +167,18 @@ export function LeadDrawer({
           <SectionTitle>Details</SectionTitle>
           <DetailRow label="Email">
             {lead.email ? (
-              <a href={`mailto:${lead.email}`} className="text-[#0073ea] hover:underline">
-                {lead.email}
-              </a>
+              <span className="flex items-center gap-[8px]">
+                <a href={`mailto:${lead.email}`} className="truncate text-[#0073ea] hover:underline">
+                  {lead.email}
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setComposerOpen(true)}
+                  className="shrink-0 rounded-[4px] border border-line-strong px-[8px] py-[2px] font-sans text-[12px] text-ink transition-colors hover:bg-[var(--hover-ghost)]"
+                >
+                  Send email
+                </button>
+              </span>
             ) : (
               "—"
             )}
@@ -337,6 +350,15 @@ export function LeadDrawer({
           )}
         </div>
       </div>
+      {composerOpen && lead.email && (
+        <EmailComposer
+          profile={profile}
+          to={[lead.email]}
+          target={{ type: "lead", id: lead.id, name: lead.name }}
+          onClose={() => setComposerOpen(false)}
+          onDone={onToast}
+        />
+      )}
     </div>
   );
 }

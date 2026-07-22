@@ -26,6 +26,7 @@ import {
   type LogPayload,
 } from "@/components/crm/deals/activity-log";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
+import { EmailCell } from "@/components/crm/leads/lead-cells";
 
 const ROW_H = 36;
 
@@ -249,6 +250,18 @@ export function AccountGroup({
                           <DomainCell
                             value={account.domain}
                             onSave={(next) => onPatchAccount(account.id, { domain: next || null })}
+                          />
+                        </span>
+                      );
+                    case "email":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <EmailCell
+                            email={account.email}
+                            label={account.email_label}
+                            onSave={(email, label) =>
+                              onPatchAccount(account.id, { email: email || null, email_label: label || null })
+                            }
                           />
                         </span>
                       );
