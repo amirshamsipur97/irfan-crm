@@ -194,6 +194,19 @@
   Layout persists per user via saveHomeLayout ("use server" file — exports
   must stay async-only; the key allow-list is a private const). Default
   layout ['pipeline','meetings','recents'] when no row exists.
+- **EMAIL COMPOSER REDESIGN + SEND-FROM-CELL (2026-07-23)**: composer
+  (components/crm/email/EmailComposer.tsx) rebuilt Monday-style — title bar,
+  From (avatar + resolved sender), To w/ suggestions + CC toggle, Subject,
+  body, footer with association chip + 'Replies go to' + Send; soft GSAP
+  open; server errors pulled out of FunctionsHttpError and shown inline.
+  Sending now also lives on the BOARDS we already have (NO new tables):
+  EmailCell gained optional `onSend` → hover ✉ chip; Leads (clients),
+  Accounts (developers — needs the Email column populated) and Contacts each
+  hold an EmailComposer + pass onEmail* through their Group. Emails log with
+  related_type/name = that lead/account/contact. Sender identity verified
+  E2E on Accounts (From = crm_users.sender_email; preview user set to
+  crm@irfaninvest.com). ⚠️ still 503 until RESEND_API_KEY set + domain
+  verified (see EMAIL INFRA / SENDER IDENTITY notes above — unchanged).
 - **NEXT / REMAINING**:
   1. Supabase Site URL change (user, dashboard) — only open localhost risk.
   3. 2 extra Sales Dashboard sections (user will send screenshots).
