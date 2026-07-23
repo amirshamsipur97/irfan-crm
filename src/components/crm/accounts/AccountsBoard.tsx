@@ -31,6 +31,7 @@ import { SuccessToast } from "@/components/ui/SuccessToast";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
+import { EmailComposer } from "@/components/crm/email/EmailComposer";
 
 export function AccountsBoard({
   profile,
@@ -77,6 +78,8 @@ export function AccountsBoard({
   );
 
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+
+  const [emailAccount, setEmailAccount] = useState<CrmAccount | null>(null);
   const rowTools = useRowTools({
     boardKey: "accounts",
     rows: localAccounts,
@@ -206,6 +209,7 @@ export function AccountsBoard({
               group={group}
               isNew={group.id === newGroupId}
               tools={rowTools}
+              onEmailAccount={setEmailAccount}
               accounts={sortedRows.filter(
                 (a) =>
                   a.group_id === group.id &&
@@ -260,6 +264,15 @@ export function AccountsBoard({
           tone={toast.tone}
           onUndo={toast.undo}
           onClose={() => setToast(null)}
+        />
+      )}
+      {emailAccount && emailAccount.email && (
+        <EmailComposer
+          profile={profile}
+          to={[emailAccount.email]}
+          target={{ type: "account", id: emailAccount.id, name: emailAccount.name }}
+          onClose={() => setEmailAccount(null)}
+          onDone={(message, tone) => setToast({ message, tone })}
         />
       )}
       <AiFloaty />

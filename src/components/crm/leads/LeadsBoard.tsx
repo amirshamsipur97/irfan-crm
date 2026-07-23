@@ -37,6 +37,7 @@ import { findDuplicateContact } from "@/app/(app)/crm/contacts/actions";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
+import { EmailComposer } from "@/components/crm/email/EmailComposer";
 
 export function LeadsBoard({
   profile,
@@ -84,6 +85,8 @@ export function LeadsBoard({
   );
 
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+
+  const [emailLead, setEmailLead] = useState<CrmLead | null>(null);
   const rowTools = useRowTools({
     boardKey: "leads",
     rows: localLeads,
@@ -278,6 +281,7 @@ export function LeadsBoard({
               group={group}
               isNew={group.id === newGroupId}
               tools={rowTools}
+              onEmailLead={setEmailLead}
               leads={sortedRows.filter((l) => l.group_id === group.id)}
               stages={stages}
               users={users}
@@ -372,6 +376,15 @@ export function LeadsBoard({
           />
         );
       })()}
+      {emailLead && emailLead.email && (
+        <EmailComposer
+          profile={profile}
+          to={[emailLead.email]}
+          target={{ type: "lead", id: emailLead.id, name: emailLead.name }}
+          onClose={() => setEmailLead(null)}
+          onDone={(message, tone) => setToast({ message, tone })}
+        />
+      )}
       <AiFloaty />
     </Surface>
   );

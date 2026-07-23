@@ -48,6 +48,7 @@ export function AccountGroup({
   onAddAccount,
   onLogActivity,
   tools,
+  onEmailAccount,
 }: {
   group: CrmAccountGroup;
   accounts: CrmAccount[];
@@ -66,6 +67,7 @@ export function AccountGroup({
   onAddAccount: (name: string) => void;
   onLogActivity: (accountId: string, payload: LogPayload) => void;
   tools?: RowToolsConfig;
+  onEmailAccount?: (account: CrmAccount) => void;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -258,6 +260,7 @@ export function AccountGroup({
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
                           <EmailCell
                             email={account.email}
+                            onSend={account.email && onEmailAccount ? () => onEmailAccount(account) : undefined}
                             label={account.email_label}
                             onSave={(email, label) =>
                               onPatchAccount(account.id, { email: email || null, email_label: label || null })

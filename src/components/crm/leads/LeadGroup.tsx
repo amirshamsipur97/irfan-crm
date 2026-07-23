@@ -61,6 +61,7 @@ export function LeadGroup({
   onPatchLead,
   onMoveToContacts,
   onOpenLead,
+  onEmailLead,
   tools,
 }: {
   group: CrmLeadGroup;
@@ -83,6 +84,7 @@ export function LeadGroup({
   onPatchLead: (leadId: string, patch: Partial<CrmLead>) => void;
   onMoveToContacts: (leadId: string) => void;
   onOpenLead?: (leadId: string) => void;
+  onEmailLead?: (lead: CrmLead) => void;
   tools?: RowToolsConfig;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
@@ -362,6 +364,7 @@ export function LeadGroup({
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
                           <EmailCell
                             email={lead.email}
+                            onSend={lead.email && onEmailLead ? () => onEmailLead(lead) : undefined}
                             label={
                               ((lead.custom as Record<string, unknown>)?.email_label as
                                 | string

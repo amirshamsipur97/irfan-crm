@@ -61,6 +61,7 @@ export function ContactGroup({
   onRenameColumn,
   onDeleteColumn,
   onOpenContact,
+  onEmailContact,
   tools,
 }: {
   group: CrmContactGroup;
@@ -81,6 +82,7 @@ export function ContactGroup({
   onRenameColumn: (columnId: string, label: string) => void;
   onDeleteColumn: (columnId: string) => void;
   onOpenContact?: (contactId: string) => void;
+  onEmailContact?: (contact: CrmContact) => void;
   tools?: RowToolsConfig;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
@@ -279,6 +281,7 @@ export function ContactGroup({
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
                           <EmailCell
                             email={contact.email}
+                            onSend={contact.email && onEmailContact ? () => onEmailContact(contact) : undefined}
                             label={contact.email_label}
                             onSave={(email, label) =>
                               onPatchContact(contact.id, { email, email_label: label })

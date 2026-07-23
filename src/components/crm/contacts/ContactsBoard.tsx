@@ -34,6 +34,7 @@ import {
 } from "@/app/(app)/crm/custom-columns-actions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
+import { EmailComposer } from "@/components/crm/email/EmailComposer";
 
 export function ContactsBoard({
   profile,
@@ -108,6 +109,8 @@ export function ContactsBoard({
   );
 
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+
+  const [emailContact, setEmailContact] = useState<CrmContact | null>(null);
   const rowTools = useRowTools({
     boardKey: "contacts",
     rows: localContacts,
@@ -233,6 +236,7 @@ export function ContactsBoard({
               group={group}
               isNew={group.id === newGroupId}
               tools={rowTools}
+              onEmailContact={setEmailContact}
               contacts={sortedRows.filter(
                 (c) =>
                   c.group_id === group.id &&
@@ -308,6 +312,15 @@ export function ContactsBoard({
           />
         );
       })()}
+      {emailContact && emailContact.email && (
+        <EmailComposer
+          profile={profile}
+          to={[emailContact.email]}
+          target={{ type: "contact", id: emailContact.id, name: emailContact.name }}
+          onClose={() => setEmailContact(null)}
+          onDone={(message, tone) => setToast({ message, tone })}
+        />
+      )}
       <AiFloaty />
     </Surface>
   );

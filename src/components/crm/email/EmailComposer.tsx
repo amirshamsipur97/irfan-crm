@@ -1,7 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { gsap } from "gsap";
+import { useGSAP } from "@gsap/react";
+import { canAnimate } from "@/lib/motion";
 import { createClient } from "@/lib/supabase/client";
+import { Avatar } from "@/components/ui/Avatar";
 import type { CrmUser } from "@/lib/types";
 
 export interface EmailTarget {
@@ -19,9 +23,6 @@ export interface RecipientSuggestion {
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-const inputCls =
-  "h-[34px] w-full rounded-[4px] border border-line-strong px-[10px] font-sans text-[13px] text-ink outline-none placeholder:text-ink-muted focus:border-teal-deep";
-
 function parseEmails(raw: string): string[] {
   return raw
     .split(/[,;\s]+/)
@@ -29,7 +30,31 @@ function parseEmails(raw: string): string[] {
     .filter(Boolean);
 }
 
-/** Modal composer — sends through the crm-send-email edge function and logs to crm_emails. */
+/** label + inline value row, Monday-composer style */
+function FieldRow({
+  label,
+  children,
+  className = "",
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`flex min-h-[46px] items-center gap-[14px] border-b border-line-soft px-[20px] ${className}`}>
+      <span className="w-[52px] shrink-0 font-sans text-[14px] leading-[20px] text-ink-muted">
+        {label}
+      </span>
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * Monday-style email composer — sends through the crm-send-email edge
+ * function (Resend; From = the agent's work address, replies go to Zoho)
+ * and logs to crm_emails.
+ */
 export function EmailComposer({
   profile,
   to = [],
@@ -47,18 +72,39 @@ export function EmailComposer({
   onClose: () => void;
   onDone: (message: string, tone?: "success" | "alert") => void;
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
   const [toRaw, setToRaw] = useState(to.join(", "));
+  const [ccOpen, setCcOpen] = useState(false);
   const [ccRaw, setCcRaw] = useState("");
   const [subject, setSubject] = useState(initialSubject);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toFocused, setToFocused] = useState(false);
+
+  useGSAP(
+    () => {
+      if (!canAnimate() || !panelRef.current) return;
+      gsap.from(panelRef.current, {
+        y: 18,
+        scale: 0.97,
+        opacity: 0,
+        duration: 0.28,
+        ease: "power3.out",
+        clearProps: "all",
+      });
+    },
+    { scope: panelRef }
+  );
 
   const toList = parseEmails(toRaw);
   const ccList = parseEmails(ccRaw);
   const invalid = [...toList, ...ccList].find((e) => !EMAIL_RE.test(e));
   const canSend =
     !sending && toList.length > 0 && !invalid && subject.trim() !== "" && message.trim() !== "";
+
+  const senderEmail = profile.sender_email || profile.email;
+  const senderName = profile.full_name || profile.email;
 
   const send = async () => {
     setSending(true);
@@ -97,33 +143,45 @@ export function EmailComposer({
     onClose();
   };
 
+  const lastToken = toRaw.split(/[,;]/).pop()!.trim().toLowerCase();
   const matching = suggestions.filter(
     (s) =>
       s.email &&
       !toList.includes(s.email.toLowerCase()) &&
-      (toRaw.trim() === "" ||
-        s.name.toLowerCase().includes(toRaw.split(",").pop()!.trim().toLowerCase()) ||
-        s.email.toLowerCase().includes(toRaw.split(",").pop()!.trim().toLowerCase()))
+      (lastToken === "" ||
+        s.name.toLowerCase().includes(lastToken) ||
+        s.email.toLowerCase().includes(lastToken))
   );
+  const showSuggestions = toFocused && suggestions.length > 0 && matching.length > 0;
+
+  const inputBase =
+    "w-full bg-transparent font-sans text-[14px] leading-[20px] text-ink outline-none placeholder:text-ink-muted";
 
   return (
-    <div className="fixed inset-0 z-[95] flex items-center justify-center">
+    <div className="fixed inset-0 z-[95] flex items-center justify-center p-[24px]">
       <button
         type="button"
         aria-label="Close composer"
         onClick={onClose}
-        className="absolute inset-0 cursor-default bg-black/30"
+        className="absolute inset-0 cursor-default bg-black/35"
       />
-      <div className="relative flex w-[560px] max-w-[calc(100vw-48px)] flex-col rounded-[10px] bg-white shadow-[0px_12px_40px_rgba(0,0,0,0.3)]">
-        <div className="flex items-center justify-between border-b border-line px-[20px] py-[14px]">
-          <h3 className="m-0 font-display text-[17px] font-semibold leading-[24px] text-ink">
-            New email
-            {target?.name && (
-              <span className="pl-[8px] font-sans text-[13px] font-normal text-ink-muted">
-                re: {target.name}
-              </span>
-            )}
-          </h3>
+      <div
+        ref={panelRef}
+        className="relative flex max-h-full w-[680px] max-w-full flex-col overflow-hidden rounded-[12px] bg-white shadow-[0px_18px_60px_rgba(0,0,0,0.35)]"
+      >
+        {/* title bar */}
+        <div className="flex items-center justify-between bg-[#f5f6f8] px-[16px] py-[10px]">
+          <div className="flex items-center gap-[10px]">
+            <span className="flex size-[28px] items-center justify-center rounded-[6px] bg-[#579bfc]">
+              <svg width="15" height="15" viewBox="0 0 18 18" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <rect x="2" y="3.8" width="14" height="10.4" rx="1.6" />
+                <path d="M2.6 4.6L9 9.6l6.4-5" />
+              </svg>
+            </span>
+            <p className="m-0 font-display text-[16px] font-semibold leading-[22px] text-ink">
+              Email
+            </p>
+          </div>
           <button
             type="button"
             aria-label="Close"
@@ -136,88 +194,135 @@ export function EmailComposer({
           </button>
         </div>
 
-        <div className="flex flex-col gap-[10px] px-[20px] py-[16px]">
-          <div>
-            <label className="block pb-[4px] font-sans text-[12px] text-ink-muted">To</label>
+        {/* From */}
+        <FieldRow label="From">
+          <div className="flex items-center gap-[8px]">
+            <Avatar name={senderName} src={profile.avatar_url} size={26} />
+            <p className="m-0 truncate font-sans text-[14px] leading-[20px] text-ink">
+              {senderName}
+              <span className="pl-[6px] text-ink-muted">({senderEmail})</span>
+            </p>
+          </div>
+        </FieldRow>
+
+        {/* To */}
+        <FieldRow label="To" className="relative">
+          <div className="flex items-center gap-[8px]">
             <input
               value={toRaw}
               onChange={(e) => setToRaw(e.target.value)}
+              onFocus={() => setToFocused(true)}
+              onBlur={() => setTimeout(() => setToFocused(false), 180)}
               placeholder="client@example.com, developer@company.com"
-              className={inputCls}
+              className={inputBase}
             />
-            {suggestions.length > 0 && matching.length > 0 && toRaw.trim() !== "" && (
-              <div className="mt-[4px] max-h-[130px] overflow-y-auto rounded-[6px] border border-line">
-                {matching.slice(0, 6).map((s) => (
-                  <button
-                    key={`${s.kind}-${s.email}`}
-                    type="button"
-                    onClick={() => {
-                      const parts = parseEmails(toRaw);
-                      parts.pop();
-                      setToRaw([...parts, s.email].join(", "));
-                    }}
-                    className="flex w-full items-center justify-between px-[10px] py-[6px] text-left transition-colors hover:bg-[var(--hover-ghost)]"
-                  >
-                    <span className="min-w-0 truncate font-sans text-[13px] text-ink">
-                      {s.name}
-                      <span className="pl-[6px] text-ink-muted">{s.email}</span>
-                    </span>
-                    <span className="shrink-0 pl-[8px] font-sans text-[11px] uppercase tracking-wide text-ink-muted">
-                      {s.kind}
-                    </span>
-                  </button>
-                ))}
-              </div>
+            {!ccOpen && (
+              <button
+                type="button"
+                onClick={() => setCcOpen(true)}
+                className="shrink-0 rounded-[4px] px-[6px] py-[2px] font-sans text-[12px] text-ink-muted transition-colors hover:bg-[var(--hover-ghost)] hover:text-ink"
+              >
+                CC
+              </button>
             )}
           </div>
-          <div>
-            <label className="block pb-[4px] font-sans text-[12px] text-ink-muted">
-              CC (optional)
-            </label>
+          {showSuggestions && (
+            <div className="absolute inset-x-[20px] top-full z-20 max-h-[168px] overflow-y-auto rounded-[8px] border border-line bg-white shadow-[0px_6px_20px_rgba(0,0,0,0.18)]">
+              {matching.slice(0, 6).map((s) => (
+                <button
+                  key={`${s.kind}-${s.email}`}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    const parts = toRaw.split(/[,;]/).slice(0, -1).map((p) => p.trim()).filter(Boolean);
+                    setToRaw([...parts, s.email].join(", "));
+                  }}
+                  className="flex w-full items-center justify-between px-[12px] py-[7px] text-left transition-colors hover:bg-[var(--hover-ghost)]"
+                >
+                  <span className="min-w-0 truncate font-sans text-[13px] text-ink">
+                    {s.name}
+                    <span className="pl-[6px] text-ink-muted">{s.email}</span>
+                  </span>
+                  <span
+                    className={`shrink-0 rounded-[10px] px-[8px] py-px pl-[8px] font-sans text-[11px] uppercase tracking-wide ${
+                      s.kind === "account" ? "bg-[#a25ddc]/15 text-[#7a3fb8]" : "bg-cyan-tint text-ink"
+                    }`}
+                  >
+                    {s.kind === "account" ? "developer" : "client"}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </FieldRow>
+
+        {/* CC */}
+        {ccOpen && (
+          <FieldRow label="CC">
             <input
+              autoFocus
               value={ccRaw}
               onChange={(e) => setCcRaw(e.target.value)}
               placeholder="cc@irfaninvest.com"
-              className={inputCls}
+              className={inputBase}
             />
-          </div>
-          <div>
-            <label className="block pb-[4px] font-sans text-[12px] text-ink-muted">Subject</label>
-            <input
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="Subject"
-              className={inputCls}
-            />
-          </div>
-          <div>
-            <label className="block pb-[4px] font-sans text-[12px] text-ink-muted">Message</label>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={8}
-              placeholder={`Hi,\n\n…\n\nBest regards,\n${profile.full_name || ""}`}
-              className="w-full resize-y rounded-[4px] border border-line-strong px-[10px] py-[8px] font-sans text-[13px] leading-[20px] text-ink outline-none placeholder:text-ink-muted focus:border-teal-deep"
-            />
-          </div>
-          {(invalid || error) && (
-            <p className="m-0 font-sans text-[13px] text-alert">
-              {invalid ? `Invalid email: ${invalid}` : error}
-            </p>
-          )}
-        </div>
+          </FieldRow>
+        )}
 
-        <div className="flex items-center justify-between border-t border-line px-[20px] py-[12px]">
-          <p className="m-0 font-sans text-[12px] leading-[16px] text-ink-muted">
-            Sends as {profile.full_name || profile.email} · {profile.email}
-            <br />
-            Replies arrive in your Zoho inbox
+        {/* Subject */}
+        <FieldRow label="Subject">
+          <input
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="Subject"
+            className={`${inputBase} font-medium`}
+          />
+        </FieldRow>
+
+        {/* body */}
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder={`Hi,\n\n…\n\nBest regards,\n${senderName}`}
+          className="thin-scroll min-h-[220px] w-full flex-1 resize-none px-[20px] py-[14px] font-sans text-[14px] leading-[22px] text-ink outline-none placeholder:text-ink-muted"
+        />
+
+        {(invalid || error) && (
+          <p className="m-0 border-t border-line-soft px-[20px] py-[8px] font-sans text-[13px] text-alert">
+            {invalid ? `Invalid email: ${invalid}` : error}
           </p>
+        )}
+
+        {/* footer */}
+        <div className="flex items-center justify-between border-t border-line px-[16px] py-[10px]">
+          <div className="flex min-w-0 items-center gap-[10px]">
+            {target?.name && (
+              <span className="flex min-w-0 items-center gap-[6px] rounded-[6px] bg-[#eceef2] px-[10px] py-[4px]">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#676879" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <circle cx="8" cy="4" r="2" />
+                  <circle cx="3.5" cy="12" r="2" />
+                  <circle cx="12.5" cy="12" r="2" />
+                  <path d="M7 5.6L4.4 10M9 5.6l2.6 4.4M5.5 12h5" />
+                </svg>
+                <span className="truncate font-sans text-[12px] leading-[16px] text-ink">
+                  {target.name}
+                  <span className="pl-[4px] text-ink-muted">({target.type})</span>
+                </span>
+              </span>
+            )}
+            <span className="hidden font-sans text-[12px] leading-[16px] text-ink-muted sm:block">
+              Replies go to {senderEmail}
+            </span>
+          </div>
           <button
             type="button"
             disabled={!canSend}
             onClick={send}
-            className="h-[36px] rounded-[4px] bg-teal-deep px-[18px] font-sans text-[14px] text-white transition-opacity disabled:opacity-40"
+            className={`h-[36px] shrink-0 rounded-[6px] px-[20px] font-sans text-[14px] transition-colors ${
+              canSend
+                ? "bg-teal-deep text-white hover:bg-[#006e87]"
+                : "cursor-default bg-[#eceef2] text-ink-disabled"
+            }`}
           >
             {sending ? "Sending…" : "Send"}
           </button>

@@ -30,10 +30,13 @@ export function EmailCell({
   email,
   label,
   onSave,
+  onSend,
 }: {
   email: string | null;
   label: string | null;
   onSave: (email: string | null, label: string | null) => void;
+  /** when provided, a hover ✉ chip opens the in-CRM email composer */
+  onSend?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [emailDraft, setEmailDraft] = useState("");
@@ -70,6 +73,19 @@ export function EmailCell({
           >
             {display}
           </a>
+          {onSend && (
+            <button
+              type="button"
+              aria-label={`Send email to ${email}`}
+              onClick={onSend}
+              className="ml-[4px] flex size-[22px] shrink-0 items-center justify-center rounded-[4px] bg-[#eceef2] opacity-0 transition-opacity duration-100 hover:bg-[#dde1e9] group-hover/cell:opacity-100"
+            >
+              <svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="#323338" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <rect x="2" y="3.8" width="14" height="10.4" rx="1.6" />
+                <path d="M2.6 4.6L9 9.6l6.4-5" />
+              </svg>
+            </button>
+          )}
           <PencilChip label="Edit email" onClick={openEditor} />
         </>
       ) : (
