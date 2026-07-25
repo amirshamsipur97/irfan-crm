@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
 import type { CrmRole } from "@/lib/types";
 
@@ -11,22 +12,24 @@ const ROLES: CrmRole[] = ["developer", "ceo", "media", "manager", "agent", "fina
 export async function updateMemberRole(userId: string, role: CrmRole) {
   if (!ROLES.includes(role)) return { error: "invalid role" };
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_users")
-    .update({ role, requested_role: null })
+    .update({ role, requested_role: null }, { count: "exact" })
     .eq("id", userId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(PAGE);
   return {};
 }
 
 export async function setMemberActive(userId: string, isActive: boolean) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_users")
-    .update({ is_active: isActive })
+    .update({ is_active: isActive }, { count: "exact" })
     .eq("id", userId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(PAGE);
   return {};
 }
@@ -66,8 +69,9 @@ export async function createInvite(email: string, fullName: string, role: CrmRol
 
 export async function deleteInvite(inviteId: string) {
   const supabase = await createClient();
-  const { error } = await supabase.from("crm_invites").delete().eq("id", inviteId);
+  const { error, count } = await supabase.from("crm_invites").delete({ count: "exact" }).eq("id", inviteId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(PAGE);
   return {};
 }

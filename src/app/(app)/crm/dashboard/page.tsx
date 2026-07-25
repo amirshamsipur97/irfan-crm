@@ -100,7 +100,7 @@ export default async function SalesDashboardPage() {
       count: reached(s.position),
       color: s.is_won ? "#00c875" : "#579bfc",
     })),
-  ].filter((step, i, arr) => !(i > 0 && step.label === "New"));
+  ].filter((step, i) => !(i > 0 && step.label === "New"));
   const total = funnel[0]?.count ?? 0;
   const conversionToWon = total > 0 ? Math.round((wonDeals.length / total) * 100) : 0;
 

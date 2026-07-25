@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
 
 const BOARD_PATH = "/crm/developments";
@@ -44,11 +45,12 @@ export async function updateDevelopment(developmentId: string, patch: Record<str
   if (entries.length === 0) return { error: "nothing to update" };
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_developments")
-    .update(Object.fromEntries(entries))
+    .update(Object.fromEntries(entries), { count: "exact" })
     .eq("id", developmentId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   return {};
 }
@@ -76,22 +78,13 @@ export async function addDevelopmentGroup(name: string, color: string) {
 
 export async function renameDevelopmentGroup(groupId: string, name: string) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_development_groups")
-    .update({ name: name.trim() || "New Group" })
+    .update({ name: name.trim() || "New Group" }, { count: "exact" })
     .eq("id", groupId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
-  return {};
-}
-
-export async function setDevelopmentGroupCollapsed(groupId: string, collapsed: boolean) {
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("crm_development_groups")
-    .update({ is_collapsed: collapsed })
-    .eq("id", groupId);
-  if (error) return { error: error.message };
   return {};
 }
 

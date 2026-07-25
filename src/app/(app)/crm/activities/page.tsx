@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { withCollapsePrefs } from "@/lib/group-prefs";
 import type { CrmCustomColumn } from "@/lib/custom-columns";
 import { getProfile } from "@/lib/profile";
 import { recordBoardVisit } from "@/lib/visits";
@@ -36,7 +37,7 @@ export default async function ActivitiesBoardPage() {
   return (
     <ActivitiesBoard
       profile={profile}
-      groups={groups ?? []}
+      groups={await withCollapsePrefs("activities", groups ?? [])}
       activities={activities ?? []}
       users={users ?? []}
       customColumns={customColumns ?? []}

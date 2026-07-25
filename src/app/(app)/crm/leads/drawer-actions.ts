@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
 import type { CrmActivityItem, CrmLeadStageHistory, CrmPropertyInterest } from "@/lib/types";
 
@@ -81,11 +82,12 @@ export async function addLeadInterest(leadId: string, unitId: string) {
 /** Drop a shortlisted unit from the lead. */
 export async function setLeadInterestStatus(interestId: string, status: "active" | "shortlisted" | "rejected") {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_property_interests")
-    .update({ status })
+    .update({ status }, { count: "exact" })
     .eq("id", interestId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   return {};
 }

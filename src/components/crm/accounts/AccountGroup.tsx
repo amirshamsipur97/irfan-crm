@@ -15,7 +15,7 @@ import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Icon } from "@/components/ui/Icon";
 import type { CrmAccount, CrmAccountGroup, CrmContact, CrmDeal } from "@/lib/types";
-import { Checkbox, InlineEdit, TimelineCell } from "@/components/crm/leads/cells";
+import { Checkbox, InlineEdit, OwnerCell, TimelineCell } from "@/components/crm/leads/cells";
 import { DealsChipCell, TextCell } from "@/components/crm/contacts/contact-cells";
 import { CONNECTED_UNDERLINE } from "@/components/crm/contacts/contacts-config";
 import { ACCOUNT_COLUMNS, ACCOUNT_NAME_COL_W } from "./accounts-config";
@@ -246,6 +246,18 @@ export function AccountGroup({
                 {ACCOUNT_COLUMNS.map((col) => {
                   const w = { width: col.w };
                   switch (col.key) {
+                    case "owner":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <OwnerCell
+                            owner={users.find((u) => u.id === account.owner_id)}
+                            users={users}
+                            onSelect={(ownerId) =>
+                              onPatchAccount(account.id, { owner_id: ownerId })
+                            }
+                          />
+                        </span>
+                      );
                     case "domain":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>

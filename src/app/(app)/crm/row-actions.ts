@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
 
 /** boardKey → backing table (allow-list; never accept table names from the client). */
@@ -48,8 +49,9 @@ export async function moveRow(
   if (patch.group_id) clean.group_id = patch.group_id;
   if (Object.keys(clean).length === 0) return { error: "nothing to move" };
 
-  const { error } = await supabase.from(table(boardKey)).update(clean).eq("id", rowId);
+  const { error, count } = await supabase.from(table(boardKey)).update(clean, { count: "exact" }).eq("id", rowId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(`/crm/${boardKey}`);
   return {};
 }

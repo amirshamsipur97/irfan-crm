@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useServerState } from "@/lib/use-server-state";
 import { Surface } from "@/components/shell/AppChrome";
 import { Avatar } from "@/components/ui/Avatar";
 import { SuccessToast } from "@/components/ui/SuccessToast";
@@ -31,12 +32,9 @@ export function TeamView({
   members: CrmUser[];
   invites: CrmInvite[];
 }) {
-  const [localMembers, setLocalMembers] = useState(members);
-  const [localInvites, setLocalInvites] = useState(invites);
+  const [localMembers, setLocalMembers] = useServerState(members);
+  const [localInvites, setLocalInvites] = useServerState(invites);
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert" } | null>(null);
-
-  useEffect(() => setLocalMembers(members), [members]);
-  useEffect(() => setLocalInvites(invites), [invites]);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [inviteRole, setInviteRole] = useState<CrmRole>("agent");

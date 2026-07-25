@@ -1,19 +1,21 @@
 "use client";
 
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import { useServerState } from "@/lib/use-server-state";
 import {
   addCustomColumn,
   deleteCustomColumn,
   renameCustomColumn,
 } from "@/app/(app)/crm/custom-columns-actions";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Surface } from "@/components/shell/AppChrome";
 import { AiFloaty } from "@/components/shell/AiFloaty";
 import { Icon } from "@/components/ui/Icon";
 import { SuccessToast } from "@/components/ui/SuccessToast";
+import { applyRowEdit } from "@/components/crm/persist";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { canAnimate } from "@/lib/motion";
 import type { CrmDevelopment, CrmUnit, CrmUnitGroup, CrmUser } from "@/lib/types";
@@ -22,11 +24,11 @@ import { GROUP_COLORS } from "@/components/crm/leads/board-config";
 import type { PickerOption } from "@/components/crm/deals/connect-picker";
 import { UnitGroup } from "./UnitGroup";
 import { quickCreateDevelopment } from "@/app/(app)/crm/developments/actions";
+import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import {
   addUnit,
   addUnitGroup,
   renameUnitGroup,
-  setUnitGroupCollapsed,
   updateUnit,
 } from "@/app/(app)/crm/units/actions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
@@ -49,10 +51,10 @@ export function UnitsBoard({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState("Main table");
-  const [localUnits, setLocalUnits] = useState(units);
+  const [localUnits, setLocalUnits] = useServerState(units);
   const [search, setSearch] = useState("");
   const [personFilter, setPersonFilter] = useState<string | null>(null);
-  const [localGroups, setLocalGroups] = useState(groups);
+  const [localGroups, setLocalGroups] = useServerState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
   const rowTools = useRowTools({
@@ -79,10 +81,7 @@ export function UnitsBoard({
     sub: d.location,
   }));
 
-  const [localColumns, setLocalColumns] = useState(customColumns);
-  useEffect(() => setLocalColumns(customColumns), [customColumns]);
-  useEffect(() => setLocalUnits(units), [units]);
-  useEffect(() => setLocalGroups(groups), [groups]);
+  const [localColumns, setLocalColumns] = useServerState(customColumns);
 
   useGSAP(
     () => {
@@ -105,20 +104,14 @@ export function UnitsBoard({
       setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
       return;
     }
-    setLocalUnits((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)));
-    updateUnit(id, patch as Record<string, unknown>);
-    if (prevRow) {
-      const previous = Object.fromEntries(
-        Object.keys(patch).map((k) => [k, prevRow[k as keyof CrmUnit] ?? null])
-      ) as Partial<CrmUnit>;
-      setToast({
-        message: "We successfully updated 1 item",
-        undo: () => {
-          setLocalUnits((prev) => prev.map((u) => (u.id === id ? { ...u, ...previous } : u)));
-          updateUnit(id, previous as Record<string, unknown>);
-        },
-      });
-    }
+    return applyRowEdit<CrmUnit>({
+      id,
+      patch,
+      prev: prevRow,
+      setRows: setLocalUnits,
+      save: updateUnit,
+      setToast,
+    });
   };
 
   const handleAdd = async (groupId: string, name: string) => {
@@ -225,7 +218,7 @@ export function UnitsBoard({
               users={users}
               developmentOptions={developmentOptions}
               onToggleCollapse={(collapsed) => {
-                setUnitGroupCollapsed(group.id, collapsed);
+                setGroupCollapsed("units", group.id, collapsed);
               }}
               onRenameGroup={(name) => {
                 setLocalGroups((prev) =>

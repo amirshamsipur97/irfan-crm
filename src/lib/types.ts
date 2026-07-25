@@ -170,6 +170,7 @@ export interface CrmContact {
   account_name: string | null;
   account_id: string | null;
   group_id: string | null;
+  owner_id: string | null;
   last_interaction_at: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
@@ -198,6 +199,7 @@ export interface CrmAccount {
   employees_range: string | null;
   hq_location: string | null;
   group_id: string | null;
+  owner_id: string | null;
   last_interaction_at: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;

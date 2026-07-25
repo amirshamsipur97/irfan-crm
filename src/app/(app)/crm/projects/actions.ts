@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
 
 const BOARD_PATH = "/crm/projects";
@@ -47,11 +48,12 @@ export async function updateProject(projectId: string, patch: Record<string, unk
   if (entries.length === 0) return { error: "nothing to update" };
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_projects")
-    .update(Object.fromEntries(entries))
+    .update(Object.fromEntries(entries), { count: "exact" })
     .eq("id", projectId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   return {};
 }
@@ -79,21 +81,13 @@ export async function addProjectGroup(name: string, color: string) {
 
 export async function renameProjectGroup(groupId: string, name: string) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_project_groups")
-    .update({ name: name.trim() || "New Group" })
+    .update({ name: name.trim() || "New Group" }, { count: "exact" })
     .eq("id", groupId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   return {};
 }
 
-export async function setProjectGroupCollapsed(groupId: string, collapsed: boolean) {
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("crm_project_groups")
-    .update({ is_collapsed: collapsed })
-    .eq("id", groupId);
-  if (error) return { error: error.message };
-  return {};
-}

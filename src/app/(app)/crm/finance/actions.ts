@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE = "/crm/finance";
@@ -30,8 +31,9 @@ export async function updatePaymentPlan(
   patch: { name?: string; description?: string | null; active?: boolean }
 ) {
   const supabase = await createClient();
-  const { error } = await supabase.from("crm_payment_plans").update(patch).eq("id", planId);
+  const { error, count } = await supabase.from("crm_payment_plans").update(patch, { count: "exact" }).eq("id", planId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(PAGE);
   return {};
 }

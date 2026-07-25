@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
 
 const BOARD_PATH = "/crm/contacts";
@@ -8,6 +9,7 @@ const BOARD_PATH = "/crm/contacts";
 /** whitelist of directly patchable crm_contacts columns */
 const PATCHABLE = new Set([
   "name",
+  "owner_id",
   "email",
   "email_label",
   "phone",
@@ -33,6 +35,7 @@ export async function addContact(groupId: string, name: string) {
     .insert({
       name: name.trim() || "New Contact",
       group_id: groupId,
+      owner_id: user.id,
       created_by: user.id,
     })
     .select("id")
@@ -48,11 +51,12 @@ export async function updateContact(contactId: string, patch: Record<string, unk
   if (entries.length === 0) return { error: "nothing to update" };
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_contacts")
-    .update(Object.fromEntries(entries))
+    .update(Object.fromEntries(entries), { count: "exact" })
     .eq("id", contactId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   return {};
 }
@@ -80,22 +84,13 @@ export async function addContactGroup(name: string, color: string) {
 
 export async function renameContactGroup(groupId: string, name: string) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_contact_groups")
-    .update({ name: name.trim() || "New Group" })
+    .update({ name: name.trim() || "New Group" }, { count: "exact" })
     .eq("id", groupId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
-  return {};
-}
-
-export async function setContactGroupCollapsed(groupId: string, collapsed: boolean) {
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("crm_contact_groups")
-    .update({ is_collapsed: collapsed })
-    .eq("id", groupId);
-  if (error) return { error: error.message };
   return {};
 }
 

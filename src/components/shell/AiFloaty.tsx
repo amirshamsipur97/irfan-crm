@@ -16,6 +16,8 @@ export function AiFloaty() {
   return null;
 }
 
+// kept for when the AI Sidekick becomes real — see HANDOFF.md
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function AiFloatyDisabled() {
   const rootRef = useRef<HTMLDivElement>(null);
   const labelRef = useRef<HTMLDivElement>(null);

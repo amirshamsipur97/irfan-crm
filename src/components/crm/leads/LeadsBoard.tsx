@@ -1,13 +1,14 @@
 "use client";
 
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import { useServerState } from "@/lib/use-server-state";
 import {
   addCustomColumn,
   deleteCustomColumn,
   renameCustomColumn,
 } from "@/app/(app)/crm/custom-columns-actions";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Surface } from "@/components/shell/AppChrome";
@@ -26,14 +27,15 @@ import {
   moveLeadToContacts,
   renameGroup,
   renameLead,
-  setGroupCollapsed,
   updateLead,
   updateLeadOwner,
   updateLeadStage,
 } from "@/app/(app)/crm/leads/actions";
+import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import type { LogPayload } from "@/components/crm/deals/activity-log";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { findDuplicateContact } from "@/app/(app)/crm/contacts/actions";
+import { applyRowEdit, persist } from "@/components/crm/persist";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
@@ -57,17 +59,14 @@ export function LeadsBoard({
   customColumns?: CrmCustomColumn[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const [localLeads, setLocalLeads] = useState(leads);
-  const [localGroups, setLocalGroups] = useState(groups);
+  const [localLeads, setLocalLeads] = useServerState(leads);
+  const [localGroups, setLocalGroups] = useServerState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [personFilter, setPersonFilter] = useState<string | null>(null);
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
 
-  const [localColumns, setLocalColumns] = useState(customColumns);
-  useEffect(() => setLocalColumns(customColumns), [customColumns]);
-  useEffect(() => setLocalLeads(leads), [leads]);
-  useEffect(() => setLocalGroups(groups), [groups]);
+  const [localColumns, setLocalColumns] = useServerState(customColumns);
 
   useGSAP(
     () => {
@@ -100,34 +99,33 @@ export function LeadsBoard({
   const patchLead = (leadId: string, patch: Partial<CrmLead>) =>
     setLocalLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, ...patch } : l)));
 
-  /** cell edits: optimistic patch + persist + green toast with working undo */
-  const editLead = (leadId: string, patch: Partial<CrmLead>) => {
+  /** cell edits: optimistic patch, awaited persist, rollback + toast on refusal */
+  const editLead = async (leadId: string, patch: Partial<CrmLead>) => {
     const prevLead = localLeads.find((l) => l.id === leadId);
     if (prevLead && !canEditRow(profile, prevLead)) {
       setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
       return;
     }
-    patchLead(leadId, patch);
-    updateLead(leadId, patch as Record<string, unknown>);
-    if ("email" in patch || "phone" in patch) {
+    const saved = await applyRowEdit<CrmLead>({
+      id: leadId,
+      patch,
+      prev: prevLead,
+      setRows: setLocalLeads,
+      save: updateLead,
+      setToast,
+    });
+    if (saved && ("email" in patch || "phone" in patch)) {
       const next = { ...prevLead, ...patch } as CrmLead;
-      findDuplicateContact(next.email, `${next.country_code ?? ""}${next.phone ?? ""}`, null).then(
-        (dup) => {
-          if (dup) setToast({ message: `Possible duplicate: contact "${dup.name}" has the same email/phone`, tone: "alert" });
-        }
+      const dup = await findDuplicateContact(
+        next.email,
+        `${next.country_code ?? ""}${next.phone ?? ""}`,
+        null
       );
-    }
-    if (prevLead) {
-      const previous = Object.fromEntries(
-        Object.keys(patch).map((k) => [k, prevLead[k as keyof CrmLead] ?? null])
-      ) as Partial<CrmLead>;
-      setToast({
-        message: "We successfully updated 1 item",
-        undo: () => {
-          patchLead(leadId, previous);
-          updateLead(leadId, previous as Record<string, unknown>);
-        },
-      });
+      if (dup)
+        setToast({
+          message: `Possible duplicate: contact "${dup.name}" has the same email/phone`,
+          tone: "alert",
+        });
     }
   };
 
@@ -286,14 +284,21 @@ export function LeadsBoard({
               stages={stages}
               users={users}
               onToggleCollapse={(collapsed) => {
-                setGroupCollapsed(group.id, collapsed);
+                setGroupCollapsed("leads", group.id, collapsed);
               }}
               onRenameGroup={(name) => {
+                const previous = group.name;
                 setLocalGroups((prev) =>
                   prev.map((g) => (g.id === group.id ? { ...g, name: name || "New Group" } : g))
                 );
                 setNewGroupId(null);
-                renameGroup(group.id, name);
+                persist(renameGroup(group.id, name), {
+                  setToast,
+                  revert: () =>
+                    setLocalGroups((prev) =>
+                      prev.map((g) => (g.id === group.id ? { ...g, name: previous } : g))
+                    ),
+                });
               }}
               onRenameLead={(leadId, name) => {
                 const row = localLeads.find((l) => l.id === leadId);
@@ -302,7 +307,10 @@ export function LeadsBoard({
                   return;
                 }
                 patchLead(leadId, { name });
-                renameLead(leadId, name);
+                persist(renameLead(leadId, name), {
+                  setToast,
+                  revert: () => patchLead(leadId, { name: row?.name }),
+                });
               }}
               onStageChange={(leadId, stageId) => {
                 const row = localLeads.find((l) => l.id === leadId);
@@ -311,7 +319,10 @@ export function LeadsBoard({
                   return;
                 }
                 patchLead(leadId, { stage_id: stageId });
-                updateLeadStage(leadId, stageId);
+                persist(updateLeadStage(leadId, stageId), {
+                  setToast,
+                  revert: () => patchLead(leadId, { stage_id: row?.stage_id }),
+                });
               }}
               onOwnerChange={(leadId, ownerId) => {
                 const row = localLeads.find((l) => l.id === leadId);
@@ -320,7 +331,10 @@ export function LeadsBoard({
                   return;
                 }
                 patchLead(leadId, { owner_id: ownerId });
-                updateLeadOwner(leadId, ownerId);
+                persist(updateLeadOwner(leadId, ownerId), {
+                  setToast,
+                  revert: () => patchLead(leadId, { owner_id: row?.owner_id ?? null }),
+                });
               }}
               onAddLead={(name) => handleAddLead(group.id, name)}
               onPatchLead={editLead}

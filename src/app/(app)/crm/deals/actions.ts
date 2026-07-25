@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
 
 const BOARD_PATH = "/crm/deals";
@@ -112,11 +113,12 @@ export async function updateDeal(dealId: string, patch: Record<string, unknown>)
   if (entries.length === 0) return { error: "nothing to update" };
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_deals")
-    .update(Object.fromEntries(entries))
+    .update(Object.fromEntries(entries), { count: "exact" })
     .eq("id", dealId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   return {};
 }
@@ -144,22 +146,13 @@ export async function addDealGroup(name: string, color: string) {
 
 export async function renameDealGroup(groupId: string, name: string) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_deal_groups")
-    .update({ name: name.trim() || "New Group" })
+    .update({ name: name.trim() || "New Group" }, { count: "exact" })
     .eq("id", groupId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
-  return {};
-}
-
-export async function setDealGroupCollapsed(groupId: string, collapsed: boolean) {
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("crm_deal_groups")
-    .update({ is_collapsed: collapsed })
-    .eq("id", groupId);
-  if (error) return { error: error.message };
   return {};
 }
 
@@ -181,6 +174,7 @@ export async function quickCreateAccount(name: string) {
   const { error } = await supabase.from("crm_accounts").insert({
     name: name.trim(),
     group_id: group?.id ?? null,
+    owner_id: user.id,
     created_by: user.id,
   });
   if (error) return { error: error.message };
@@ -207,6 +201,7 @@ export async function quickCreateContact(name: string) {
   const { error } = await supabase.from("crm_contacts").insert({
     name: name.trim(),
     group_id: group?.id ?? null,
+    owner_id: user.id,
     created_by: user.id,
   });
   if (error) return { error: error.message };

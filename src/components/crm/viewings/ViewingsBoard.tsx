@@ -1,6 +1,7 @@
 "use client";
 
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import { useServerState } from "@/lib/use-server-state";
 import {
   addCustomColumn,
   deleteCustomColumn,
@@ -14,6 +15,7 @@ import { Surface } from "@/components/shell/AppChrome";
 import { AiFloaty } from "@/components/shell/AiFloaty";
 import { Icon } from "@/components/ui/Icon";
 import { SuccessToast } from "@/components/ui/SuccessToast";
+import { applyRowEdit } from "@/components/crm/persist";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { canAnimate } from "@/lib/motion";
 import type { CrmContact, CrmUnit, CrmUser, CrmViewing, CrmViewingGroup } from "@/lib/types";
@@ -21,13 +23,13 @@ import { BoardHeader } from "@/components/crm/leads/BoardHeader";
 import { GROUP_COLORS } from "@/components/crm/leads/board-config";
 import type { PickerOption } from "@/components/crm/deals/connect-picker";
 import { quickCreateContact } from "@/app/(app)/crm/deals/actions";
+import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import { quickCreateUnit } from "@/app/(app)/crm/units/actions";
 import { ViewingGroup } from "./ViewingGroup";
 import {
   addViewing,
   addViewingGroup,
   renameViewingGroup,
-  setViewingGroupCollapsed,
   updateViewing,
 } from "@/app/(app)/crm/viewings/actions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
@@ -52,10 +54,10 @@ export function ViewingsBoard({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState("Main table");
-  const [localViewings, setLocalViewings] = useState(viewings);
+  const [localViewings, setLocalViewings] = useServerState(viewings);
   const [search, setSearch] = useState("");
   const [personFilter, setPersonFilter] = useState<string | null>(null);
-  const [localGroups, setLocalGroups] = useState(groups);
+  const [localGroups, setLocalGroups] = useServerState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
   const rowTools = useRowTools({
@@ -84,10 +86,7 @@ export function ViewingsBoard({
     sub: u.development_name,
   }));
 
-  const [localColumns, setLocalColumns] = useState(customColumns);
-  useEffect(() => setLocalColumns(customColumns), [customColumns]);
-  useEffect(() => setLocalViewings(viewings), [viewings]);
-  useEffect(() => setLocalGroups(groups), [groups]);
+  const [localColumns, setLocalColumns] = useServerState(customColumns);
   useEffect(
     () => setContactOptions(contacts.map((c) => ({ name: c.name, sub: c.account_name }))),
     [contacts]
@@ -117,20 +116,14 @@ export function ViewingsBoard({
       setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
       return;
     }
-    setLocalViewings((prev) => prev.map((v) => (v.id === id ? { ...v, ...patch } : v)));
-    updateViewing(id, patch as Record<string, unknown>);
-    if (prevRow) {
-      const previous = Object.fromEntries(
-        Object.keys(patch).map((k) => [k, prevRow[k as keyof CrmViewing] ?? null])
-      ) as Partial<CrmViewing>;
-      setToast({
-        message: "We successfully updated 1 item",
-        undo: () => {
-          setLocalViewings((prev) => prev.map((v) => (v.id === id ? { ...v, ...previous } : v)));
-          updateViewing(id, previous as Record<string, unknown>);
-        },
-      });
-    }
+    return applyRowEdit<CrmViewing>({
+      id,
+      patch,
+      prev: prevRow,
+      setRows: setLocalViewings,
+      save: updateViewing,
+      setToast,
+    });
   };
 
   const handleAdd = async (groupId: string, name: string) => {
@@ -237,7 +230,7 @@ export function ViewingsBoard({
               contactOptions={contactOptions}
               unitOptions={unitOptions}
               onToggleCollapse={(collapsed) => {
-                setViewingGroupCollapsed(group.id, collapsed);
+                setGroupCollapsed("viewings", group.id, collapsed);
               }}
               onRenameGroup={(name) => {
                 setLocalGroups((prev) =>

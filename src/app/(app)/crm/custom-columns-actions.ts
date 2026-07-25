@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
 import type { CustomColumnType } from "@/lib/custom-columns";
 import { DEFAULT_OPTIONS, DEFAULT_LABELS } from "@/lib/custom-columns";
@@ -59,11 +60,12 @@ export async function addCustomColumn(boardKey: string, type: CustomColumnType) 
 
 export async function renameCustomColumn(columnId: string, label: string, boardKey: string) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_custom_columns")
-    .update({ label: label.trim() || "Column" })
+    .update({ label: label.trim() || "Column" }, { count: "exact" })
     .eq("id", columnId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   if (BOARD_PATHS[boardKey]) revalidatePath(BOARD_PATHS[boardKey]);
   return {};
 }
@@ -71,8 +73,9 @@ export async function renameCustomColumn(columnId: string, label: string, boardK
 /** Admin-tier only (RLS enforces); row values stay in `custom` untouched. */
 export async function deleteCustomColumn(columnId: string, boardKey: string) {
   const supabase = await createClient();
-  const { error } = await supabase.from("crm_custom_columns").delete().eq("id", columnId);
+  const { error, count } = await supabase.from("crm_custom_columns").delete({ count: "exact" }).eq("id", columnId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   if (BOARD_PATHS[boardKey]) revalidatePath(BOARD_PATHS[boardKey]);
   return {};
 }

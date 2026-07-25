@@ -1,6 +1,9 @@
 "use client";
 
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import { useServerState } from "@/lib/use-server-state";
+import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { applyRowEdit } from "@/components/crm/persist";
 import {
   addCustomColumn,
   deleteCustomColumn,
@@ -8,7 +11,7 @@ import {
 } from "@/app/(app)/crm/custom-columns-actions";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Surface } from "@/components/shell/AppChrome";
@@ -24,9 +27,9 @@ import {
   addActivity,
   addActivityGroup,
   renameActivityGroup,
-  setActivityGroupCollapsed,
   updateActivity,
 } from "@/app/(app)/crm/activities/actions";
+import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 
@@ -44,10 +47,10 @@ export function ActivitiesBoard({
   customColumns?: CrmCustomColumn[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const [localActivities, setLocalActivities] = useState(activities);
+  const [localActivities, setLocalActivities] = useServerState(activities);
   const [search, setSearch] = useState("");
   const [personFilter, setPersonFilter] = useState<string | null>(null);
-  const [localGroups, setLocalGroups] = useState(groups);
+  const [localGroups, setLocalGroups] = useServerState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
   const [itemHeight, setItemHeight] = useState<ItemHeight>("single");
 
@@ -69,10 +72,7 @@ export function ActivitiesBoard({
     { key: "status", label: "Status", get: (r) => r.status },
   ];
   const sortedRows = applyQuickFilters([...localActivities].sort(byPosition), filterDims, qf.state);
-  const [localColumns, setLocalColumns] = useState(customColumns);
-  useEffect(() => setLocalColumns(customColumns), [customColumns]);
-  useEffect(() => setLocalActivities(activities), [activities]);
-  useEffect(() => setLocalGroups(groups), [groups]);
+  const [localColumns, setLocalColumns] = useServerState(customColumns);
 
   useGSAP(
     () => {
@@ -90,10 +90,19 @@ export function ActivitiesBoard({
   );
 
   const patchActivity = (activityId: string, patch: Partial<CrmActivityItem>) => {
-    setLocalActivities((prev) =>
-      prev.map((a) => (a.id === activityId ? { ...a, ...patch } : a))
-    );
-    updateActivity(activityId, patch as Record<string, unknown>);
+    const prevRow = localActivities.find((a) => a.id === activityId);
+    if (prevRow && !canEditRow(profile, prevRow)) {
+      setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
+      return;
+    }
+    return applyRowEdit<CrmActivityItem>({
+      id: activityId,
+      patch,
+      prev: prevRow,
+      setRows: setLocalActivities,
+      save: updateActivity,
+      setToast,
+    });
   };
 
   const handleAddActivity = async (groupId: string, name: string) => {
@@ -198,7 +207,7 @@ export function ActivitiesBoard({
               users={users}
               rowH={ROW_HEIGHTS[itemHeight]}
               onToggleCollapse={(collapsed) => {
-                setActivityGroupCollapsed(group.id, collapsed);
+                setGroupCollapsed("activities", group.id, collapsed);
               }}
               onRenameGroup={(name) => {
                 setLocalGroups((prev) =>

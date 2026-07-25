@@ -9,7 +9,7 @@
 
 import { useRef, useState } from "react";
 import { Popover } from "@/components/crm/leads/cells";
-import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { canEditRow, isFullAccess, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import type { CrmUser } from "@/lib/types";
 import { deleteRow, duplicateRow, moveRow } from "@/app/(app)/crm/row-actions";
 
@@ -30,6 +30,8 @@ export interface BoardRowLike {
 export interface RowToolsConfig {
   groups: { id: string; name: string }[];
   canEdit: (rowId: string) => boolean;
+  /** deleting a board row is admin-tier in RLS, regardless of who owns it */
+  canDelete: boolean;
   onOpen?: (rowId: string) => void;
   onDuplicate: (rowId: string) => void;
   onMove: (rowId: string, groupId: string) => void;
@@ -84,6 +86,7 @@ export function useRowTools<T extends BoardRowLike>(opts: {
   return {
     groups,
     onOpen,
+    canDelete: isFullAccess(profile.role),
     canEdit: (rowId) => {
       const row = rows.find((r) => r.id === rowId);
       return row ? canEditRow(profile, row) : false;
@@ -355,7 +358,12 @@ export function RowTools({
         <div className="my-[5px] border-t border-line-soft" />
         <button
           type="button"
-          disabled={!editable}
+          disabled={!editable || !tools.canDelete}
+          title={
+            !tools.canDelete
+              ? "Only a Developer or CEO can delete board items"
+              : undefined
+          }
           className={`${ITEM_CLS} text-alert`}
           onClick={() => {
             setOpen(false);

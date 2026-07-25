@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
 import type {
   CrmCommissionSplit,
@@ -168,16 +169,17 @@ export async function markInstallmentPaid(scheduleId: string, method: string) {
     .single<{ id: string }>();
   if (payError) return { error: payError.message };
 
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_payment_schedules")
     .update({
       status: "paid",
       paid_amount: Number(row.expected_amount),
       paid_at: new Date().toISOString(),
       payment_id: payment.id,
-    })
+    }, { count: "exact" })
     .eq("id", scheduleId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   return {};
 }
@@ -240,11 +242,12 @@ export async function addCommissionSplit(
 
 export async function setSplitStatus(splitId: string, status: "pending" | "approved" | "paid") {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_commission_splits")
-    .update({ status })
+    .update({ status }, { count: "exact" })
     .eq("id", splitId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   return {};
 }
@@ -285,11 +288,12 @@ export async function updateTransaction(transactionId: string, patch: Record<str
   const entries = Object.entries(patch).filter(([k]) => TX_PATCHABLE.has(k));
   if (entries.length === 0) return { error: "nothing to update" };
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_transactions")
-    .update(Object.fromEntries(entries))
+    .update(Object.fromEntries(entries), { count: "exact" })
     .eq("id", transactionId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   return {};
 }
@@ -320,11 +324,12 @@ export async function addPayment(
 
 export async function refundPayment(paymentId: string) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_payments")
-    .update({ status: "refunded" })
+    .update({ status: "refunded" }, { count: "exact" })
     .eq("id", paymentId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   return {};
 }
@@ -349,8 +354,9 @@ export async function setCommissionStatus(commissionId: string, status: string, 
     patch.received_amount = receivedAmount;
     patch.received_at = new Date().toISOString();
   }
-  const { error } = await supabase.from("crm_deal_commissions").update(patch).eq("id", commissionId);
+  const { error, count } = await supabase.from("crm_deal_commissions").update(patch, { count: "exact" }).eq("id", commissionId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   return {};
 }

@@ -1,13 +1,14 @@
 "use client";
 
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import { useServerState } from "@/lib/use-server-state";
 import {
   addCustomColumn,
   deleteCustomColumn,
   renameCustomColumn,
 } from "@/app/(app)/crm/custom-columns-actions";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Surface } from "@/components/shell/AppChrome";
@@ -23,11 +24,12 @@ import {
   logAccountActivity,
   addAccountGroup,
   renameAccountGroup,
-  setAccountGroupCollapsed,
   updateAccount,
 } from "@/app/(app)/crm/accounts/actions";
+import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import type { LogPayload } from "@/components/crm/deals/activity-log";
 import { SuccessToast } from "@/components/ui/SuccessToast";
+import { applyRowEdit } from "@/components/crm/persist";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
@@ -52,15 +54,12 @@ export function AccountsBoard({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState("Main View");
-  const [localAccounts, setLocalAccounts] = useState(accounts);
+  const [localAccounts, setLocalAccounts] = useServerState(accounts);
   const [search, setSearch] = useState("");
-  const [localGroups, setLocalGroups] = useState(groups);
+  const [localGroups, setLocalGroups] = useServerState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
 
-  const [localColumns, setLocalColumns] = useState(customColumns);
-  useEffect(() => setLocalColumns(customColumns), [customColumns]);
-  useEffect(() => setLocalAccounts(accounts), [accounts]);
-  useEffect(() => setLocalGroups(groups), [groups]);
+  const [localColumns, setLocalColumns] = useServerState(customColumns);
 
   useGSAP(
     () => {
@@ -104,24 +103,15 @@ export function AccountsBoard({
       setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
       return;
     }
-    setLocalAccounts((prev) =>
-      prev.map((x) => (x.id === accountId ? { ...x, ...patch } : x))
-    );
-    updateAccount(accountId, patch as Record<string, unknown>);
-    if (!silent && prevRow) {
-      const previous = Object.fromEntries(
-        Object.keys(patch).map((k) => [k, prevRow[k as keyof CrmAccount] ?? null])
-      ) as Partial<CrmAccount>;
-      setToast({
-        message: "We successfully updated 1 item",
-        undo: () => {
-          setLocalAccounts((prev) =>
-            prev.map((x) => (x.id === accountId ? { ...x, ...previous } : x))
-          );
-          updateAccount(accountId, previous as Record<string, unknown>);
-        },
-      });
-    }
+    return applyRowEdit<CrmAccount>({
+      id: accountId,
+      patch,
+      prev: prevRow,
+      setRows: setLocalAccounts,
+      save: updateAccount,
+      setToast,
+      silent,
+    });
   };
 
   const handleAddAccount = async (groupId: string, name: string) => {
@@ -137,6 +127,7 @@ export function AccountsBoard({
         description: null,
         employees_range: null,
         hq_location: null,
+        owner_id: profile.id,
         custom: {},
         group_id: groupId,
         last_interaction_at: null,
@@ -220,7 +211,7 @@ export function AccountsBoard({
               contacts={contacts}
               deals={deals}
               onToggleCollapse={(collapsed) => {
-                setAccountGroupCollapsed(group.id, collapsed);
+                setGroupCollapsed("accounts", group.id, collapsed);
               }}
               onRenameGroup={(name) => {
                 setLocalGroups((prev) =>

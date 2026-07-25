@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
 import type {
   CrmActivityItem,
@@ -100,11 +101,12 @@ export async function setInterestStatus(
   status: "active" | "shortlisted" | "rejected"
 ) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_property_interests")
-    .update({ status })
+    .update({ status }, { count: "exact" })
     .eq("id", interestId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   return {};
 }
@@ -138,8 +140,9 @@ export async function addDealOffer(dealId: string, amount: number, unitId: strin
 
 export async function setOfferStatus(offerId: string, status: string) {
   const supabase = await createClient();
-  const { error } = await supabase.from("crm_offers").update({ status }).eq("id", offerId);
+  const { error, count } = await supabase.from("crm_offers").update({ status }, { count: "exact" }).eq("id", offerId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   return {};
 }
@@ -180,11 +183,12 @@ export async function createDealReservation(dealId: string, unitId: string, amou
 
 export async function cancelDealReservation(reservationId: string, reason: string) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_reservations")
-    .update({ status: "cancelled", cancellation_reason: reason.trim() || "cancelled" })
+    .update({ status: "cancelled", cancellation_reason: reason.trim() || "cancelled" }, { count: "exact" })
     .eq("id", reservationId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   revalidatePath("/crm/units");
   return {};

@@ -7,6 +7,7 @@ export const ACCOUNT_COLUMNS: {
   /** connected-board columns get the green header underline */
   connected?: boolean;
 }[] = [
+  { key: "owner", label: "Owner", w: 100 },
   { key: "domain", label: "Domain", w: 189 },
   { key: "email", label: "Email", w: 200 },
   { key: "industry", label: "Industry", w: 230 },

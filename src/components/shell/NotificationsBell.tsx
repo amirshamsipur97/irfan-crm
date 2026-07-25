@@ -137,7 +137,9 @@ export function NotificationsBell({ profile }: { profile: CrmUser }) {
   const [members, setMembers] = useState<CrmUser[]>([]);
   const wrapRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const supabase = useRef(createClient()).current;
+  // lazy state initialiser, not a ref: reading ref.current during render is
+  // exactly what react-hooks/refs forbids, and this value never changes
+  const [supabase] = useState(createClient);
 
   const fetchCount = useCallback(async () => {
     const { count } = await supabase
@@ -167,9 +169,12 @@ export function NotificationsBell({ profile }: { profile: CrmUser }) {
     return () => clearInterval(t);
   }, [fetchCount]);
 
-  useEffect(() => {
-    if (open) fetchList();
-  }, [open, fetchList]);
+  // opening the panel is a user event, so the fetch belongs to the click that
+  // opened it rather than to an effect that mirrors `open`
+  const openPanel = () => {
+    setOpen(true);
+    fetchList();
+  };
 
   useEffect(() => {
     if (!composeOpen || members.length > 0) return;
@@ -246,7 +251,7 @@ export function NotificationsBell({ profile }: { profile: CrmUser }) {
         type="button"
         aria-label="Notifications"
         title="Notifications"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (open ? setOpen(false) : openPanel())}
         className={`flex size-[40px] items-center justify-center rounded-[4px] hover:bg-[var(--hover-ghost)] ${
           open ? "bg-[var(--hover-ghost)]" : ""
         }`}

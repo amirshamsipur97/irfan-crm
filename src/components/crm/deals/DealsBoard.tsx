@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useServerState } from "@/lib/use-server-state";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Surface } from "@/components/shell/AppChrome";
@@ -21,13 +22,14 @@ import {
   quickCreateAccount,
   quickCreateContact,
   renameDealGroup,
-  setDealGroupCollapsed,
   updateDeal,
 } from "@/app/(app)/crm/deals/actions";
+import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import type { LogPayload } from "./activity-log";
 import type { PickerOption } from "./connect-picker";
 import { LostReasonDialog } from "./lost-reason-dialog";
 import { DealDrawer } from "./deal-drawer";
+import { applyRowEdit } from "@/components/crm/persist";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
 import {
@@ -63,10 +65,10 @@ export function DealsBoard({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState("Main table");
-  const [localDeals, setLocalDeals] = useState(deals);
+  const [localDeals, setLocalDeals] = useServerState(deals);
   const [search, setSearch] = useState("");
   const [personFilter, setPersonFilter] = useState<string | null>(null);
-  const [localGroups, setLocalGroups] = useState(groups);
+  const [localGroups, setLocalGroups] = useServerState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
   const [accountOptions, setAccountOptions] = useState<PickerOption[]>(
     accounts.map((a) => ({ name: a.name, sub: a.domain }))
@@ -86,11 +88,7 @@ export function DealsBoard({
     onToast: (message, tone) => setToast({ message, tone }),
     onOpen: setOpenDealId,
   });
-  const [localColumns, setLocalColumns] = useState(customColumns);
-
-  useEffect(() => setLocalDeals(deals), [deals]);
-  useEffect(() => setLocalColumns(customColumns), [customColumns]);
-  useEffect(() => setLocalGroups(groups), [groups]);
+  const [localColumns, setLocalColumns] = useServerState(customColumns);
   useEffect(
     () => setAccountOptions(accounts.map((a) => ({ name: a.name, sub: a.domain }))),
     [accounts]
@@ -129,24 +127,16 @@ export function DealsBoard({
         return;
       }
     }
-    setLocalDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, ...patch } : d)));
-    updateDeal(dealId, patch as Record<string, unknown>);
-
-    if (!silent && prevDeal) {
-      // Monday-style confirmation with a real undo (restores the previous values)
-      const previous = Object.fromEntries(
-        Object.keys(patch).map((k) => [k, prevDeal[k as keyof CrmDeal] ?? null])
-      ) as Partial<CrmDeal>;
-      setToast({
-        message: "We successfully updated 1 item",
-        undo: () => {
-          setLocalDeals((prev) =>
-            prev.map((d) => (d.id === dealId ? { ...d, ...previous } : d))
-          );
-          updateDeal(dealId, previous as Record<string, unknown>);
-        },
-      });
-    }
+    // Monday-style confirmation with a real undo (restores the previous values)
+    return applyRowEdit<CrmDeal>({
+      id: dealId,
+      patch,
+      prev: prevDeal,
+      setRows: setLocalDeals,
+      save: updateDeal,
+      setToast,
+      silent,
+    });
   };
 
   const handleAddColumn = async (type: CustomColumnType) => {
@@ -305,7 +295,7 @@ export function DealsBoard({
                 onRenameColumn={handleRenameColumn}
                 onDeleteColumn={handleDeleteColumn}
                 onToggleCollapse={(collapsed) => {
-                  setDealGroupCollapsed(group.id, collapsed);
+                  setGroupCollapsed("deals", group.id, collapsed);
                 }}
                 onRenameGroup={(name) => {
                   setLocalGroups((prev) =>

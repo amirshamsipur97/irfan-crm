@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
 
 const BOARD_PATH = "/crm/accounts";
@@ -8,6 +9,7 @@ const BOARD_PATH = "/crm/accounts";
 /** whitelist of directly patchable crm_accounts columns */
 const PATCHABLE = new Set([
   "name",
+  "owner_id",
   "domain",
   "email",
   "email_label",
@@ -31,6 +33,7 @@ export async function addAccount(groupId: string, name: string) {
     .insert({
       name: name.trim() || "New account",
       group_id: groupId,
+      owner_id: user.id,
       created_by: user.id,
     })
     .select("id")
@@ -46,11 +49,12 @@ export async function updateAccount(accountId: string, patch: Record<string, unk
   if (entries.length === 0) return { error: "nothing to update" };
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_accounts")
-    .update(Object.fromEntries(entries))
+    .update(Object.fromEntries(entries), { count: "exact" })
     .eq("id", accountId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   return {};
 }
@@ -78,22 +82,13 @@ export async function addAccountGroup(name: string, color: string) {
 
 export async function renameAccountGroup(groupId: string, name: string) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_account_groups")
-    .update({ name: name.trim() || "New Group" })
+    .update({ name: name.trim() || "New Group" }, { count: "exact" })
     .eq("id", groupId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
-  return {};
-}
-
-export async function setAccountGroupCollapsed(groupId: string, collapsed: boolean) {
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("crm_account_groups")
-    .update({ is_collapsed: collapsed })
-    .eq("id", groupId);
-  if (error) return { error: error.message };
   return {};
 }
 

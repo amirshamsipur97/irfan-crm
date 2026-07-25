@@ -28,7 +28,7 @@ export const WORKSPACE_NAV: { label: string; icon: IconName; href: string }[] = 
 
 // Emails / Finance / Team moved to the left icon rail (IconRail) so the
 // workspace sidebar stays a pure board list.
-export function WorkspaceSidebar({ role: _role }: { role?: CrmRole }) {
+export function WorkspaceSidebar(_props: { role?: CrmRole }) {
   const pathname = usePathname();
   const nav = WORKSPACE_NAV;
   const rootRef = useRef<HTMLElement>(null);

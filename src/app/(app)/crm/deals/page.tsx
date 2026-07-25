@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { withCollapsePrefs } from "@/lib/group-prefs";
 import { getProfile } from "@/lib/profile";
 import { recordBoardVisit } from "@/lib/visits";
 import { DealsBoard } from "@/components/crm/deals/DealsBoard";
@@ -41,7 +42,7 @@ export default async function DealsBoardPage() {
   return (
     <DealsBoard
       profile={profile}
-      groups={groups ?? []}
+      groups={await withCollapsePrefs("deals", groups ?? [])}
       deals={deals ?? []}
       stages={stages ?? []}
       users={users ?? []}

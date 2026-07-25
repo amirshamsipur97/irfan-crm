@@ -9,10 +9,9 @@ import {
   BatteryBar,
   Checkbox,
   InlineEdit,
+  OwnerCell,
   TimelineCell,
 } from "@/components/crm/leads/cells";
-import { dialFlag } from "@/components/crm/leads/board-config";
-import { ChipCell } from "@/components/crm/deals/deal-cells";
 import { money } from "@/components/crm/deals/deals-config";
 import {
   CONNECTED_UNDERLINE,
@@ -276,6 +275,18 @@ export function ContactGroup({
                 {CONTACT_COLUMNS.map((col) => {
                   const w = { width: col.w };
                   switch (col.key) {
+                    case "owner":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <OwnerCell
+                            owner={users.find((u) => u.id === contact.owner_id)}
+                            users={users}
+                            onSelect={(ownerId) =>
+                              onPatchContact(contact.id, { owner_id: ownerId })
+                            }
+                          />
+                        </span>
+                      );
                     case "email":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>

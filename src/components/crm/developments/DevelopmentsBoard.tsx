@@ -1,6 +1,7 @@
 "use client";
 
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import { useServerState } from "@/lib/use-server-state";
 import {
   addCustomColumn,
   deleteCustomColumn,
@@ -14,6 +15,7 @@ import { Surface } from "@/components/shell/AppChrome";
 import { AiFloaty } from "@/components/shell/AiFloaty";
 import { Icon } from "@/components/ui/Icon";
 import { SuccessToast } from "@/components/ui/SuccessToast";
+import { applyRowEdit } from "@/components/crm/persist";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { canAnimate } from "@/lib/motion";
 import type {
@@ -27,12 +29,12 @@ import { BoardHeader } from "@/components/crm/leads/BoardHeader";
 import { GROUP_COLORS } from "@/components/crm/leads/board-config";
 import type { PickerOption } from "@/components/crm/deals/connect-picker";
 import { quickCreateAccount } from "@/app/(app)/crm/deals/actions";
+import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import { DevelopmentGroup } from "./DevelopmentGroup";
 import {
   addDevelopment,
   addDevelopmentGroup,
   renameDevelopmentGroup,
-  setDevelopmentGroupCollapsed,
   updateDevelopment,
 } from "@/app/(app)/crm/developments/actions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
@@ -57,10 +59,10 @@ export function DevelopmentsBoard({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState("Main table");
-  const [localDevelopments, setLocalDevelopments] = useState(developments);
+  const [localDevelopments, setLocalDevelopments] = useServerState(developments);
   const [search, setSearch] = useState("");
   const [personFilter, setPersonFilter] = useState<string | null>(null);
-  const [localGroups, setLocalGroups] = useState(groups);
+  const [localGroups, setLocalGroups] = useServerState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
   const rowTools = useRowTools({
@@ -85,10 +87,7 @@ export function DevelopmentsBoard({
     accounts.map((a) => ({ name: a.name, sub: a.domain }))
   );
 
-  const [localColumns, setLocalColumns] = useState(customColumns);
-  useEffect(() => setLocalColumns(customColumns), [customColumns]);
-  useEffect(() => setLocalDevelopments(developments), [developments]);
-  useEffect(() => setLocalGroups(groups), [groups]);
+  const [localColumns, setLocalColumns] = useServerState(customColumns);
   useEffect(
     () => setDeveloperOptions(accounts.map((a) => ({ name: a.name, sub: a.domain }))),
     [accounts]
@@ -115,22 +114,14 @@ export function DevelopmentsBoard({
       setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
       return;
     }
-    setLocalDevelopments((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
-    updateDevelopment(id, patch as Record<string, unknown>);
-    if (prevRow) {
-      const previous = Object.fromEntries(
-        Object.keys(patch).map((k) => [k, prevRow[k as keyof CrmDevelopment] ?? null])
-      ) as Partial<CrmDevelopment>;
-      setToast({
-        message: "We successfully updated 1 item",
-        undo: () => {
-          setLocalDevelopments((prev) =>
-            prev.map((d) => (d.id === id ? { ...d, ...previous } : d))
-          );
-          updateDevelopment(id, previous as Record<string, unknown>);
-        },
-      });
-    }
+    return applyRowEdit<CrmDevelopment>({
+      id,
+      patch,
+      prev: prevRow,
+      setRows: setLocalDevelopments,
+      save: updateDevelopment,
+      setToast,
+    });
   };
 
   const handleAdd = async (groupId: string, name: string) => {
@@ -234,7 +225,7 @@ export function DevelopmentsBoard({
               users={users}
               developerOptions={developerOptions}
               onToggleCollapse={(collapsed) => {
-                setDevelopmentGroupCollapsed(group.id, collapsed);
+                setGroupCollapsed("developments", group.id, collapsed);
               }}
               onRenameGroup={(name) => {
                 setLocalGroups((prev) =>

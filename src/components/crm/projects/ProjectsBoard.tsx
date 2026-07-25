@@ -1,6 +1,9 @@
 "use client";
 
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
+import { useServerState } from "@/lib/use-server-state";
+import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { applyRowEdit } from "@/components/crm/persist";
 import {
   addCustomColumn,
   deleteCustomColumn,
@@ -8,7 +11,7 @@ import {
 } from "@/app/(app)/crm/custom-columns-actions";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Surface } from "@/components/shell/AppChrome";
@@ -23,9 +26,9 @@ import {
   addProject,
   addProjectGroup,
   renameProjectGroup,
-  setProjectGroupCollapsed,
   updateProject,
 } from "@/app/(app)/crm/projects/actions";
+import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 
@@ -44,10 +47,10 @@ export function ProjectsBoard({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState("Main table");
-  const [localProjects, setLocalProjects] = useState(projects);
+  const [localProjects, setLocalProjects] = useServerState(projects);
   const [search, setSearch] = useState("");
   const [personFilter, setPersonFilter] = useState<string | null>(null);
-  const [localGroups, setLocalGroups] = useState(groups);
+  const [localGroups, setLocalGroups] = useServerState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
 
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert" } | null>(null);
@@ -69,10 +72,7 @@ export function ProjectsBoard({
     { key: "account", label: "Account", get: (r) => r.account_name },
   ];
   const sortedRows = applyQuickFilters([...localProjects].sort(byPosition), filterDims, qf.state);
-  const [localColumns, setLocalColumns] = useState(customColumns);
-  useEffect(() => setLocalColumns(customColumns), [customColumns]);
-  useEffect(() => setLocalProjects(projects), [projects]);
-  useEffect(() => setLocalGroups(groups), [groups]);
+  const [localColumns, setLocalColumns] = useServerState(customColumns);
 
   useGSAP(
     () => {
@@ -90,10 +90,19 @@ export function ProjectsBoard({
   );
 
   const patchProject = (projectId: string, patch: Partial<CrmProject>) => {
-    setLocalProjects((prev) =>
-      prev.map((p) => (p.id === projectId ? { ...p, ...patch } : p))
-    );
-    updateProject(projectId, patch as Record<string, unknown>);
+    const prevRow = localProjects.find((p) => p.id === projectId);
+    if (prevRow && !canEditRow(profile, prevRow)) {
+      setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
+      return;
+    }
+    return applyRowEdit<CrmProject>({
+      id: projectId,
+      patch,
+      prev: prevRow,
+      setRows: setLocalProjects,
+      save: updateProject,
+      setToast,
+    });
   };
 
   const handleAddProject = async (groupId: string, name: string) => {
@@ -197,7 +206,7 @@ export function ProjectsBoard({
               )}
               users={users}
               onToggleCollapse={(collapsed) => {
-                setProjectGroupCollapsed(group.id, collapsed);
+                setGroupCollapsed("projects", group.id, collapsed);
               }}
               onRenameGroup={(name) => {
                 setLocalGroups((prev) =>

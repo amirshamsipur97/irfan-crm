@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE = "/admin";
@@ -14,11 +15,12 @@ export async function updateRegistrationSettings(allowedDomains: string[], maxAg
     return { error: "max agents must be between 1 and 500" };
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_registration_settings")
-    .update({ allowed_domains: domains, max_agents: Math.round(maxAgents), updated_at: new Date().toISOString() })
+    .update({ allowed_domains: domains, max_agents: Math.round(maxAgents), updated_at: new Date().toISOString() }, { count: "exact" })
     .eq("id", true);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(PAGE);
   return { domains };
 }
@@ -28,11 +30,12 @@ export async function updateMemberSender(userId: string, senderEmail: string) {
   const clean = senderEmail.trim().toLowerCase();
   if (clean && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(clean)) return { error: "invalid email" };
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("crm_users")
-    .update({ sender_email: clean || null })
+    .update({ sender_email: clean || null }, { count: "exact" })
     .eq("id", userId);
   if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(PAGE);
   return {};
 }

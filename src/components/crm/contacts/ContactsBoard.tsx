@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useServerState } from "@/lib/use-server-state";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Surface } from "@/components/shell/AppChrome";
@@ -17,11 +18,12 @@ import {
   logContactActivity,
   addContactGroup,
   renameContactGroup,
-  setContactGroupCollapsed,
   updateContact,
 } from "@/app/(app)/crm/contacts/actions";
+import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import type { LogPayload } from "@/components/crm/deals/activity-log";
 import { SuccessToast } from "@/components/ui/SuccessToast";
+import { applyRowEdit } from "@/components/crm/persist";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { findDuplicateContact } from "@/app/(app)/crm/contacts/actions";
 import { quickCreateAccount } from "@/app/(app)/crm/deals/actions";
@@ -54,17 +56,13 @@ export function ContactsBoard({
   customColumns: CrmCustomColumn[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const [localContacts, setLocalContacts] = useState(contacts);
+  const [localContacts, setLocalContacts] = useServerState(contacts);
   const [search, setSearch] = useState("");
-  const [localGroups, setLocalGroups] = useState(groups);
+  const [localGroups, setLocalGroups] = useServerState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
   const [openContactId, setOpenContactId] = useState<string | null>(null);
 
-  const [localColumns, setLocalColumns] = useState(customColumns);
-
-  useEffect(() => setLocalContacts(contacts), [contacts]);
-  useEffect(() => setLocalGroups(groups), [groups]);
-  useEffect(() => setLocalColumns(customColumns), [customColumns]);
+  const [localColumns, setLocalColumns] = useServerState(customColumns);
 
   const handleAddColumn = async (type: CustomColumnType) => {
     const result = await addCustomColumn("contacts", type);
@@ -139,39 +137,33 @@ export function ContactsBoard({
     [accounts]
   );
 
-  const patchContact = (contactId: string, patch: Partial<CrmContact>, silent = false) => {
+  const patchContact = async (contactId: string, patch: Partial<CrmContact>, silent = false) => {
     const prevRow = localContacts.find((x) => x.id === contactId);
     if (prevRow && !canEditRow(profile, prevRow)) {
       setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
       return;
     }
-    setLocalContacts((prev) =>
-      prev.map((x) => (x.id === contactId ? { ...x, ...patch } : x))
-    );
-    updateContact(contactId, patch as Record<string, unknown>);
-    if ("email" in patch || "phone" in patch) {
+    const saved = await applyRowEdit<CrmContact>({
+      id: contactId,
+      patch,
+      prev: prevRow,
+      setRows: setLocalContacts,
+      save: updateContact,
+      setToast,
+      silent,
+    });
+    if (saved && ("email" in patch || "phone" in patch)) {
       const next = { ...prevRow, ...patch } as CrmContact;
-      findDuplicateContact(
+      const dup = await findDuplicateContact(
         next.email,
         `${next.country_code ?? ""}${next.phone ?? ""}`,
         contactId
-      ).then((dup) => {
-        if (dup) setToast({ message: `Possible duplicate: "${dup.name}" has the same email/phone`, tone: "alert" });
-      });
-    }
-    if (!silent && prevRow) {
-      const previous = Object.fromEntries(
-        Object.keys(patch).map((k) => [k, prevRow[k as keyof CrmContact] ?? null])
-      ) as Partial<CrmContact>;
-      setToast({
-        message: "We successfully updated 1 item",
-        undo: () => {
-          setLocalContacts((prev) =>
-            prev.map((x) => (x.id === contactId ? { ...x, ...previous } : x))
-          );
-          updateContact(contactId, previous as Record<string, unknown>);
-        },
-      });
+      );
+      if (dup)
+        setToast({
+          message: `Possible duplicate: "${dup.name}" has the same email/phone`,
+          tone: "alert",
+        });
     }
   };
 
@@ -191,6 +183,7 @@ export function ContactsBoard({
         comments: null,
         account_name: null,
         account_id: null,
+        owner_id: profile.id,
         custom: {},
         group_id: groupId,
         last_interaction_at: null,
@@ -247,7 +240,7 @@ export function ContactsBoard({
               )}
               deals={deals}
               onToggleCollapse={(collapsed) => {
-                setContactGroupCollapsed(group.id, collapsed);
+                setGroupCollapsed("contacts", group.id, collapsed);
               }}
               onRenameGroup={(name) => {
                 setLocalGroups((prev) =>

@@ -17,7 +17,6 @@ import type { CrmLead, CrmLeadGroup, CrmStage, CrmUser } from "@/lib/types";
 import {
   BOARD_COLUMNS,
   NAME_COL_W,
-  dialFlag,
   shortDate,
   sourceColor,
 } from "./board-config";

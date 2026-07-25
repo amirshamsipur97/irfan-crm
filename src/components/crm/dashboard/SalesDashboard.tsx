@@ -63,7 +63,6 @@ function HeaderButton({ children }: { children: React.ReactNode }) {
 }
 
 export function SalesDashboard({
-  profile,
   data,
   currency = "OMR",
 }: {
