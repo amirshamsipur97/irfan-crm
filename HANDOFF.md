@@ -2,8 +2,66 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-07-21 late session** (all work committed locally through
-> `437f49e`; repo is LOCAL-ONLY, no remote).
+> Updated: **2026-07-26 hardening pass** (committed through `7d0cf13`, deployed;
+> repo is LOCAL-ONLY, no remote).
+
+## INFRASTRUCTURE HARDENING (2026-07-26, commit `7d0cf13`, DEPLOYED)
+
+Pre-rollout pass over the whole app before opening the CRM to the sales team.
+Five migrations + a code sweep. **Read this before touching the write path.**
+
+1. **Silent write failures (the big one).** RLS rejects a write by matching zero
+   rows, *not* by raising an error: PostgREST answers `204` and supabase-js
+   reports `{ error: null }`. Every action used the bare `.update()/.delete()`
+   shape, so a refused write showed "We successfully updated 1 item" and the
+   value reverted at the next refetch. Verified in SQL: an agent updating a
+   contact they neither own nor created updates 0 rows with no error.
+   - `src/lib/mutate.ts` — `PERMISSION_ERROR` + `counted()`.
+   - 40 write sites now pass `{ count: "exact" }` and return an error when
+     nothing was written. **Any new write action must do the same.**
+   - Exceptions kept deliberately silent: activity "touch" writes
+     (`last_activity_at`/`last_interaction_at`) and un-starring a board — a
+     zero-row result there is a no-op, not a refusal.
+2. **Boards await their writes.** `src/components/crm/persist.ts` holds
+   `applyRowEdit()` (optimistic patch → await → rollback + alert toast on
+   refusal → success toast with undo) and `persist()` for renames/stage/owner
+   moves. It replaced nine hand-rolled copies of the same block. Client Projects
+   and Activities had *no* permission guard at all — both now have one.
+3. **Owner parity.** `crm_contacts`/`crm_accounts` had no `owner_id` and were
+   creator-edit only while `canEditRow()` promised owner-edit. Both gained
+   `owner_id` (backfilled from `created_by`), an Owner column on the board,
+   owner-edit RLS, `owner_id` in PATCHABLE, and inserts/quick-creates set it.
+   `crm_convert_lead` hands the new contact to the *lead's* owner.
+   Migration `crm_standardize_row_ownership`.
+4. **Policy + grant hardening.** All 157 `crm_` policies are `TO authenticated`
+   (were a mix of `public`). Trigger functions and internal helpers
+   (`crm_notify` — it took an arbitrary target user id — and
+   `crm_compute_lead_score`) are no longer EXECUTE-able by anon *or*
+   authenticated. RLS predicates (`crm_is_member` etc.) keep the authenticated
+   grant they need for policy evaluation; `crm_can_register` keeps anon because
+   signup runs before there is a session. `search_path` pinned on
+   `crm_set_updated_at` and `crm_guard_payment_immutable`.
+   Migration `crm_harden_function_grants`.
+5. **Per-user group collapse.** `crm_*_groups.is_collapsed` is shared, so one
+   agent collapsing a group collapsed it for everyone. New `crm_group_prefs`
+   (own-rows RLS) + `withCollapsePrefs()` in `src/lib/group-prefs.ts`, overlaid
+   in all nine pages — Group components were untouched, they still read
+   `group.is_collapsed`. The nine per-board `setXGroupCollapsed` actions were
+   deleted in favour of `setGroupCollapsed(boardKey, groupId, collapsed)` in
+   `app/(app)/crm/actions.ts`. Migration `crm_per_user_group_collapse`.
+6. **Delete gating.** RLS DELETE is admin-tier, but the row menu enabled Delete
+   for any row owner — every agent would have hit a permission error after the
+   row already vanished optimistically. `RowToolsConfig.canDelete` now mirrors
+   the real tier.
+7. **Lint.** Props→state sync moved out of effects into `useServerState()`
+   (`src/lib/use-server-state.ts`, the render-time pattern React documents).
+   68 → 31 problems. The remaining ones are the `useGSAP` + `contextSafe` ref
+   reads (rule false positive — do NOT "fix" them, the collapse animations
+   depend on that pattern) plus a few dialog-local prop syncs.
+
+Verified: `tsc` clean, `next build` clean, all 15 routes 200 in dev, Owner
+column renders on both boards, collapse preference proven per-user in SQL +
+page render, production smoke-tested.
 
 ## CURRENT STATE SNAPSHOT (2026-07-21)
 
