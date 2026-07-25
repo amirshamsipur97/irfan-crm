@@ -5,6 +5,32 @@
 > Updated: **2026-07-26 hardening pass** (committed through `7d0cf13`, deployed;
 > repo is LOCAL-ONLY, no remote).
 
+## CUSTOM DOMAIN (2026-07-26) — https://crm.irfaninvest.com
+
+The CRM's real address. `irfan-crm.vercel.app` still resolves to the same
+deployment. Setup, for reference if it ever has to be redone:
+
+- `crm.irfaninvest.com` added to Vercel project `irfan-crm`; ownership verified
+  automatically because `irfaninvest.com` already lives in the same Vercel team.
+- DNS is Namecheap BasicDNS (`dns1/dns2.registrar-servers.com`). One record in
+  Advanced DNS: **`CNAME  crm → cname.vercel-dns.com.`** — the same target the
+  existing `www` record uses. Vercel also offers a per-project target
+  (`e88392216869c707.vercel-dns-016.com.`); the generic one is fine and keeps
+  the zone consistent.
+- Let's Encrypt certificate issued automatically on first request.
+- `NEXT_PUBLIC_SITE_URL` (Vercel production) switched to
+  `https://crm.irfaninvest.com`, then redeployed — this is what the signup
+  action uses for `emailRedirectTo`, so confirmation links land on the new host.
+- ⚠️ `vercel env pull` and the env API return an EMPTY value for every
+  encrypted variable with this token, including the Supabase ones that
+  demonstrably work. That is a decrypt limitation, not a missing value — trust
+  the CLI's `Added Environment Variable` confirmation, and do not "fix" an env
+  var because the pull looks blank.
+- ⚠️ STILL REQUIRED (dashboard-only, no MCP or API for it): add
+  `https://crm.irfaninvest.com/auth/callback` to Supabase → Authentication →
+  URL Configuration → Redirect URLs, and set Site URL to the new domain.
+  Without it, email confirmation and Google OAuth break on the new host.
+
 ## INFRASTRUCTURE HARDENING (2026-07-26, commit `7d0cf13`, DEPLOYED)
 
 Pre-rollout pass over the whole app before opening the CRM to the sales team.
