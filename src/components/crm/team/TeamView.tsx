@@ -8,6 +8,7 @@ import { SuccessToast } from "@/components/ui/SuccessToast";
 import { ROLE_LABELS } from "@/lib/permissions";
 import type { CrmInvite, CrmRole, CrmUser } from "@/lib/types";
 import {
+  approveMember,
   createInvite,
   deleteInvite,
   setMemberActive,
@@ -64,6 +65,37 @@ export function TeamView({
     }
   };
 
+  /** pending = signed up through the form, never approved by an admin */
+  const pending = localMembers.filter((m) => !m.approved_at);
+  const approved = localMembers.filter((m) => m.approved_at);
+
+  const [issued, setIssued] = useState<Record<string, string>>({});
+  const [approving, setApproving] = useState<string | null>(null);
+
+  const approve = async (userId: string, role: CrmRole) => {
+    setApproving(userId);
+    const result = await approveMember(userId, role);
+    setApproving(null);
+    if (result.error || !result.tempPassword) {
+      setToast({ message: result.error ?? "approval failed", tone: "alert" });
+      return;
+    }
+    setIssued((prev) => ({ ...prev, [userId]: result.tempPassword as string }));
+    setLocalMembers((ms) =>
+      ms.map((m) =>
+        m.id === userId
+          ? { ...m, is_active: true, role, requested_role: null, approved_at: new Date().toISOString() }
+          : m
+      )
+    );
+    setToast({
+      message: result.emailed
+        ? "Approved — the temporary password was emailed"
+        : `Approved, but the email did not go out (${result.emailError ?? "no mail server"}). Copy the password below and send it yourself.`,
+      tone: result.emailed ? "success" : "alert",
+    });
+  };
+
   const sendInvite = async () => {
     const result = await createInvite(inviteEmail, inviteName, inviteRole);
     if (result.error || !result.id) {
@@ -99,6 +131,82 @@ export function TeamView({
           enforced by the database.
         </p>
 
+        {/* approval queue */}
+        {pending.length > 0 && (
+          <div className="mb-[24px] rounded-[8px] border border-[#fdab3d] bg-[#fff8ef]">
+            <div className="border-b border-[#fadfb9] px-[16px] py-[10px]">
+              <h2 className="m-0 font-display text-[15px] font-medium leading-[22px] text-ink">
+                Waiting for approval ({pending.length})
+              </h2>
+              <p className="m-0 pt-[2px] font-sans text-[12px] leading-[17px] text-ink-muted">
+                Approving issues a one-time temporary password and emails it. The
+                member is asked to choose their own the first time they sign in.
+              </p>
+            </div>
+            {pending.map((m) => (
+              <div key={m.id} className="border-b border-[#fadfb9] px-[16px] py-[12px] last:border-b-0">
+                <div className="flex flex-wrap items-center gap-[12px]">
+                  <Avatar name={m.full_name || m.email} src={m.avatar_url} size={30} />
+                  <span className="min-w-0">
+                    <span className="block font-sans text-[13.5px] font-medium text-ink">
+                      {m.full_name || "—"}
+                    </span>
+                    <span className="block font-sans text-[12px] text-ink-muted">{m.email}</span>
+                  </span>
+                  {m.title && (
+                    <span className="rounded-[10px] bg-white px-[9px] py-[3px] font-sans text-[11px] text-ink-muted">
+                      {m.title}
+                    </span>
+                  )}
+                  <span className="ml-auto flex items-center gap-[8px]">
+                    <label className="font-sans text-[12px] text-ink-muted" htmlFor={`role-${m.id}`}>
+                      Approve as
+                    </label>
+                    <select
+                      id={`role-${m.id}`}
+                      defaultValue={m.requested_role ?? "agent"}
+                      className="h-[30px] rounded-[4px] border border-line-strong bg-white px-[6px] font-sans text-[13px] text-ink outline-none focus:border-teal-deep"
+                      onChange={(e) => {
+                        e.currentTarget.dataset.picked = e.currentTarget.value;
+                      }}
+                    >
+                      {ROLE_OPTIONS.map((r) => (
+                        <option key={r.value} value={r.value}>
+                          {ROLE_LABELS[r.value]}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      disabled={approving === m.id}
+                      onClick={() => {
+                        const select = document.getElementById(
+                          `role-${m.id}`
+                        ) as HTMLSelectElement | null;
+                        approve(m.id, (select?.value ?? "agent") as CrmRole);
+                      }}
+                      className="h-[30px] rounded-[4px] bg-brand px-[14px] font-sans text-[13px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                    >
+                      {approving === m.id ? "Approving…" : "Approve"}
+                    </button>
+                  </span>
+                </div>
+                {issued[m.id] && (
+                  <p className="m-0 mt-[10px] rounded-[6px] bg-white px-[12px] py-[9px] font-sans text-[12.5px] leading-[18px] text-ink">
+                    Temporary password:{" "}
+                    <code className="rounded-[4px] border border-line-strong bg-canvas px-[7px] py-[2px] text-[13px] tracking-[0.4px]">
+                      {issued[m.id]}
+                    </code>
+                    <span className="pl-[8px] text-ink-muted">
+                      shown once — it is replaced at first sign-in
+                    </span>
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* members */}
         <div className="overflow-x-auto rounded-[8px] border border-line bg-white">
           <table className="w-full min-w-[720px] border-collapse font-sans text-[13.5px]">
@@ -115,7 +223,7 @@ export function TeamView({
               </tr>
             </thead>
             <tbody>
-              {localMembers.map((m) => {
+              {approved.map((m) => {
                 const hint = ROLE_OPTIONS.find((r) => r.value === m.role)?.hint ?? "";
                 const isSelf = m.id === profile.id;
                 return (

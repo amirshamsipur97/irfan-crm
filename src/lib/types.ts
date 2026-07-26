@@ -23,6 +23,10 @@ export interface CrmUser {
   role: CrmRole;
   requested_role: "agent" | "media" | "manager" | "finance" | null;
   is_active: boolean;
+  /** true while the account still uses the temporary password issued at signup */
+  must_change_password: boolean;
+  /** when an admin approved the signup; null means it is still pending */
+  approved_at: string | null;
   created_at: string;
   updated_at: string;
 }

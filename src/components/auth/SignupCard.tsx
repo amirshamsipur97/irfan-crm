@@ -2,8 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { signUp, signInWithGoogle, type AuthState } from "@/app/(auth)/actions";
-import { GoogleGlyph } from "./AuthShell";
+import { signUp, type AuthState } from "@/app/(auth)/actions";
 
 const DIAL_CODES = ["+968", "+971", "+98", "+966", "+974", "+965", "+973", "+1", "+44", "+7", "+91"];
 
@@ -42,7 +41,7 @@ export function SignupCard() {
           </svg>
         </span>
         <h1 className="pt-[16px] font-display text-[22px] font-semibold leading-[30px] text-ink">
-          Confirm your email
+          Request sent
         </h1>
         <p className="pt-[8px] font-sans text-[14px] leading-[21px] text-ink-muted">{state.notice}</p>
         <Link
@@ -132,34 +131,11 @@ export function SignupCard() {
           </div>
         </div>
 
-        <div>
-          <FieldLabel htmlFor="su_password" required>
-            Password
-          </FieldLabel>
-          <input
-            id="su_password"
-            name="password"
-            type="password"
-            required
-            minLength={8}
-            autoComplete="new-password"
-            className={inputCls}
-          />
-        </div>
-        <div>
-          <FieldLabel htmlFor="su_confirm" required>
-            Confirm password
-          </FieldLabel>
-          <input
-            id="su_confirm"
-            name="confirm_password"
-            type="password"
-            required
-            minLength={8}
-            autoComplete="new-password"
-            className={inputCls}
-          />
-        </div>
+        <p className="col-span-2 rounded-[8px] bg-[#f0f6ff] px-[14px] py-[11px] font-sans text-[12px] leading-[18px] text-ink-muted">
+          You do not pick a password here. Once your request is approved we email
+          you a temporary one, and the app asks you to choose your own the first
+          time you sign in.
+        </p>
 
         {state?.error && (
           <p role="alert" className="col-span-2 font-sans text-[13px] leading-[18px] text-[#e2445c]">
@@ -185,21 +161,7 @@ export function SignupCard() {
         </div>
       </form>
 
-      <div className="flex items-center gap-[12px] py-[16px]">
-        <span className="h-px flex-1 bg-line" />
-        <span className="font-sans text-[13px] leading-[18px] text-ink-muted">Or</span>
-        <span className="h-px flex-1 bg-line" />
-      </div>
-
-      <form action={signInWithGoogle}>
-        <button
-          type="submit"
-          className="flex h-[40px] w-full items-center justify-center gap-[10px] rounded-[8px] border border-line-strong bg-white font-sans text-[14px] leading-[20px] text-ink transition-colors hover:bg-[var(--hover-ghost)]"
-        >
-          <GoogleGlyph />
-          Continue with Google
-        </button>
-      </form>
+      {/* Google sign-up is temporarily disabled — see LoginCard for the note. */}
 
       <p className="pt-[20px] text-center font-sans text-[13px] leading-[18px] text-ink-muted">
         Already have an account?{" "}

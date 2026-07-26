@@ -2,8 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { signIn, signInWithGoogle, type AuthState } from "@/app/(auth)/actions";
-import { GoogleGlyph } from "./AuthShell";
+import { signIn, type AuthState } from "@/app/(auth)/actions";
 
 const inputCls =
   "h-[40px] w-full rounded-[8px] border border-line-strong bg-white px-[12px] font-sans text-[14px] text-ink outline-none placeholder:text-ink-muted focus:border-teal-deep";
@@ -64,21 +63,9 @@ export function LoginCard({ oauthError }: { oauthError: string | null }) {
         </button>
       </form>
 
-      <div className="flex items-center gap-[12px] py-[18px]">
-        <span className="h-px flex-1 bg-line" />
-        <span className="font-sans text-[13px] leading-[18px] text-ink-muted">Or</span>
-        <span className="h-px flex-1 bg-line" />
-      </div>
-
-      <form action={signInWithGoogle}>
-        <button
-          type="submit"
-          className="flex h-[40px] w-full items-center justify-center gap-[10px] rounded-[8px] border border-line-strong bg-white font-sans text-[14px] leading-[20px] text-ink transition-colors hover:bg-[var(--hover-ghost)]"
-        >
-          <GoogleGlyph />
-          Continue with Google
-        </button>
-      </form>
+      {/* Google sign-in is temporarily disabled — accounts are created through
+          the signup form and a system-issued temporary password. The action and
+          the /auth/callback route are intact, so re-enabling is just this block. */}
 
       <p className="pt-[28px] text-center font-sans text-[13px] leading-[18px] text-ink-muted">
         Don&apos;t have an account?{" "}

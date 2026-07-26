@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { generateTempPassword } from "@/lib/temp-password";
 
 export type AuthState = { error?: string; notice?: string } | null;
 
@@ -28,11 +29,10 @@ export async function signUp(_prev: AuthState, formData: FormData) {
 
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-  const confirm = String(formData.get("confirm_password") ?? "");
-  if (password !== confirm) {
-    return { error: "Passwords do not match." };
-  }
+  // Signing up no longer sets a password: the account is created with a
+  // throwaway that nobody is told, and an admin approving the request on
+  // /crm/team replaces it with the temporary password the new member is emailed.
+  const password = generateTempPassword();
   const dial = String(formData.get("country_code") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
@@ -83,10 +83,13 @@ export async function signUp(_prev: AuthState, formData: FormData) {
     return { error: error.message };
   }
 
-  // email confirmation is on — no session yet means "check your inbox"
-  if (!data.session) {
+  // the account is created inactive: an admin approves it on /crm/team, which
+  // issues the temporary password and emails it. There is nothing for the new
+  // member to do until then, and no session to hand them either way.
+  if (data.user) {
     return {
-      notice: "Almost there — check your inbox and confirm your email to activate your account.",
+      notice:
+        "Your request has been sent. Once an administrator approves it you will receive an email with a temporary password to sign in with.",
     };
   }
 
