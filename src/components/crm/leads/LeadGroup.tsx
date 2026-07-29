@@ -19,10 +19,8 @@ import {
   LEAD_SOURCES,
   NAME_COL_W,
   shortDate,
-  sourceColor,
 } from "./board-config";
 import {
-  BatteryBar,
   Checkbox,
   InlineEdit,
   OwnerCell,
@@ -141,15 +139,6 @@ export function LeadGroup({
       return next;
     });
 
-  const statusSegments = stages
-    .map((s) => ({ color: s.color, count: leads.filter((l) => l.stage_id === s.id).length }))
-    .filter((s) => s.count > 0);
-  const sourceSegments = Object.entries(
-    leads.reduce<Record<string, number>>((acc, l) => {
-      acc[l.source] = (acc[l.source] ?? 0) + 1;
-      return acc;
-    }, {})
-  ).map(([source, count]) => ({ color: sourceColor(source), count }));
 
   const cellBorder = "border-b border-r border-line";
 
@@ -496,32 +485,9 @@ export function LeadGroup({
             />
           </div>
 
-          {/* summary row */}
-          <div className="flex w-fit items-stretch" style={{ height: ROW_H }}>
-            <span className="sticky left-0 z-10 block bg-white" style={{ width: NAME_COL_W }} />
-            {BOARD_COLUMNS.map((col) => (
-              <span
-                key={col.key}
-                className="flex items-center justify-center border-b border-r border-line bg-white"
-                style={{ width: col.w }}
-              >
-                {col.key === "status" && statusSegments.length > 0 && (
-                  <BatteryBar segments={statusSegments} />
-                )}
-                {col.key === "source" && sourceSegments.length > 0 && (
-                  <BatteryBar segments={sourceSegments} />
-                )}
-              </span>
-            ))}
-            {customColumns.map((col) => (
-              <span
-                key={col.id}
-                className="border-b border-r border-line bg-white"
-                style={{ width: CUSTOM_COL_W }}
-              />
-            ))}
-            <span className="w-[40px] border-b border-line bg-white" />
-          </div>
+          {/* the per-group summary strip (status / source battery bars) was
+              removed on request — it read as a stray bordered row hanging under
+              the table rather than as a footer. */}
         </div>
       )}
 

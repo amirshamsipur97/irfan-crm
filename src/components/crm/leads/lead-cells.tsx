@@ -215,12 +215,13 @@ export function CenterEditCell({
   onSave: (next: string | null) => void;
 }) {
   return (
-    <span className="flex size-full items-center justify-center px-[6px]">
+    <span className="flex size-full items-center justify-center">
       <InlineEdit
+        fill
         value={value ?? ""}
         onSave={(next) => onSave(next.trim() || null)}
         placeholder=""
-        className="max-w-full text-center font-sans text-[14px] leading-[20px] text-ink"
+        className="text-center font-sans text-[14px] leading-[20px] text-ink"
       />
     </span>
   );

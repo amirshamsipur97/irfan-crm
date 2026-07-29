@@ -40,6 +40,7 @@ export function InlineEdit({
   autoEdit = false,
   placeholder = "",
   style,
+  fill = false,
 }: {
   value: string;
   onSave: (next: string) => void;
@@ -47,6 +48,13 @@ export function InlineEdit({
   autoEdit?: boolean;
   placeholder?: string;
   style?: React.CSSProperties;
+  /**
+   * Stretch to the whole cell. Without this an empty value leaves a button with
+   * no content, so the only way in is a pixel-perfect click in the middle of
+   * the box — the single most common complaint about entering data. Off by
+   * default because the group title uses this inline, next to other controls.
+   */
+  fill?: boolean;
 }) {
   const [editing, setEditing] = useState(autoEdit);
   const [draft, setDraft] = useState(value);
@@ -70,7 +78,9 @@ export function InlineEdit({
             setEditing(false);
           }
         }}
-        className={`rounded-[4px] border border-teal-deep bg-white px-[4px] outline-none ${className}`}
+        className={`rounded-[4px] border border-teal-deep bg-white px-[4px] outline-none ${
+          fill ? "size-full" : ""
+        } ${className}`}
         style={style}
       />
     );
@@ -82,7 +92,9 @@ export function InlineEdit({
         setDraft(value);
         setEditing(true);
       }}
-      className={`truncate rounded-[4px] border border-transparent px-[5px] text-left transition-colors hover:border-line-strong ${className}`}
+      className={`truncate rounded-[4px] border border-transparent transition-colors hover:border-line-strong ${
+        fill ? "size-full px-[8px] hover:bg-[var(--hover-ghost)]" : "px-[5px]"
+      } ${className}`}
       style={style}
       title={value}
     >
