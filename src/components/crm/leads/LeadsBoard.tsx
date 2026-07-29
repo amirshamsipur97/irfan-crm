@@ -19,7 +19,7 @@ import type { CrmLead, CrmLeadGroup, CrmStage, CrmUnit, CrmUser } from "@/lib/ty
 import { BoardHeader } from "./BoardHeader";
 import { LeadGroup } from "./LeadGroup";
 import { LeadDrawer } from "./lead-drawer";
-import { GROUP_COLORS } from "./board-config";
+import { GROUP_COLORS, sourceColor, sourceLabel } from "./board-config";
 import {
   addGroup,
   addLead,
@@ -159,6 +159,10 @@ export function LeadsBoard({
       {
         id: tempId,
         name: name.trim() || "New Lead",
+        first_name: null,
+        last_name: null,
+        notes: null,
+        lead_date: new Date().toISOString().slice(0, 10),
         phone: null,
         country_code: null,
         email: null,
@@ -205,8 +209,10 @@ export function LeadsBoard({
     (l) =>
       (!q ||
         l.name.toLowerCase().includes(q) ||
-        (l.company ?? "").toLowerCase().includes(q) ||
-        (l.email ?? "").toLowerCase().includes(q)) &&
+        (l.first_name ?? "").toLowerCase().includes(q) ||
+        (l.last_name ?? "").toLowerCase().includes(q) ||
+        (l.email ?? "").toLowerCase().includes(q) ||
+        (l.phone ?? "").toLowerCase().includes(q)) &&
       (!personFilter || l.owner_id === personFilter)
   );
   const qf = useQuickFilters();
@@ -215,8 +221,13 @@ export function LeadsBoard({
     { key: "group", label: "Group", get: (r) => r.group_id, format: (v) => localGroups.find((g) => g.id === v)?.name ?? "—", color: (v) => localGroups.find((g) => g.id === v)?.color },
     { key: "stage", label: "Status", get: (r) => r.stage_id, format: (v) => stages.find((s) => s.id === v)?.name ?? "—", color: (v) => stages.find((s) => s.id === v)?.color },
     { key: "owner", label: "Owner", get: (r) => r.owner_id, format: (v) => users.find((u) => u.id === v)?.full_name ?? "—" },
-    { key: "source", label: "Source", get: (r) => r.source },
-    { key: "priority", label: "Priority", get: (r) => r.priority },
+    {
+      key: "source",
+      label: "Lead Source",
+      get: (r) => r.source,
+      format: (v) => sourceLabel(String(v ?? "")),
+      color: (v) => sourceColor(String(v ?? "")),
+    },
   ];
   const sortedRows = applyQuickFilters([...visibleLeads].sort(byPosition), filterDims, qf.state);
 

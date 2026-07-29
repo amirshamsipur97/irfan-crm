@@ -175,6 +175,10 @@ export async function logLeadActivity(
 
 /** whitelist of directly patchable crm_leads columns */
 const LEAD_PATCHABLE = new Set([
+  "first_name",
+  "last_name",
+  "notes",
+  "lead_date",
   "email",
   "phone",
   "country_code",

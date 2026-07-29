@@ -71,6 +71,12 @@ export interface CrmLeadGroup {
 export interface CrmLead {
   id: string;
   name: string;
+  first_name: string | null;
+  last_name: string | null;
+  /** free-text note shown as the board's "Text" column */
+  notes: string | null;
+  /** the day the enquiry came in (not the row's created_at) */
+  lead_date: string | null;
   phone: string | null;
   country_code: string | null;
   email: string | null;

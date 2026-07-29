@@ -3,6 +3,11 @@ import type { IconName } from "@/lib/figma-icons";
 /** Column layout of the Leads main table (widths from the Figma frame). */
 export const NAME_COL_W = 292;
 
+/**
+ * Exactly what the sales team captures on a lead. Score, Activities timeline,
+ * Company, Title, Last interaction and Active sequences were removed on request
+ * — the lead drawer still shows score and activity for anyone who wants them.
+ */
 export const BOARD_COLUMNS: {
   key: string;
   label: string;
@@ -10,17 +15,15 @@ export const BOARD_COLUMNS: {
   headerIcon?: IconName;
 }[] = [
   { key: "status", label: "Status", w: 140 },
-  { key: "score", label: "Score", w: 96 },
   { key: "owner", label: "Owner", w: 98 },
-  { key: "timeline", label: "Activities timeline", w: 152, headerIcon: "tlHeader" },
-  { key: "contact", label: "Create a contact", w: 181 },
-  { key: "company", label: "Company", w: 140 },
-  { key: "title", label: "Title", w: 140 },
-  { key: "email", label: "Email", w: 189 },
-  { key: "phone", label: "Phone", w: 160 },
-  { key: "source", label: "Lead Source", w: 150 },
-  { key: "last", label: "Last interaction", w: 150 },
-  { key: "seq", label: "Active sequences", w: 170 },
+  { key: "first_name", label: "First name", w: 150 },
+  { key: "last_name", label: "Last name", w: 150 },
+  { key: "phone", label: "Telephone", w: 170 },
+  { key: "email", label: "Email", w: 200 },
+  { key: "source", label: "Lead Source", w: 160 },
+  { key: "date", label: "Date", w: 130 },
+  { key: "notes", label: "Text", w: 260 },
+  { key: "contact", label: "Move to contact", w: 181 },
 ];
 
 export const TABLE_W = NAME_COL_W + BOARD_COLUMNS.reduce((s, c) => s + c.w, 0) + 40;
@@ -37,12 +40,22 @@ export const GROUP_COLORS = [
   "#66ccff",
 ];
 
-/** Lead source → tag color (white text). */
+/** The channels leads actually arrive through, in the order they are picked. */
+export const LEAD_SOURCES: { key: string; label: string; color: string }[] = [
+  { key: "meta", label: "Meta", color: "#0866ff" },
+  { key: "google-ads", label: "Google Ads", color: "#fdab3d" },
+  { key: "dubizzle", label: "Dubizzle", color: "#e2445c" },
+  { key: "co-worker", label: "Co-worker", color: "#00a0a0" },
+  { key: "personal", label: "Personal", color: "#a25ddc" },
+];
+
+/** Lead source → tag color (white text). Legacy values keep a colour so old
+ *  rows do not render grey-on-grey until someone re-picks their source. */
 export const SOURCE_COLORS: Record<string, string> = {
+  ...Object.fromEntries(LEAD_SOURCES.map((s) => [s.key, s.color])),
   manual: "#c4c4c4",
   website: "#00c875",
   ads: "#fdab3d",
-  "google-ads": "#fdab3d",
   "ai-chat": "#a25ddc",
   import: "#579bfc",
   linkedin: "#61b56b",
@@ -50,6 +63,11 @@ export const SOURCE_COLORS: Record<string, string> = {
 
 export function sourceColor(source: string): string {
   return SOURCE_COLORS[source.toLowerCase()] ?? "#7f8f8f";
+}
+
+/** Display label for a stored source key (falls back to the raw value). */
+export function sourceLabel(source: string): string {
+  return LEAD_SOURCES.find((s) => s.key === source.toLowerCase())?.label ?? source;
 }
 
 const DIAL_FLAGS: Record<string, string> = {

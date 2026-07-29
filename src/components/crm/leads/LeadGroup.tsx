@@ -16,6 +16,7 @@ import { Icon } from "@/components/ui/Icon";
 import type { CrmLead, CrmLeadGroup, CrmStage, CrmUser } from "@/lib/types";
 import {
   BOARD_COLUMNS,
+  LEAD_SOURCES,
   NAME_COL_W,
   shortDate,
   sourceColor,
@@ -34,6 +35,8 @@ import {
   type LogPayload,
 } from "@/components/crm/deals/activity-log";
 import { TimeCell } from "@/components/crm/activities/activity-cells";
+import { toLocalDateString } from "@/components/crm/activities/activities-config";
+import { OptionCell } from "@/components/crm/contacts/contact-cells";
 import { CenterEditCell, EmailCell, MoveToContactsCell, PhoneCell } from "./lead-cells";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 
@@ -343,17 +346,43 @@ export function LeadGroup({
                           />
                         </span>
                       );
-                    case "company":
-                    case "title":
+                    case "first_name":
+                    case "last_name":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
                           <CenterEditCell
-                            value={col.key === "company" ? lead.company : lead.title}
+                            value={col.key === "first_name" ? lead.first_name : lead.last_name}
                             onSave={(next) =>
                               onPatchLead(
                                 lead.id,
-                                col.key === "company" ? { company: next } : { title: next }
+                                col.key === "first_name"
+                                  ? { first_name: next }
+                                  : { last_name: next }
                               )
+                            }
+                          />
+                        </span>
+                      );
+                    case "notes":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <CenterEditCell
+                            value={lead.notes}
+                            onSave={(next) => onPatchLead(lead.id, { notes: next })}
+                          />
+                        </span>
+                      );
+                    case "date":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <TimeCell
+                            value={lead.lead_date}
+                            label="Date"
+                            format={shortDate}
+                            // slicing the ISO string would shift the date a day
+                            // in +04, so go through the local-date helper
+                            onChange={(iso) =>
+                              onPatchLead(lead.id, { lead_date: toLocalDateString(iso) })
                             }
                           />
                         </span>
@@ -394,12 +423,11 @@ export function LeadGroup({
                     case "source":
                       return (
                         <span key={col.key} className={`${cellBorder} block`} style={w}>
-                          <span
-                            className="flex size-full items-center justify-center font-sans text-[14px] leading-[20px] text-white"
-                            style={{ backgroundColor: sourceColor(lead.source) }}
-                          >
-                            <span className="truncate px-[4px] capitalize">{lead.source}</span>
-                          </span>
+                          <OptionCell
+                            value={lead.source}
+                            options={LEAD_SOURCES}
+                            onSelect={(next) => onPatchLead(lead.id, { source: next ?? "" })}
+                          />
                         </span>
                       );
                     case "last":
