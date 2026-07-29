@@ -227,8 +227,9 @@ export function AdminView({
 
               <Panel title="Registration">
                 <p className="m-0 pb-[8px] font-sans text-[13px] text-[#9ba0c0]">
-                  Signups from these domains are auto-approved as Sales Agents. Everyone else needs
-                  an invite.
+                  People with an email on these domains may request an account; everyone
+                  else needs an invite. Requests wait on the Team page until a Developer
+                  or CEO approves them and the temporary password is issued.
                 </p>
                 <div className="flex flex-wrap items-center gap-[6px] pb-[10px]">
                   {domains.map((d) => (
