@@ -12,26 +12,61 @@ import type { IconName } from "@/lib/figma-icons";
 import { canAnimate } from "@/lib/motion";
 import type { CrmRole } from "@/lib/types";
 
-export const WORKSPACE_NAV: { label: string; icon: IconName; href: string }[] = [
+type NavItem = { label: string; icon: IconName; href: string };
+
+/**
+ * The everyday sales workflow — home, the pipeline in the order it is worked,
+ * and the report that summarises it. Kept above a divider so the boards people
+ * open all day are never mixed in with the reference and inventory boards.
+ */
+export const PRIMARY_NAV: NavItem[] = [
   { label: "Workspace home", icon: "navHome", href: "/crm" },
+  { label: "Leads", icon: "navLeads", href: "/crm/leads" },
   { label: "Contacts", icon: "navContacts", href: "/crm/contacts" },
   { label: "Deals", icon: "navDeals", href: "/crm/deals" },
-  { label: "Leads", icon: "navLeads", href: "/crm/leads" },
+  { label: "Sales Dashboard", icon: "navDashboard", href: "/crm/dashboard" },
+];
+
+/** Supporting boards: reference data, property inventory and logistics. */
+export const SECONDARY_NAV: NavItem[] = [
   { label: "Accounts", icon: "navAccounts", href: "/crm/accounts" },
   { label: "Client Projects", icon: "navProjects", href: "/crm/projects" },
   { label: "Developments", icon: "navProjects", href: "/crm/developments" },
   { label: "Units", icon: "navAccounts", href: "/crm/units" },
   { label: "Viewings", icon: "navActivities", href: "/crm/viewings" },
   { label: "Activities", icon: "navActivities", href: "/crm/activities" },
-  { label: "Sales Dashboard", icon: "navDashboard", href: "/crm/dashboard" },
 ];
+
+/** Every board, for lookups that do not care about the grouping. */
+export const WORKSPACE_NAV: NavItem[] = [...PRIMARY_NAV, ...SECONDARY_NAV];
 
 // Emails / Finance / Team moved to the left icon rail (IconRail) so the
 // workspace sidebar stays a pure board list.
 export function WorkspaceSidebar(_props: { role?: CrmRole }) {
   const pathname = usePathname();
-  const nav = WORKSPACE_NAV;
   const rootRef = useRef<HTMLElement>(null);
+
+  const renderItem = (item: NavItem) => {
+    const active =
+      item.href === "/crm" ? pathname === "/crm" : pathname.startsWith(item.href);
+    return (
+      <div key={item.label} className="ws-nav-item px-[16px] pb-[4px]">
+        <Link
+          href={item.href}
+          className={`flex h-[32px] items-center gap-[8px] rounded-[4px] py-[4px] pl-[6px] pr-[8px] transition-colors duration-150 ${
+            active ? "bg-[var(--active-nav)]" : "hover:bg-[var(--hover-ghost)]"
+          }`}
+        >
+          <Icon name={item.icon} size={16} />
+          <span className="truncate font-sans text-[14px] leading-[20px] text-ink">
+            {item.label}
+          </span>
+          <LinkSpinner />
+        </Link>
+      </div>
+    );
+  };
+
   useGSAP(
     () => {
       if (!canAnimate()) return;
@@ -94,28 +129,15 @@ export function WorkspaceSidebar(_props: { role?: CrmRole }) {
           <Icon name="wsContentChevron" size={16} />
         </button>
 
-        {/* board list */}
+        {/* board list — daily workflow above the rule, supporting boards below */}
         <nav className="mt-[4px] flex flex-col">
-          {nav.map((item) => {
-            const active =
-              item.href === "/crm" ? pathname === "/crm" : pathname.startsWith(item.href);
-            return (
-              <div key={item.label} className="ws-nav-item px-[16px] pb-[4px]">
-                <Link
-                  href={item.href}
-                  className={`flex h-[32px] items-center gap-[8px] rounded-[4px] py-[4px] pl-[6px] pr-[8px] transition-colors duration-150 ${
-                    active ? "bg-[var(--active-nav)]" : "hover:bg-[var(--hover-ghost)]"
-                  }`}
-                >
-                  <Icon name={item.icon} size={16} />
-                  <span className="truncate font-sans text-[14px] leading-[20px] text-ink">
-                    {item.label}
-                  </span>
-                  <LinkSpinner />
-                </Link>
-              </div>
-            );
-          })}
+          {PRIMARY_NAV.map(renderItem)}
+
+          <div className="my-[8px] px-[16px]">
+            <span className="block h-px bg-line" />
+          </div>
+
+          {SECONDARY_NAV.map(renderItem)}
         </nav>
       </div>
 
