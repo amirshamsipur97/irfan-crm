@@ -195,7 +195,17 @@ export function LeadsBoard({
         updated_at: new Date().toISOString(),
       },
     ]);
-    await addLead(groupId, name);
+    // swap the placeholder for the row the database actually stored, so its
+    // real id is in place before anyone can click a cell on it
+    const created = await addLead(groupId, name);
+    if (created.error || !created.row) {
+      setLocalLeads((prev) => prev.filter((r) => r.id !== tempId));
+      setToast({ message: created.error ?? "could not add the row", tone: "alert" });
+      return;
+    }
+    setLocalLeads((prev) =>
+      prev.map((r) => (r.id === tempId ? ({ ...r, ...(created.row as object) } as typeof r) : r))
+    );
   };
 
   const handleAddGroup = async () => {

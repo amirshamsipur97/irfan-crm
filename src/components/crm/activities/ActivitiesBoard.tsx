@@ -106,10 +106,11 @@ export function ActivitiesBoard({
   };
 
   const handleAddActivity = async (groupId: string, name: string) => {
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     setLocalActivities((prev) => [
       ...prev,
       {
-        id: `temp-${prev.length}-${name}`,
+        id: tempId,
         name: name.trim() || "New Activity",
         group_id: groupId,
         owner_id: null,
@@ -124,7 +125,17 @@ export function ActivitiesBoard({
         updated_at: new Date().toISOString(),
       },
     ]);
-    await addActivity(groupId, name);
+    // swap the placeholder for the row the database actually stored, so its
+    // real id is in place before anyone can click a cell on it
+    const created = await addActivity(groupId, name);
+    if (created.error || !created.row) {
+      setLocalActivities((prev) => prev.filter((r) => r.id !== tempId));
+      setToast({ message: created.error ?? "could not add the row", tone: "alert" });
+      return;
+    }
+    setLocalActivities((prev) =>
+      prev.map((r) => (r.id === tempId ? ({ ...r, ...(created.row as object) } as typeof r) : r))
+    );
   };
 
   const handleAddGroup = async () => {

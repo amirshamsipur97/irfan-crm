@@ -9,6 +9,19 @@ export type BoardToast = {
 };
 
 /**
+ * A row that has been added to the board but whose insert has not come back
+ * yet carries a placeholder id. Sending one to the server produced
+ * `invalid input syntax for type uuid: "temp-..."` — every board write goes
+ * through this check first.
+ */
+export function isTempId(id: string): boolean {
+  return id.startsWith("temp-");
+}
+
+export const STILL_SAVING_MESSAGE =
+  "Still saving this row — give it a second, then try again.";
+
+/**
  * One optimistic cell edit, shared by all nine boards.
  *
  * The boards used to patch local state and then fire the server action without
@@ -32,6 +45,11 @@ export async function applyRowEdit<T extends { id: string }>(opts: {
   silent?: boolean;
 }): Promise<boolean> {
   const { id, patch, prev, setRows, save, setToast, silent } = opts;
+
+  if (isTempId(id)) {
+    setToast({ message: STILL_SAVING_MESSAGE, tone: "alert" });
+    return false;
+  }
 
   const previous = prev
     ? (Object.fromEntries(

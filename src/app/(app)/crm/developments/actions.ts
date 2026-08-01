@@ -32,12 +32,12 @@ export async function addDevelopment(groupId: string, name: string) {
       group_id: groupId,
       created_by: user.id,
     })
-    .select("id")
-    .single<{ id: string }>();
+    .select("*")
+    .single<Record<string, unknown>>();
 
   if (error) return { error: error.message };
   revalidatePath(BOARD_PATH);
-  return { id: data.id };
+  return { id: data.id as string, row: data };
 }
 
 export async function updateDevelopment(developmentId: string, patch: Record<string, unknown>) {

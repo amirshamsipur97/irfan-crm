@@ -36,12 +36,12 @@ export async function addAccount(groupId: string, name: string) {
       owner_id: user.id,
       created_by: user.id,
     })
-    .select("id")
-    .single<{ id: string }>();
+    .select("*")
+    .single<Record<string, unknown>>();
 
   if (error) return { error: error.message };
   revalidatePath(BOARD_PATH);
-  return { id: data.id };
+  return { id: data.id as string, row: data };
 }
 
 export async function updateAccount(accountId: string, patch: Record<string, unknown>) {

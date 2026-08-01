@@ -106,10 +106,11 @@ export function ProjectsBoard({
   };
 
   const handleAddProject = async (groupId: string, name: string) => {
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     setLocalProjects((prev) => [
       ...prev,
       {
-        id: `temp-${prev.length}-${name}`,
+        id: tempId,
         name: name.trim() || "New project",
         group_id: groupId,
         owner_id: null,
@@ -127,7 +128,17 @@ export function ProjectsBoard({
         updated_at: new Date().toISOString(),
       },
     ]);
-    await addProject(groupId, name);
+    // swap the placeholder for the row the database actually stored, so its
+    // real id is in place before anyone can click a cell on it
+    const created = await addProject(groupId, name);
+    if (created.error || !created.row) {
+      setLocalProjects((prev) => prev.filter((r) => r.id !== tempId));
+      setToast({ message: created.error ?? "could not add the row", tone: "alert" });
+      return;
+    }
+    setLocalProjects((prev) =>
+      prev.map((r) => (r.id === tempId ? ({ ...r, ...(created.row as object) } as typeof r) : r))
+    );
   };
 
   const handleAddGroup = async () => {

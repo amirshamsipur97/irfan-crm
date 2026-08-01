@@ -127,10 +127,11 @@ export function ViewingsBoard({
   };
 
   const handleAdd = async (groupId: string, name: string) => {
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     setLocalViewings((prev) => [
       ...prev,
       {
-        id: `temp-${prev.length}-${name}`,
+        id: tempId,
         name: name.trim() || "New viewing",
         group_id: groupId,
         agent_id: profile.id,
@@ -150,7 +151,17 @@ export function ViewingsBoard({
         updated_at: new Date().toISOString(),
       },
     ]);
-    await addViewing(groupId, name);
+    // swap the placeholder for the row the database actually stored, so its
+    // real id is in place before anyone can click a cell on it
+    const created = await addViewing(groupId, name);
+    if (created.error || !created.row) {
+      setLocalViewings((prev) => prev.filter((r) => r.id !== tempId));
+      setToast({ message: created.error ?? "could not add the row", tone: "alert" });
+      return;
+    }
+    setLocalViewings((prev) =>
+      prev.map((r) => (r.id === tempId ? ({ ...r, ...(created.row as object) } as typeof r) : r))
+    );
   };
 
   const handleAddGroup = async () => {

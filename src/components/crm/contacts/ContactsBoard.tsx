@@ -166,10 +166,11 @@ export function ContactsBoard({
   };
 
   const handleAddContact = async (groupId: string, name: string) => {
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     setLocalContacts((prev) => [
       ...prev,
       {
-        id: `temp-${prev.length}-${name}`,
+        id: tempId,
         name: name.trim() || "New Contact",
         email: null,
         email_label: null,
@@ -200,7 +201,17 @@ export function ContactsBoard({
         updated_at: new Date().toISOString(),
       },
     ]);
-    await addContact(groupId, name);
+    // swap the placeholder for the row the database actually stored, so its
+    // real id is in place before anyone can click a cell on it
+    const created = await addContact(groupId, name);
+    if (created.error || !created.row) {
+      setLocalContacts((prev) => prev.filter((r) => r.id !== tempId));
+      setToast({ message: created.error ?? "could not add the row", tone: "alert" });
+      return;
+    }
+    setLocalContacts((prev) =>
+      prev.map((r) => (r.id === tempId ? ({ ...r, ...(created.row as object) } as typeof r) : r))
+    );
   };
 
   const handleAddGroup = async () => {

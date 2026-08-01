@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { isTempId, STILL_SAVING_MESSAGE } from "@/components/crm/persist";
 import { money } from "@/components/crm/deals/deals-config";
 import type { CrmContact, CrmContactDocument } from "@/lib/types";
 import {
@@ -64,10 +65,15 @@ export function DemandSection({
   const [docType, setDocType] = useState("passport");
 
   useEffect(() => {
+    if (isTempId(contact.id)) return;
     listDocuments(contact.id).then(setDocs);
   }, [contact.id]);
 
   const save = async () => {
+    if (isTempId(contact.id)) {
+      onToast?.(STILL_SAVING_MESSAGE, "alert");
+      return;
+    }
     setSaving(true);
     const result = await updateDemand(contact.id, {
       property_type: demand.property_type || null,
@@ -86,6 +92,10 @@ export function DemandSection({
   };
 
   const upload = async (file: File) => {
+    if (isTempId(contact.id)) {
+      onToast?.(STILL_SAVING_MESSAGE, "alert");
+      return;
+    }
     if (file.size > MAX_DOC_BYTES) {
       onToast?.(`"${file.name}" is larger than 25 MB`, "alert");
       return;

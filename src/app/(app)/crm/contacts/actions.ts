@@ -21,6 +21,18 @@ const PATCHABLE = new Set([
   "account_name",
   "custom",
   "last_interaction_at",
+  // carried over from the lead
+  "first_name",
+  "last_name",
+  "notes",
+  "lead_source",
+  "lead_date",
+  // the client's demand, editable straight from the board
+  "property_type",
+  "bedrooms",
+  "budget",
+  "preferred_area",
+  "requirements",
 ]);
 
 export async function addContact(groupId: string, name: string) {
@@ -38,12 +50,12 @@ export async function addContact(groupId: string, name: string) {
       owner_id: user.id,
       created_by: user.id,
     })
-    .select("id")
-    .single<{ id: string }>();
+    .select("*")
+    .single<Record<string, unknown>>();
 
   if (error) return { error: error.message };
   revalidatePath(BOARD_PATH);
-  return { id: data.id };
+  return { id: data.id as string, row: data };
 }
 
 export async function updateContact(contactId: string, patch: Record<string, unknown>) {

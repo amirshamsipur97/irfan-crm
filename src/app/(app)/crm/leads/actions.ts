@@ -40,12 +40,12 @@ export async function addLead(groupId: string, name: string) {
       source: "manual",
       created_by: user.id,
     })
-    .select("id")
-    .single<{ id: string }>();
+    .select("*")
+    .single<Record<string, unknown>>();
 
   if (error) return { error: error.message };
   revalidatePath(BOARD_PATH);
-  return { id: data.id };
+  return { id: data.id as string, row: data };
 }
 
 export async function addGroup(name: string, color: string) {

@@ -10,6 +10,7 @@
 import { useRef, useState } from "react";
 import { Popover } from "@/components/crm/leads/cells";
 import { canEditRow, isFullAccess, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { isTempId, STILL_SAVING_MESSAGE } from "@/components/crm/persist";
 import type { CrmUser } from "@/lib/types";
 import { deleteRow, duplicateRow, moveRow } from "@/app/(app)/crm/row-actions";
 
@@ -76,6 +77,11 @@ export function useRowTools<T extends BoardRowLike>(opts: {
   const guard = (rowId: string) => {
     const row = rows.find((r) => r.id === rowId);
     if (!row) return null;
+    // a row whose insert is still in flight has no database id yet
+    if (isTempId(rowId)) {
+      onToast(STILL_SAVING_MESSAGE, "alert");
+      return null;
+    }
     if (!canEditRow(profile, row)) {
       onToast(OWNER_ONLY_MESSAGE, "alert");
       return null;
@@ -92,6 +98,7 @@ export function useRowTools<T extends BoardRowLike>(opts: {
       return row ? canEditRow(profile, row) : false;
     },
     onDuplicate: async (rowId) => {
+      if (!guard(rowId)) return;
       const result = await duplicateRow(boardKey, rowId);
       if (result.error || !result.row) {
         onToast(result.error ?? "could not duplicate", "alert");
