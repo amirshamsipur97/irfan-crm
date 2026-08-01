@@ -2,7 +2,7 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-08-02** (committed through `4231d9c`, deployed;
+> Updated: **2026-08-02** (committed through `b0f0fac`, deployed;
 > repo is LOCAL-ONLY, no remote).
 
 ## START HERE — state as of 2026-08-01
@@ -132,6 +132,15 @@ Lead captured  →  Move to contact  →  the contact IS the client's Demand
   HOME_WIDGETS (unknown keys filter out of saved layouts) and stored
   layouts were migrated meetings→leads in SQL (sections is JSONB).
   accounts/contacts metric widgets + Recents unchanged.
+- **TopBar trimmed + /help guide (commit `b0f0fac`)**: Invite members /
+  Apps marketplace / Settings icons REMOVED (inert Monday chrome;
+  TopIconButton deleted with them). The "?" links to **/help** —
+  `components/help/HelpGuide.tsx`, a static trilingual manual
+  (fa RTL / en / ru, switcher persisted in localStorage `crm-help-lang`,
+  default fa): six-step sales-flow diagram, downpayment worked example
+  (price × % = target + part-payments bar → Complete → invoice), 8
+  per-board cards, roles matrix, tips. Content lives in the DICT object
+  in that file — update it when the product changes.
 
 - **Leads** = capture only. Lead · Status · Owner · First name · Last name ·
   Telephone · Email · Lead Source (Meta / Google Ads / Dubizzle / Co-worker /
