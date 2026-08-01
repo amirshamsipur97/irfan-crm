@@ -200,7 +200,8 @@ export function DealsBoard({
     } else {
       setContactOptions((prev) => [...prev, { name }]);
       await quickCreateContact(name);
-      patchDeal(dealId, { contact_name: name });
+      // the client IS the row now — the offer's name follows the pick
+      patchDeal(dealId, { contact_name: name, name: `Offer — ${name}` });
     }
   };
 
@@ -276,6 +277,17 @@ export function DealsBoard({
     setLocalDeals((prev) =>
       prev.map((r) => (r.id === tempId ? ({ ...r, ...(created.row as object) } as typeof r) : r))
     );
+    // typing an existing client's name in "+ Add offer" links them right away
+    const match = contacts.find(
+      (c) => c.name.trim().toLowerCase() === name.trim().toLowerCase()
+    );
+    if (match) {
+      patchDeal(
+        created.row.id as string,
+        { contact_name: match.name, name: `Offer — ${match.name}` },
+        true
+      );
+    }
   };
 
   const handleAddGroup = async () => {

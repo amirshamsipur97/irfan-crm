@@ -9,9 +9,10 @@ export const DEAL_NAME_COL_W = 292;
  * an agent can see at a glance whether the offer fits the budget.
  */
 export const DEAL_COLUMNS: { key: string; label: string; w: number }[] = [
+  // the CLIENT is the first (sticky) column — an offer is made TO a person,
+  // so the row itself is picked from Contacts, not typed as free text
   { key: "stage", label: "Stage", w: 159 },
   { key: "owner", label: "Owner", w: 98 },
-  { key: "contacts", label: "Client", w: 200 },
   { key: "client_demand", label: "Client wants", w: 170 },
   { key: "client_budget", label: "Client budget", w: 140 },
   // stock rotates weekly and is shared with other agencies, so an offer is

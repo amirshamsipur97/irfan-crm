@@ -264,7 +264,7 @@ export function DealGroup({
                 />
               </span>
               <span className="flex flex-1 items-center justify-center border-b border-r border-t border-line font-sans text-[14px] leading-[20px] text-ink">
-                Offer
+                Client
               </span>
             </div>
             {DEAL_COLUMNS.map((col) => (
@@ -328,12 +328,22 @@ export function DealGroup({
                       }
                     />
                   </span>
-                  <span className="flex min-w-0 flex-1 items-center justify-between border-b border-r border-line px-[6px] transition-colors group-hover/row:bg-canvas">
-                    <InlineEdit
-                      value={deal.name}
-                      onSave={(name) => onPatchDeal(deal.id, { name })}
-                      className="min-w-0 flex-1 font-sans text-[14px] leading-[20px] text-ink"
-                    />
+                  <span className="flex min-w-0 flex-1 items-center justify-between border-b border-r border-line px-[2px] transition-colors group-hover/row:bg-canvas">
+                    {/* the row IS the client — picked from Contacts, and the
+                        offer's stored name follows the pick automatically */}
+                    <span className="block min-w-0 flex-1">
+                      <ConnectPicker
+                        value={deal.contact_name}
+                        options={contactOptions}
+                        entityLabel="Contacts"
+                        kind="contact"
+                        onPick={(name) =>
+                          onPatchDeal(deal.id, { contact_name: name, name: `Offer — ${name}` })
+                        }
+                        onClear={() => onPatchDeal(deal.id, { contact_name: null })}
+                        onCreate={(name) => onCreateContact(deal.id, name)}
+                      />
+                    </span>
                     {deal.downpayment_completed_at && <DealDoneBadge />}
                     <button
                       type="button"
@@ -381,20 +391,6 @@ export function DealGroup({
                                 : money(Number(deal.deal_value))
                             }
                             onSave={(next) => onPatchDeal(deal.id, { deal_value: next })}
-                          />
-                        </span>
-                      );
-                    case "contacts":
-                      return (
-                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
-                          <ConnectPicker
-                            value={deal.contact_name}
-                            options={contactOptions}
-                            entityLabel="Contacts"
-                            kind="contact"
-                            onPick={(name) => onPatchDeal(deal.id, { contact_name: name })}
-                            onClear={() => onPatchDeal(deal.id, { contact_name: null })}
-                            onCreate={(name) => onCreateContact(deal.id, name)}
                           />
                         </span>
                       );
@@ -584,7 +580,7 @@ export function DealGroup({
                       setAddDraft("");
                     }
                   }}
-                  placeholder="+ Add offer"
+                  placeholder="+ Add offer — type the client's name"
                   className="h-[24px] w-full min-w-[200px] rounded-[4px] bg-transparent px-[4px] font-sans text-[14px] text-ink outline-none placeholder:text-ink-muted focus:border focus:border-teal-deep focus:bg-white"
                 />
               </span>
