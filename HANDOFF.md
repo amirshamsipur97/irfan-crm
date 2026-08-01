@@ -2,7 +2,7 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-08-02** (committed through `d5bef4e`, deployed;
+> Updated: **2026-08-02** (committed through `4231d9c`, deployed;
 > repo is LOCAL-ONLY, no remote).
 
 ## START HERE — state as of 2026-08-01
@@ -121,6 +121,17 @@ Lead captured  →  Move to contact  →  the contact IS the client's Demand
   button); its MessageDialog now calls crm_send_dm. The real Persian test
   DM (preview→amirali, 22 Jul) lives in crm_messages — keep it. E2E'd
   both directions incl. live poll pickup + read marking.
+- **Home = real funnel (commit `4231d9c`)**: the old pipeline widget
+  summed LEAD budgets by lead stage ("55K / 6 open deals" measured
+  nothing). page.tsx now reads the actual model: Open offers (count +
+  value), Deals accepted (count + value), Downpayments collected vs
+  target (+ "N invoices to send" chip in the widget header), NEW Leads
+  widget (30-day intake + top-source chips + converted count), NEW
+  Upcoming viewings widget (crm_viewings.scheduled_start >= now, next 5).
+  The un-connectable Meetings/calendar promo widget was REMOVED from
+  HOME_WIDGETS (unknown keys filter out of saved layouts) and stored
+  layouts were migrated meetings→leads in SQL (sections is JSONB).
+  accounts/contacts metric widgets + Recents unchanged.
 
 - **Leads** = capture only. Lead · Status · Owner · First name · Last name ·
   Telephone · Email · Lead Source (Meta / Google Ads / Dubizzle / Co-worker /
