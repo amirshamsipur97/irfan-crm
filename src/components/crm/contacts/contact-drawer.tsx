@@ -5,7 +5,9 @@ import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { canAnimate } from "@/lib/motion";
 import { money } from "@/components/crm/deals/deals-config";
-import { shortDate } from "@/components/crm/leads/board-config";
+import { shortDate, sourceLabel } from "@/components/crm/leads/board-config";
+import { canEditRow } from "@/lib/permissions";
+import { DemandSection } from "./demand-section";
 import { activityTime } from "@/components/crm/activities/activities-config";
 import type { CrmActivityItem, CrmContact, CrmDeal, CrmPropertyInterest, CrmUser } from "@/lib/types";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
@@ -159,10 +161,29 @@ export function ContactDrawer({
           <DetailRow label="Account">{contact.account_name ?? "—"}</DetailRow>
           <DetailRow label="Title">{contact.title ?? "—"}</DetailRow>
           <DetailRow label="Comments">{contact.comments ?? "—"}</DetailRow>
+          {/* everything below came across with the lead on conversion */}
+          {(contact.first_name || contact.last_name) && (
+            <DetailRow label="Name on file">
+              {[contact.first_name, contact.last_name].filter(Boolean).join(" ")}
+            </DetailRow>
+          )}
+          {contact.lead_source && (
+            <DetailRow label="Lead source">{sourceLabel(contact.lead_source)}</DetailRow>
+          )}
+          {contact.lead_date && (
+            <DetailRow label="Lead date">{shortDate(contact.lead_date)}</DetailRow>
+          )}
+          {contact.notes && <DetailRow label="Lead notes">{contact.notes}</DetailRow>}
           <DetailRow label="Last interaction">
             {contact.last_interaction_at ? activityTime(contact.last_interaction_at) : "—"}
           </DetailRow>
           <DetailRow label="Created">{shortDate(contact.created_at)}</DetailRow>
+
+          <DemandSection
+            contact={contact}
+            canEdit={canEditRow(profile, contact)}
+            onToast={onToast}
+          />
 
           {loading ? (
             <p className="pt-[24px] font-sans text-[14px] text-ink-muted">Loading…</p>

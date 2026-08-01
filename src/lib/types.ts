@@ -181,12 +181,37 @@ export interface CrmContact {
   account_id: string | null;
   group_id: string | null;
   owner_id: string | null;
+  /** carried over from the lead this contact was converted from */
+  first_name: string | null;
+  last_name: string | null;
+  notes: string | null;
+  lead_source: string | null;
+  lead_date: string | null;
+  /** the client's demand: what they are looking for */
+  property_type: string | null;
+  bedrooms: string | null;
+  budget: number | null;
+  preferred_area: string | null;
+  requirements: string | null;
   last_interaction_at: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
   position?: number;
   created_at: string;
   updated_at: string;
+}
+
+/** A file attached to a client — passport scan, ID, signed paperwork. */
+export interface CrmContactDocument {
+  id: string;
+  contact_id: string;
+  name: string;
+  storage_path: string;
+  mime_type: string | null;
+  size_bytes: number | null;
+  doc_type: string | null;
+  uploaded_by: string | null;
+  created_at: string;
 }
 
 export interface CrmAccountGroup {
