@@ -161,7 +161,7 @@ export function PhoneFields({
               className="h-[30px] w-full rounded-[4px] border border-line-strong px-[8px] font-sans text-[13px] text-ink outline-none focus:border-teal-deep"
             />
           </div>
-          <div className="thin-scroll max-h-[240px] overflow-y-auto py-[4px]">
+          <div className="thin-scroll max-h-[240px] touch-pan-y overflow-y-auto overscroll-contain py-[4px]">
             {matches.length === 0 && (
               <p className="m-0 px-[12px] py-[10px] font-sans text-[13px] text-ink-muted">
                 No match

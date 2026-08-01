@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { CELL_BUTTON, CELL_INPUT } from "@/components/crm/cell-style";
 import { Avatar } from "@/components/ui/Avatar";
@@ -135,6 +143,17 @@ export function anchorFixedPos(
 }
 
 /**
+ * Popovers nested inside popovers (the phone editor holds the country picker)
+ * are portalled to <body> as SIBLINGS, so a plain `ref.contains(target)` calls
+ * everything in the child panel "outside" — the parent then closed the moment
+ * the country list was scrolled or clicked. Each open panel therefore reports
+ * itself to every ancestor popover through this context, and ancestors treat
+ * events inside a registered descendant as their own. Events in an ANCESTOR
+ * still close the descendant (clicking the number field closes the list).
+ */
+const PopoverAncestors = createContext<((panel: HTMLElement, open: boolean) => void) | null>(null);
+
+/**
  * Generic cell-anchored popover.
  *
  * The panel is rendered into <body> rather than next to its cell. Each board
@@ -163,6 +182,19 @@ export function Popover({
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
+  // panels of popovers nested inside this one, live while they are open
+  const nestedPanels = useRef(new Set<HTMLElement>());
+  const parentRegister = useContext(PopoverAncestors);
+  const register = useCallback(
+    (panel: HTMLElement, isOpen: boolean) => {
+      if (isOpen) nestedPanels.current.add(panel);
+      else nestedPanels.current.delete(panel);
+      // a grandchild is inside its grandparent too — pass the report up
+      parentRegister?.(panel, isOpen);
+    },
+    [parentRegister]
+  );
+
   useLayoutEffect(() => {
     if (!open) {
       setPos(null);
@@ -173,14 +205,28 @@ export function Popover({
     if (el && anchor) setPos(anchorFixedPos(anchor, el.offsetWidth, el.offsetHeight, align));
   }, [open, align]);
 
+  // announce this panel to ancestor popovers for as long as it is open
+  useEffect(() => {
+    if (!open || !parentRegister) return;
+    const el = ref.current;
+    if (!el) return;
+    parentRegister(el, true);
+    return () => parentRegister(el, false);
+  }, [open, parentRegister]);
+
   useEffect(() => {
     if (!open) return;
+    const isInside = (target: Node | null) =>
+      !!target &&
+      (!!ref.current?.contains(target) ||
+        [...nestedPanels.current].some((panel) => panel.contains(target)));
     const handler = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) onClose();
+      if (!isInside(e.target as Node)) onClose();
     };
     // board scrolling would detach a fixed panel from its cell — close instead
+    // (scrolling INSIDE the panel or a nested one is fine, nothing detaches)
     const scrollClose = (e: Event) => {
-      if (!ref.current?.contains(e.target as Node)) onClose();
+      if (!isInside(e.target as Node)) onClose();
     };
     document.addEventListener("mousedown", handler);
     document.addEventListener("scroll", scrollClose, true);
@@ -196,7 +242,7 @@ export function Popover({
       className={`fixed z-[70] rounded-[8px] border border-line bg-white p-[8px] shadow-[0px_6px_20px_rgba(0,0,0,0.2)] ${className}`}
       style={pos ? { left: pos.left, top: pos.top } : { left: -9999, top: -9999 }}
     >
-      {children}
+      <PopoverAncestors.Provider value={register}>{children}</PopoverAncestors.Provider>
     </div>
   );
 
