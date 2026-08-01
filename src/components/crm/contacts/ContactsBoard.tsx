@@ -24,7 +24,7 @@ import { SuccessToast } from "@/components/ui/SuccessToast";
 import { applyRowEdit } from "@/components/crm/persist";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { findDuplicateContact } from "@/app/(app)/crm/contacts/actions";
-import { quickCreateAccount } from "@/app/(app)/crm/deals/actions";
+import { quickCreateAccount } from "@/app/(app)/crm/offers/actions";
 import type { PickerOption } from "@/components/crm/deals/connect-picker";
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
 import {

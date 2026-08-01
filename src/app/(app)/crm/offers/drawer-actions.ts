@@ -11,7 +11,7 @@ import type {
   CrmViewing,
 } from "@/lib/types";
 
-const BOARD_PATH = "/crm/deals";
+const BOARD_PATH = "/crm/offers";
 
 /** Everything the deal drawer shows, in one round trip. */
 export async function getDealRelations(dealId: string) {

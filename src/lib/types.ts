@@ -155,6 +155,12 @@ export interface CrmDeal {
   offer_property_type: string | null;
   offer_bedrooms: string | null;
   offer_details: string | null;
+  /** set when the client accepts — the row then also appears on the Deals board */
+  accepted_at: string | null;
+  /** downpayment rate for the accepted offer (prefilled from the developer) */
+  downpayment_percent: number | null;
+  /** generated in the database: deal_value × downpayment_percent / 100 */
+  downpayment_amount: number | null;
   custom: Record<string, unknown>;
   created_by: string | null;
   position?: number;
@@ -238,12 +244,28 @@ export interface CrmAccount {
   description: string | null;
   employees_range: string | null;
   hq_location: string | null;
+  /** this developer's customary downpayment rate — prefills accepted offers */
+  default_downpayment_percent: number | null;
   group_id: string | null;
   owner_id: string | null;
   last_interaction_at: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
   position?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** One part payment toward a deal's downpayment (Part 1, Part 2, ...). */
+export interface CrmDealDownpayment {
+  id: string;
+  deal_id: string;
+  part_no: number;
+  amount: number;
+  currency: string;
+  paid_at: string;
+  note: string | null;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 }

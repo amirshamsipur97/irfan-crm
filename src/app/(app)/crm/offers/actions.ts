@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
 
-const BOARD_PATH = "/crm/deals";
+const BOARD_PATH = "/crm/offers";
 
 /** whitelist of directly patchable crm_deals columns */
 const PATCHABLE = new Set([
@@ -25,6 +25,8 @@ const PATCHABLE = new Set([
   "offer_property_type",
   "offer_bedrooms",
   "offer_details",
+  "accepted_at",
+  "downpayment_percent",
   "custom",
 ]);
 
@@ -98,7 +100,7 @@ export async function addDeal(groupId: string, name: string) {
   const { data, error } = await supabase
     .from("crm_deals")
     .insert({
-      name: name.trim() || "New Deal",
+      name: name.trim() || "New Offer",
       group_id: groupId,
       stage_id: stage.id,
       created_by: user.id,
@@ -123,6 +125,8 @@ export async function updateDeal(dealId: string, patch: Record<string, unknown>)
   if (error) return { error: error.message };
   if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
+  // both boards read crm_deals — an accepted offer shows up on Deals too
+  revalidatePath("/crm/deals");
   return {};
 }
 

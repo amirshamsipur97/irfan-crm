@@ -1,55 +1,46 @@
 import { createClient } from "@/lib/supabase/server";
-import { withCollapsePrefs } from "@/lib/group-prefs";
 import { getProfile } from "@/lib/profile";
 import { recordBoardVisit } from "@/lib/visits";
-import { DealsBoard } from "@/components/crm/deals/DealsBoard";
-import type { CrmAccount, CrmContact, CrmDeal, CrmDealGroup, CrmDealStage, CrmUnit, CrmUser } from "@/lib/types";
-import type { CrmCustomColumn } from "@/lib/custom-columns";
+import { AcceptedDealsBoard } from "@/components/crm/deals/AcceptedDealsBoard";
+import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmUser } from "@/lib/types";
 
+/**
+ * Deals — offers the client ACCEPTED (Move to deal on the Offers board).
+ * Each row carries the client, the accepted offer, and the downpayment
+ * tracker: percent → computed amount → part payments until complete.
+ */
 export default async function DealsBoardPage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient(), recordBoardVisit("deals")]);
 
-  const [{ data: groups }, { data: deals }, { data: stages }, { data: users }, { data: accounts }, { data: contacts }, { data: units }, { data: customColumns }] =
+  const [{ data: deals }, { data: contacts }, { data: users }, { data: payments }] =
     await Promise.all([
       supabase
-        .from("crm_deal_groups")
+        .from("crm_deals")
         .select("*")
-        .order("position")
-        .returns<CrmDealGroup[]>(),
-      supabase.from("crm_deals").select("*").order("position").returns<CrmDeal[]>(),
-      supabase
-        .from("crm_deal_stages")
-        .select("*")
-        .order("position")
-        .returns<CrmDealStage[]>(),
+        .not("accepted_at", "is", null)
+        .order("accepted_at", { ascending: false })
+        .returns<CrmDeal[]>(),
+      supabase.from("crm_contacts").select("*").order("name").returns<CrmContact[]>(),
       supabase
         .from("crm_users")
         .select("*")
         .eq("is_active", true)
         .order("full_name")
         .returns<CrmUser[]>(),
-      supabase.from("crm_accounts").select("*").order("name").returns<CrmAccount[]>(),
-      supabase.from("crm_contacts").select("*").order("name").returns<CrmContact[]>(),
-      supabase.from("crm_units").select("*").order("name").returns<CrmUnit[]>(),
       supabase
-        .from("crm_custom_columns")
+        .from("crm_deal_downpayments")
         .select("*")
-        .eq("board_key", "deals")
-        .order("position")
-        .returns<CrmCustomColumn[]>(),
+        .order("part_no")
+        .returns<CrmDealDownpayment[]>(),
     ]);
 
   return (
-    <DealsBoard
+    <AcceptedDealsBoard
       profile={profile}
-      groups={await withCollapsePrefs("deals", groups ?? [])}
       deals={deals ?? []}
-      stages={stages ?? []}
-      users={users ?? []}
-      accounts={accounts ?? []}
       contacts={contacts ?? []}
-      units={units ?? []}
-      customColumns={customColumns ?? []}
+      users={users ?? []}
+      payments={payments ?? []}
     />
   );
 }

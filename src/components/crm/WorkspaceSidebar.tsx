@@ -23,6 +23,9 @@ export const PRIMARY_NAV: NavItem[] = [
   { label: "Workspace home", icon: "navHome", href: "/crm" },
   { label: "Leads", icon: "navLeads", href: "/crm/leads" },
   { label: "Contacts", icon: "navContacts", href: "/crm/contacts" },
+  // Offers = every proposal priced against a contact's demand; an accepted
+  // offer is "moved to deal" and its downpayment is tracked on Deals
+  { label: "Offers", icon: "navDeals", href: "/crm/offers" },
   { label: "Deals", icon: "navDeals", href: "/crm/deals" },
   { label: "Sales Dashboard", icon: "navDashboard", href: "/crm/dashboard" },
 ];

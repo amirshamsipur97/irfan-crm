@@ -13,7 +13,7 @@ import type {
   CrmTransaction,
 } from "@/lib/types";
 
-const BOARD_PATH = "/crm/deals";
+const BOARD_PATH = "/crm/offers";
 
 /** Transaction + payments + schedule + commission (+splits) for one deal. */
 export async function getDealFinancials(dealId: string) {

@@ -22,7 +22,7 @@ import {
   quickCreateContact,
   renameDealGroup,
   updateDeal,
-} from "@/app/(app)/crm/deals/actions";
+} from "@/app/(app)/crm/offers/actions";
 import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import type { PickerOption } from "./connect-picker";
 import { LostReasonDialog } from "./lost-reason-dialog";
@@ -78,7 +78,7 @@ export function DealsBoard({
   const [lostPrompt, setLostPrompt] = useState<{ dealId: string; stageId: string } | null>(null);
   const [openDealId, setOpenDealId] = useState<string | null>(null);
   const rowTools = useRowTools({
-    boardKey: "deals",
+    boardKey: "offers",
     rows: localDeals,
     setRows: setLocalDeals,
     groups: localGroups.map((g) => ({ id: g.id, name: g.name })),
@@ -138,7 +138,7 @@ export function DealsBoard({
   };
 
   const handleAddColumn = async (type: CustomColumnType) => {
-    const result = await addCustomColumn("deals", type);
+    const result = await addCustomColumn("offers", type);
     if (result.error || !result.column) {
       setToast({ message: result.error ?? "could not add column", tone: "alert" });
       return;
@@ -149,18 +149,45 @@ export function DealsBoard({
 
   const handleRenameColumn = (columnId: string, label: string) => {
     setLocalColumns((prev) => prev.map((c) => (c.id === columnId ? { ...c, label } : c)));
-    renameCustomColumn(columnId, label, "deals");
+    renameCustomColumn(columnId, label, "offers");
   };
 
   const handleDeleteColumn = async (columnId: string) => {
     const prev = localColumns;
     setLocalColumns((cols) => cols.filter((c) => c.id !== columnId));
-    const result = await deleteCustomColumn(columnId, "deals");
+    const result = await deleteCustomColumn(columnId, "offers");
     if (result.error) {
       setLocalColumns(prev);
       setToast({ message: result.error, tone: "alert" });
     } else {
       setToast({ message: "Column removed (values kept in history)" });
+    }
+  };
+
+  /**
+   * The client accepted this offer — it becomes a deal. The row stays here
+   * with a ✓ (like leads after Move to contact) and appears on the Deals
+   * board, where its downpayment is tracked. The percent is prefilled from
+   * the developer's customary rate the first time.
+   */
+  const handleMoveToDeal = async (deal: CrmDeal) => {
+    const developer = accounts.find(
+      (a) =>
+        !!deal.account_name &&
+        a.name.trim().toLowerCase() === deal.account_name.trim().toLowerCase()
+    );
+    const patch: Partial<CrmDeal> = { accepted_at: new Date().toISOString() };
+    if (deal.downpayment_percent == null && developer?.default_downpayment_percent != null) {
+      patch.downpayment_percent = Number(developer.default_downpayment_percent);
+    }
+    const saved = await patchDeal(deal.id, patch, true);
+    if (saved) {
+      setToast({
+        message: `${deal.name} moved to Deals`,
+        undo: () => {
+          patchDeal(deal.id, { accepted_at: null }, true);
+        },
+      });
     }
   };
 
@@ -206,7 +233,7 @@ export function DealsBoard({
       ...prev,
       {
         id: tempId,
-        name: name.trim() || "New Deal",
+        name: name.trim() || "New Offer",
         group_id: groupId,
         stage_id: firstStage?.id ?? "",
         owner_id: null,
@@ -224,6 +251,9 @@ export function DealsBoard({
         offer_property_type: null,
         offer_bedrooms: null,
         offer_details: null,
+        accepted_at: null,
+        downpayment_percent: null,
+        downpayment_amount: null,
         custom: {},
         forecast_category: null,
         last_interaction_at: null,
@@ -257,13 +287,13 @@ export function DealsBoard({
       <div ref={rootRef} className="flex h-full flex-col">
         <div className="board-anim">
           <BoardHeader
-            quickFilters={{ dims: filterDims, rows: localDeals, state: qf.state, onToggle: qf.toggle, onClear: qf.clear, visible: sortedRows.length, noun: "deals" }}
+            quickFilters={{ dims: filterDims, rows: localDeals, state: qf.state, onToggle: qf.toggle, onClear: qf.clear, visible: sortedRows.length, noun: "offers" }}
             profile={profile}
-            title="Deals"
+            title="Offers"
             tabs={VIEWS}
             activeTab={view}
             onTabChange={setView}
-            newLabel="New deal"
+            newLabel="New offer"
             searchValue={search}
             onSearch={setSearch}
             users={users}
@@ -271,7 +301,7 @@ export function DealsBoard({
             onPersonFilter={setPersonFilter}
             onNew={() => {
               const first = localGroups[0];
-              if (first) handleAddDeal(first.id, "New Deal");
+              if (first) handleAddDeal(first.id, "New Offer");
             }}
           />
         </div>
@@ -293,13 +323,14 @@ export function DealsBoard({
                 onCreateAccount={(dealId, name) => createAndLink("account", dealId, name)}
                 onCreateContact={(dealId, name) => createAndLink("contact", dealId, name)}
                 onOpenDeal={setOpenDealId}
+                onMoveToDeal={handleMoveToDeal}
                 customColumns={localColumns}
                 profile={profile}
                 onAddColumn={handleAddColumn}
                 onRenameColumn={handleRenameColumn}
                 onDeleteColumn={handleDeleteColumn}
                 onToggleCollapse={(collapsed) => {
-                  setGroupCollapsed("deals", group.id, collapsed);
+                  setGroupCollapsed("offers", group.id, collapsed);
                 }}
                 onRenameGroup={(name) => {
                   setLocalGroups((prev) =>

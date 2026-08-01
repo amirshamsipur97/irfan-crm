@@ -40,6 +40,38 @@ import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm
 
 const ROW_H = 36;
 
+/** Move to deal — green button that turns into a check once accepted. */
+function MoveToDealCell({ moved, onMove }: { moved: boolean; onMove: () => void }) {
+  if (moved) {
+    return (
+      <span className="flex size-full items-center justify-center" title="Moved to Deals">
+        <span className="flex size-[24px] items-center justify-center rounded-full bg-brand">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+            <path
+              d="M2.6 7.4l3 3L11.4 4"
+              stroke="#fff"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      </span>
+    );
+  }
+  return (
+    <span className="flex size-full items-center justify-center px-[6px]">
+      <button
+        type="button"
+        onClick={onMove}
+        className="h-[28px] w-full rounded-[4px] bg-brand font-sans text-[13px] leading-[20px] text-white transition-colors hover:bg-[#00b168]"
+      >
+        Move to deal
+      </button>
+    </span>
+  );
+}
+
 function DealStageCell({
   stage,
   stages,
@@ -95,6 +127,7 @@ export function DealGroup({
   onRenameGroup,
   onPatchDeal,
   onOpenDeal,
+  onMoveToDeal,
   customColumns,
   profile,
   onAddColumn,
@@ -115,6 +148,7 @@ export function DealGroup({
   onRenameGroup: (name: string) => void;
   onPatchDeal: (dealId: string, patch: Partial<CrmDeal>) => void;
   onOpenDeal?: (dealId: string) => void;
+  onMoveToDeal?: (deal: CrmDeal) => void;
   customColumns: CrmCustomColumn[];
   profile: CrmUser;
   onAddColumn: (type: CustomColumnType) => void;
@@ -201,7 +235,7 @@ export function DealGroup({
           style={{ color: group.color }}
         />
         <span className="pl-[4px] font-sans text-[14px] leading-[22px] text-ink-muted opacity-0 transition-opacity group-hover:opacity-100">
-          {deals.length} Deals
+          {deals.length} Offers
         </span>
       </div>
 
@@ -229,7 +263,7 @@ export function DealGroup({
                 />
               </span>
               <span className="flex flex-1 items-center justify-center border-b border-r border-t border-line font-sans text-[14px] leading-[20px] text-ink">
-                Deal
+                Offer
               </span>
             </div>
             {DEAL_COLUMNS.map((col) => (
@@ -492,6 +526,15 @@ export function DealGroup({
                           />
                         </span>
                       );
+                    case "move":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <MoveToDealCell
+                            moved={!!deal.accepted_at}
+                            onMove={() => onMoveToDeal?.(deal)}
+                          />
+                        </span>
+                      );
                     default:
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w} />
@@ -539,7 +582,7 @@ export function DealGroup({
                       setAddDraft("");
                     }
                   }}
-                  placeholder="+ Add deal"
+                  placeholder="+ Add offer"
                   className="h-[24px] w-full min-w-[200px] rounded-[4px] bg-transparent px-[4px] font-sans text-[14px] text-ink outline-none placeholder:text-ink-muted focus:border focus:border-teal-deep focus:bg-white"
                 />
               </span>

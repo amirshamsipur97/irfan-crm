@@ -17,6 +17,7 @@ import { Icon } from "@/components/ui/Icon";
 import type { CrmAccount, CrmAccountGroup, CrmContact, CrmDeal } from "@/lib/types";
 import { Checkbox, InlineEdit, OwnerCell } from "@/components/crm/leads/cells";
 import { DealsChipCell, TextCell } from "@/components/crm/contacts/contact-cells";
+import { NumberCell } from "@/components/crm/deals/deal-cells";
 import { CONNECTED_UNDERLINE } from "@/components/crm/contacts/contacts-config";
 import { ACCOUNT_COLUMNS, ACCOUNT_NAME_COL_W } from "./accounts-config";
 import { ContactsChipCell, DomainCell, IndustryCell } from "./account-cells";
@@ -267,6 +268,23 @@ export function AccountGroup({
                             label={account.email_label}
                             onSave={(email, label) =>
                               onPatchAccount(account.id, { email: email || null, email_label: label || null })
+                            }
+                          />
+                        </span>
+                      );
+                    case "downpayment":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <NumberCell
+                            value={
+                              account.default_downpayment_percent == null
+                                ? null
+                                : Number(account.default_downpayment_percent)
+                            }
+                            format={(v) => (v == null ? "" : `${v}%`)}
+                            title="This developer's customary rate — prefills accepted offers"
+                            onSave={(next) =>
+                              onPatchAccount(account.id, { default_downpayment_percent: next })
                             }
                           />
                         </span>

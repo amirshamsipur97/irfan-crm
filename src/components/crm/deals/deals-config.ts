@@ -23,6 +23,8 @@ export const DEAL_COLUMNS: { key: string; label: string; w: number }[] = [
   { key: "vs_budget", label: "vs budget", w: 130 },
   { key: "close_date", label: "Expected Close Date", w: 180 },
   { key: "offer_details", label: "Offer details", w: 240 },
+  // acceptance: the offer becomes a deal and its downpayment is tracked there
+  { key: "move", label: "Move to deal", w: 150 },
 ];
 
 export const FORECAST_CATEGORIES: {

@@ -10,6 +10,8 @@ export const ACCOUNT_COLUMNS: {
   { key: "owner", label: "Owner", w: 100 },
   { key: "domain", label: "Domain", w: 189 },
   { key: "email", label: "Email", w: 200 },
+  // the developer's customary downpayment rate — prefills accepted offers
+  { key: "downpayment", label: "Downpayment %", w: 140 },
   { key: "industry", label: "Industry", w: 230 },
   { key: "description", label: "Description", w: 280 },
   { key: "employees", label: "No. of employees", w: 160 },

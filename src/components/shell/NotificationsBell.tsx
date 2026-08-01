@@ -39,6 +39,7 @@ function boardChip(link: string | null): string | null {
   if (!seg) return null;
   const names: Record<string, string> = {
     leads: "Leads",
+    offers: "Offers",
     deals: "Deals",
     contacts: "Contacts",
     accounts: "Accounts",

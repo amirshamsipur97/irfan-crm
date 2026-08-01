@@ -29,7 +29,7 @@ import {
   getDealRelations,
   setInterestStatus,
   setOfferStatus,
-} from "@/app/(app)/crm/deals/drawer-actions";
+} from "@/app/(app)/crm/offers/drawer-actions";
 
 const OFFER_COLORS: Record<string, string> = {
   draft: "#c4c4c4",

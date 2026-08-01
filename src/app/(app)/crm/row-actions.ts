@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 /** boardKey → backing table (allow-list; never accept table names from the client). */
 const BOARD_TABLES: Record<string, string> = {
   leads: "crm_leads",
+  offers: "crm_deals",
   deals: "crm_deals",
   contacts: "crm_contacts",
   accounts: "crm_accounts",

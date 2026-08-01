@@ -14,7 +14,9 @@ export const BOARD_META: {
   { key: "dashboard", name: "Sales Dashboard", icon: "rowDashboard", href: "/crm/dashboard", table: null },
   { key: "projects", name: "Client Projects", icon: "rowProjects", href: "/crm/projects", table: "crm_projects" },
   { key: "leads", name: "Leads", icon: "rowLeads", href: "/crm/leads", table: "crm_leads" },
-  { key: "deals", name: "Deals", icon: "rowDeals", href: "/crm/deals", table: "crm_deals" },
+  // both boards read crm_deals: Offers = every row, Deals = accepted ones
+  { key: "offers", name: "Offers", icon: "rowDeals", href: "/crm/offers", table: "crm_deals" },
+  { key: "deals", name: "Deals", icon: "rowDeals", href: "/crm/deals", table: null },
   { key: "accounts", name: "Accounts", icon: "rowAccounts", href: "/crm/accounts", table: "crm_accounts" },
   { key: "developments", name: "Developments", icon: "rowProjects", href: "/crm/developments", table: "crm_developments" },
   { key: "units", name: "Units", icon: "rowAccounts", href: "/crm/units", table: "crm_units" },

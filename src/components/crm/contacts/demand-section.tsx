@@ -19,7 +19,7 @@ import {
   registerDocument,
   updateDemand,
 } from "@/app/(app)/crm/contacts/demand-actions";
-import { createOfferForContact } from "@/app/(app)/crm/deals/actions";
+import { createOfferForContact } from "@/app/(app)/crm/offers/actions";
 
 const fieldCls =
   "h-[34px] w-full rounded-[4px] border border-line-strong bg-white px-[8px] font-sans text-[13px] text-ink outline-none focus:border-teal-deep";

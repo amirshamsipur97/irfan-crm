@@ -27,7 +27,7 @@ import {
   setSplitStatus,
   startTransaction,
   updateTransaction,
-} from "@/app/(app)/crm/deals/finance-actions";
+} from "@/app/(app)/crm/offers/finance-actions";
 
 const TX_STATUSES: { key: string; label: string; color: string }[] = [
   { key: "draft", label: "Draft", color: "#c4c4c4" },

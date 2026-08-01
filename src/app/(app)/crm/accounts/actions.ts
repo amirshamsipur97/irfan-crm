@@ -17,6 +17,7 @@ const PATCHABLE = new Set([
   "description",
   "employees_range",
   "hq_location",
+  "default_downpayment_percent",
   "last_interaction_at",
   "custom",
 ]);

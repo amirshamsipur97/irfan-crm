@@ -9,6 +9,7 @@ import { DEFAULT_OPTIONS, DEFAULT_LABELS } from "@/lib/custom-columns";
 const BOARD_PATHS: Record<string, string> = {
   contacts: "/crm/contacts",
   leads: "/crm/leads",
+  offers: "/crm/offers",
   deals: "/crm/deals",
   accounts: "/crm/accounts",
   projects: "/crm/projects",

@@ -126,6 +126,7 @@ export function AccountsBoard({
         description: null,
         employees_range: null,
         hq_location: null,
+        default_downpayment_percent: null,
         owner_id: profile.id,
         custom: {},
         group_id: groupId,

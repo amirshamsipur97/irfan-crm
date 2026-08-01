@@ -22,7 +22,7 @@ import type { CrmContact, CrmUnit, CrmUser, CrmViewing, CrmViewingGroup } from "
 import { BoardHeader } from "@/components/crm/leads/BoardHeader";
 import { GROUP_COLORS } from "@/components/crm/leads/board-config";
 import type { PickerOption } from "@/components/crm/deals/connect-picker";
-import { quickCreateContact } from "@/app/(app)/crm/deals/actions";
+import { quickCreateContact } from "@/app/(app)/crm/offers/actions";
 import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import { quickCreateUnit } from "@/app/(app)/crm/units/actions";
 import { ViewingGroup } from "./ViewingGroup";
