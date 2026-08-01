@@ -2,7 +2,7 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-08-01** (committed through `c6e449c`, deployed;
+> Updated: **2026-08-01 (late)** (committed through `1651c0d`, deployed;
 > repo is LOCAL-ONLY, no remote).
 
 ## START HERE — state as of 2026-08-01
@@ -37,8 +37,9 @@ Lead captured  →  Move to contact  →  the contact IS the client's Demand
   kind of unit. The Units/Developments boards still exist but are empty.
 
 **Blocked on the user, not on code:**
-1. `SUPABASE_SERVICE_ROLE_KEY` — without it the Team page's Approve button
-   returns "Admin key is not configured". Placeholders are in `.env.local`.
+1. ~~`SUPABASE_SERVICE_ROLE_KEY`~~ — NO LONGER NEEDED (2026-08-01 late):
+   approval now runs through the `crm_approve_member` security-definer RPC.
+   The empty placeholder in `.env.local` is dead; nothing reads it.
 2. `SMTP_HOST/USER/PASSWORD` (Zoho) — without them approval still works and
    shows the temporary password on screen, but no email goes out. Supabase's
    built-in sender is rate-limited and already returned
@@ -52,6 +53,35 @@ without asking again: three leftover custom columns on Leads (a Dropdown from
 07-21, plus a Status and a Dropdown from 07-26 testing), two empty groups on
 Leads, and the stray account `a.shasmipur@irfaninvest.com` (a typo of
 `a.shamsipour@`, auto-approved as an agent because the domain is allow-listed).
+
+## SESSION 2026-08-01 late (commit `1651c0d`, migration `crm_approve_member_rpc`)
+
+Admin-side functions pass. The one broken admin function — Approve — no
+longer depends on the service-role key:
+
+1. **`crm_approve_member(p_user_id, p_password, p_role)` RPC** (security
+   definer, admin-gated by `crm_is_admin()` in the database): sets the
+   temporary password directly on `auth.users` (`extensions.crypt` bf, the
+   same mechanism the SQL-created test users always used), confirms the
+   address, and activates the `crm_users` row (`must_change_password = true`,
+   `approved_at = now()`, optional role). Granted to `authenticated` only;
+   anon revoked. GoTrue accepts the hash — verified by a real password-grant
+   login against the auth REST API.
+2. **`approveMember` action rewritten** to call the RPC; the tier check is
+   the database's now. `src/lib/supabase/admin.ts` DELETED (nothing else
+   used it; git history keeps it).
+3. **/admin Directory approves too**: pending members (`approved_at` null)
+   show a "waiting for approval" badge and an **Approve** button in place of
+   the Active toggle — a bare activate would have stranded a passwordless
+   account (signup stopped asking for a password on 07-26). The one-time
+   password shows inline, same as the Team page.
+4. **Custom-column rename in /admin is awaited** and rolls back + reports on
+   refusal (was fire-and-forget with an unconditional success flash).
+
+E2E (ghost signup `ghost.approve.test@…`, then deleted): agent caller
+refused ✓, admin RPC approves ✓, GoTrue login with the temp password ✓,
+UI approve from /admin Directory through the real server action ✓, all
+five /admin sections render after the DOM restructure ✓. tsc + build clean.
 
 ## SESSION 2026-07-26 → 08-01 (commits `b30e888` … `c6e449c`)
 
