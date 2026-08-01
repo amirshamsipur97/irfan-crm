@@ -21,13 +21,11 @@ import { GROUP_COLORS } from "@/components/crm/leads/board-config";
 import { AccountGroup } from "./AccountGroup";
 import {
   addAccount,
-  logAccountActivity,
   addAccountGroup,
   renameAccountGroup,
   updateAccount,
 } from "@/app/(app)/crm/accounts/actions";
 import { setGroupCollapsed } from "@/app/(app)/crm/actions";
-import type { LogPayload } from "@/components/crm/deals/activity-log";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { applyRowEdit } from "@/components/crm/persist";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
@@ -227,12 +225,6 @@ export function AccountsBoard({
               onAddColumn={handleAddColumn}
               onRenameColumn={handleRenameColumn}
               onDeleteColumn={handleDeleteColumn}
-              onLogActivity={(accountId, payload: LogPayload) => {
-                patchAccount(accountId, {
-                  last_interaction_at: payload.startAt ?? new Date().toISOString(),
-                }, true);
-                logAccountActivity(accountId, payload);
-              }}
               onAddAccount={(name) => handleAddAccount(group.id, name)}
             />
           ))}

@@ -15,16 +15,11 @@ import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Icon } from "@/components/ui/Icon";
 import type { CrmAccount, CrmAccountGroup, CrmContact, CrmDeal } from "@/lib/types";
-import { Checkbox, InlineEdit, OwnerCell, TimelineCell } from "@/components/crm/leads/cells";
+import { Checkbox, InlineEdit, OwnerCell } from "@/components/crm/leads/cells";
 import { DealsChipCell, TextCell } from "@/components/crm/contacts/contact-cells";
 import { CONNECTED_UNDERLINE } from "@/components/crm/contacts/contacts-config";
 import { ACCOUNT_COLUMNS, ACCOUNT_NAME_COL_W } from "./accounts-config";
 import { ContactsChipCell, DomainCell, IndustryCell } from "./account-cells";
-import {
-  ActivityComposer,
-  ActivityLogMenu,
-  type LogPayload,
-} from "@/components/crm/deals/activity-log";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 import { EmailCell } from "@/components/crm/leads/lead-cells";
 
@@ -46,7 +41,6 @@ export function AccountGroup({
   onRenameGroup,
   onPatchAccount,
   onAddAccount,
-  onLogActivity,
   tools,
   onEmailAccount,
 }: {
@@ -65,15 +59,12 @@ export function AccountGroup({
   onRenameGroup: (name: string) => void;
   onPatchAccount: (accountId: string, patch: Partial<CrmAccount>) => void;
   onAddAccount: (name: string) => void;
-  onLogActivity: (accountId: string, payload: LogPayload) => void;
   tools?: RowToolsConfig;
   onEmailAccount?: (account: CrmAccount) => void;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [addDraft, setAddDraft] = useState("");
-  const [logMenuFor, setLogMenuFor] = useState<string | null>(null);
-  const [composer, setComposer] = useState<{ account: CrmAccount; typeKey: string } | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
 
@@ -330,32 +321,6 @@ export function AccountGroup({
                           </span>
                         </span>
                       );
-                    case "timeline":
-                      return (
-                        <span
-                          key={col.key}
-                          className={`${cellBorder} relative block bg-white`}
-                          style={w}
-                        >
-                          <TimelineCell
-                            leadId={account.id}
-                            lastActivityAt={account.last_interaction_at}
-                            hasActivity={!!account.last_interaction_at}
-                            onAdd={() =>
-                              setLogMenuFor((cur) => (cur === account.id ? null : account.id))
-                            }
-                            addActive={logMenuFor === account.id}
-                          />
-                          <ActivityLogMenu
-                            open={logMenuFor === account.id}
-                            onClose={() => setLogMenuFor(null)}
-                            onPick={(typeKey) => {
-                              setLogMenuFor(null);
-                              setComposer({ account, typeKey });
-                            }}
-                          />
-                        </span>
-                      );
                     case "contacts":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
@@ -455,17 +420,6 @@ export function AccountGroup({
         </div>
       )}
 
-      {composer && (
-        <ActivityComposer
-          typeKey={composer.typeKey}
-          target={{ name: composer.account.name, account_name: composer.account.name }}
-          onClose={() => setComposer(null)}
-          onAdd={(payload) => {
-            onLogActivity(composer.account.id, payload);
-            setComposer(null);
-          }}
-        />
-      )}
     </section>
   );
 }

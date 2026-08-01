@@ -3,7 +3,6 @@ import type { ForecastCategory } from "@/lib/types";
 export const DEAL_NAME_COL_W = 292;
 
 export const DEAL_COLUMNS: { key: string; label: string; w: number }[] = [
-  { key: "timeline", label: "Activities timeline", w: 194 },
   { key: "stage", label: "Stage", w: 159 },
   { key: "owner", label: "Owner", w: 98 },
   { key: "value", label: "Deal Value", w: 132 },

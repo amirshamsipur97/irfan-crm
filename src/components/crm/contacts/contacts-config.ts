@@ -9,15 +9,18 @@ export const CONTACT_COLUMNS: {
 }[] = [
   { key: "owner", label: "Owner", w: 100 },
   { key: "email", label: "Email", w: 189 },
-  { key: "timeline", label: "Activities timeline", w: 194 },
+  { key: "phone", label: "Phone", w: 170 },
+  // the client's demand, readable straight from the board instead of only in
+  // the side panel — Title / Type / Priority were dropped as unusable noise
+  { key: "property_type", label: "Property type", w: 150 },
+  { key: "bedrooms", label: "Size", w: 110 },
+  { key: "budget", label: "Budget", w: 140 },
+  { key: "preferred_area", label: "Preferred area", w: 170 },
+  { key: "requirements", label: "Requirements", w: 240 },
   { key: "accounts", label: "Accounts", w: 192 },
   { key: "deals", label: "Deals", w: 181, connected: true },
   { key: "deals_value", label: "Deals value", w: 132, connected: true },
-  { key: "phone", label: "Phone", w: 170 },
-  { key: "title", label: "Title", w: 140 },
-  { key: "type", label: "Type", w: 140 },
-  { key: "priority", label: "Priority", w: 140 },
-  { key: "comments", label: "Comments", w: 260 },
+  { key: "comments", label: "Comments", w: 220 },
 ];
 
 export const CONTACT_TYPES: { key: string; label: string; color: string }[] = [

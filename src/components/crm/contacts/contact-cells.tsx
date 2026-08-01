@@ -18,13 +18,20 @@ export function OptionCell({
 
   return (
     <div className="relative size-full">
+      {/* an unset value stays white with a faint "+" instead of painting a
+          solid grey block — a column that is mostly empty (the demand fields)
+          otherwise reads as a wall of grey */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex size-full items-center justify-center font-sans text-[14px] leading-[20px] text-white transition-opacity hover:opacity-90"
-        style={{ backgroundColor: current?.color ?? "#c4c4c4" }}
+        className={`flex size-full items-center justify-center font-sans text-[14px] leading-[20px] transition-colors ${
+          current
+            ? "text-white hover:opacity-90"
+            : "bg-white text-transparent hover:bg-[var(--hover-ghost)] hover:text-ink-muted"
+        }`}
+        style={current ? { backgroundColor: current.color } : undefined}
       >
-        {current?.label ?? ""}
+        {current?.label ?? "+"}
       </button>
       <Popover open={open} onClose={() => setOpen(false)} className="w-[180px]">
         <div className="flex flex-col gap-[6px]">

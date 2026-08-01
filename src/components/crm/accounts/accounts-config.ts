@@ -14,7 +14,6 @@ export const ACCOUNT_COLUMNS: {
   { key: "description", label: "Description", w: 280 },
   { key: "employees", label: "No. of employees", w: 160 },
   { key: "hq", label: "Headquarters location", w: 210 },
-  { key: "timeline", label: "Activities timeline", w: 194 },
   { key: "contacts", label: "Contacts", w: 213, connected: true },
   { key: "deals", label: "Deals", w: 181, connected: true },
 ];

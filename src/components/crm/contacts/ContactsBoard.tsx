@@ -15,13 +15,11 @@ import { ContactGroup } from "./ContactGroup";
 import { ContactDrawer } from "./contact-drawer";
 import {
   addContact,
-  logContactActivity,
   addContactGroup,
   renameContactGroup,
   updateContact,
 } from "@/app/(app)/crm/contacts/actions";
 import { setGroupCollapsed } from "@/app/(app)/crm/actions";
-import type { LogPayload } from "@/components/crm/deals/activity-log";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { applyRowEdit } from "@/components/crm/persist";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
@@ -271,12 +269,6 @@ export function ContactsBoard({
                 setAccountOptions((prev) => [...prev, { name }]);
                 await quickCreateAccount(name);
                 patchContact(contactId, { account_name: name });
-              }}
-              onLogActivity={(contactId, payload: LogPayload) => {
-                patchContact(contactId, {
-                  last_interaction_at: payload.startAt ?? new Date().toISOString(),
-                }, true);
-                logContactActivity(contactId, payload);
               }}
               onAddContact={(name) => handleAddContact(group.id, name)}
               onOpenContact={setOpenContactId}

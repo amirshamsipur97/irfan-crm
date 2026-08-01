@@ -6,28 +6,21 @@ import { useGSAP } from "@gsap/react";
 import { Icon } from "@/components/ui/Icon";
 import type { CrmContact, CrmContactGroup, CrmDeal } from "@/lib/types";
 import {
-  BatteryBar,
   Checkbox,
   InlineEdit,
   OwnerCell,
-  TimelineCell,
 } from "@/components/crm/leads/cells";
 import { money } from "@/components/crm/deals/deals-config";
 import {
   CONNECTED_UNDERLINE,
   CONTACT_COLUMNS,
   CONTACT_NAME_COL_W,
-  CONTACT_PRIORITIES,
-  CONTACT_TYPES,
 } from "./contacts-config";
-import { DealsChipCell, OptionCell, TextCell, TitleCell } from "./contact-cells";
+import { DealsChipCell, OptionCell, TextCell } from "./contact-cells";
+import { BEDROOM_OPTIONS, PROPERTY_TYPES } from "./demand-config";
+import { NumberCell } from "@/components/crm/deals/deal-cells";
 import { EmailCell, PhoneCell } from "@/components/crm/leads/lead-cells";
 import { ConnectPicker, type PickerOption } from "@/components/crm/deals/connect-picker";
-import {
-  ActivityComposer,
-  ActivityLogMenu,
-  type LogPayload,
-} from "@/components/crm/deals/activity-log";
 import type { CrmUser } from "@/lib/types";
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
 import { CUSTOM_COL_W } from "@/lib/custom-columns";
@@ -50,7 +43,6 @@ export function ContactGroup({
   onRenameGroup,
   onPatchContact,
   onAddContact,
-  onLogActivity,
   accountOptions,
   onCreateAccount,
   customColumns,
@@ -71,7 +63,6 @@ export function ContactGroup({
   onRenameGroup: (name: string) => void;
   onPatchContact: (contactId: string, patch: Partial<CrmContact>) => void;
   onAddContact: (name: string) => void;
-  onLogActivity: (contactId: string, payload: LogPayload) => void;
   accountOptions: PickerOption[];
   onCreateAccount: (contactId: string, name: string) => void;
   customColumns: CrmCustomColumn[];
@@ -87,8 +78,6 @@ export function ContactGroup({
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [addDraft, setAddDraft] = useState("");
-  const [logMenuFor, setLogMenuFor] = useState<string | null>(null);
-  const [composer, setComposer] = useState<{ contact: CrmContact; typeKey: string } | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
 
@@ -133,13 +122,6 @@ export function ContactGroup({
         d.contact_name.trim().toLowerCase() === contact.name.trim().toLowerCase()
     );
 
-  const prioritySegments = [
-    ...CONTACT_PRIORITIES.map((p) => ({
-      color: p.color,
-      count: contacts.filter((c) => c.priority === p.key).length,
-    })),
-    { color: "#c4c4c4", count: contacts.filter((c) => !c.priority).length },
-  ].filter((s) => s.count > 0);
 
   const cellBorder = "border-b border-r border-line";
 
@@ -300,32 +282,6 @@ export function ContactGroup({
                           />
                         </span>
                       );
-                    case "timeline":
-                      return (
-                        <span
-                          key={col.key}
-                          className={`${cellBorder} relative block bg-white`}
-                          style={w}
-                        >
-                          <TimelineCell
-                            leadId={contact.id}
-                            lastActivityAt={contact.last_interaction_at}
-                            hasActivity={!!contact.last_interaction_at}
-                            onAdd={() =>
-                              setLogMenuFor((cur) => (cur === contact.id ? null : contact.id))
-                            }
-                            addActive={logMenuFor === contact.id}
-                          />
-                          <ActivityLogMenu
-                            open={logMenuFor === contact.id}
-                            onClose={() => setLogMenuFor(null)}
-                            onPick={(typeKey) => {
-                              setLogMenuFor(null);
-                              setComposer({ contact, typeKey });
-                            }}
-                          />
-                        </span>
-                      );
                     case "accounts":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
@@ -366,37 +322,56 @@ export function ContactGroup({
                           />
                         </span>
                       );
-                    case "title":
-                      return (
-                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
-                          <TitleCell
-                            value={contact.title}
-                            onSave={(next) => onPatchContact(contact.id, { title: next || null })}
-                          />
-                        </span>
-                      );
-                    case "type":
+                    case "property_type":
                       return (
                         <span key={col.key} className={`${cellBorder} block`} style={w}>
                           <OptionCell
-                            value={contact.contact_type}
-                            options={CONTACT_TYPES}
+                            value={contact.property_type}
+                            options={PROPERTY_TYPES}
                             onSelect={(next) =>
-                              onPatchContact(contact.id, { contact_type: next })
+                              onPatchContact(contact.id, { property_type: next })
                             }
                           />
                         </span>
                       );
-                    case "priority":
+                    case "bedrooms":
                       return (
                         <span key={col.key} className={`${cellBorder} block`} style={w}>
                           <OptionCell
-                            value={contact.priority}
-                            options={CONTACT_PRIORITIES}
-                            onSelect={(next) =>
-                              onPatchContact(contact.id, {
-                                priority: next as CrmContact["priority"],
-                              })
+                            value={contact.bedrooms}
+                            options={BEDROOM_OPTIONS}
+                            onSelect={(next) => onPatchContact(contact.id, { bedrooms: next })}
+                          />
+                        </span>
+                      );
+                    case "budget":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <NumberCell
+                            value={contact.budget}
+                            format={(n) => money(n)}
+                            onSave={(next) => onPatchContact(contact.id, { budget: next })}
+                          />
+                        </span>
+                      );
+                    case "preferred_area":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <TextCell
+                            value={contact.preferred_area}
+                            onSave={(next) =>
+                              onPatchContact(contact.id, { preferred_area: next || null })
+                            }
+                          />
+                        </span>
+                      );
+                    case "requirements":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <TextCell
+                            value={contact.requirements}
+                            onSave={(next) =>
+                              onPatchContact(contact.id, { requirements: next || null })
                             }
                           />
                         </span>
@@ -437,6 +412,8 @@ export function ContactGroup({
           })}
 
           {/* add contact row */}
+
+          {/* add row */}
           <div className="flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, null)}>
             <div
               className="sticky left-0 z-10 flex items-stretch bg-white"
@@ -469,54 +446,9 @@ export function ContactGroup({
               style={{ width: CONTACT_COLUMNS.reduce((s, c) => s + c.w, 0) + customColumns.length * CUSTOM_COL_W + 40 }}
             />
           </div>
-
-          {/* summary row */}
-          <div className="flex w-fit items-stretch" style={{ height: ROW_H }}>
-            <span
-              className="sticky left-0 z-10 block bg-white"
-              style={{ width: CONTACT_NAME_COL_W }}
-            />
-            {CONTACT_COLUMNS.map((col) => (
-              <span
-                key={col.key}
-                className="flex items-center justify-center border-b border-r border-line bg-white"
-                style={{ width: col.w }}
-              >
-                {col.key === "priority" && prioritySegments.length > 0 && (
-                  <BatteryBar segments={prioritySegments} />
-                )}
-                {col.key === "deals_value" && (
-                  <span className="font-sans text-[14px] leading-[20px] text-ink-muted">-</span>
-                )}
-              </span>
-            ))}
-            {customColumns.map((col) => (
-              <span
-                key={col.id}
-                className="border-b border-r border-line bg-white"
-                style={{ width: CUSTOM_COL_W }}
-              />
-            ))}
-            <span className="w-[40px] border-b border-line bg-white" />
-          </div>
         </div>
       )}
 
-      {composer && (
-        <ActivityComposer
-          typeKey={composer.typeKey}
-          target={{
-            name: composer.contact.name,
-            contact_name: composer.contact.name,
-            account_name: composer.contact.account_name,
-          }}
-          onClose={() => setComposer(null)}
-          onAdd={(payload) => {
-            onLogActivity(composer.contact.id, payload);
-            setComposer(null);
-          }}
-        />
-      )}
     </section>
   );
 }

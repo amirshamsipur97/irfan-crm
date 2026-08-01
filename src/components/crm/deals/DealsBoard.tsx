@@ -18,14 +18,12 @@ import { PipelineView } from "./PipelineView";
 import {
   addDeal,
   addDealGroup,
-  logDealActivity,
   quickCreateAccount,
   quickCreateContact,
   renameDealGroup,
   updateDeal,
 } from "@/app/(app)/crm/deals/actions";
 import { setGroupCollapsed } from "@/app/(app)/crm/actions";
-import type { LogPayload } from "./activity-log";
 import type { PickerOption } from "./connect-picker";
 import { LostReasonDialog } from "./lost-reason-dialog";
 import { DealDrawer } from "./deal-drawer";
@@ -180,13 +178,6 @@ export function DealsBoard({
     }
   };
 
-  const logActivity = (dealId: string, payload: LogPayload) => {
-    const iso = payload.startAt ?? new Date().toISOString();
-    setLocalDeals((prev) =>
-      prev.map((d) => (d.id === dealId ? { ...d, last_interaction_at: iso } : d))
-    );
-    logDealActivity(dealId, payload);
-  };
 
   const q = search.trim().toLowerCase();
   const visibleDeals = localDeals.filter(
@@ -283,7 +274,6 @@ export function DealsBoard({
                 deals={sortedRows.filter((d) => d.group_id === group.id)}
                 stages={stages}
                 users={users}
-                onLogActivity={logActivity}
                 accountOptions={accountOptions}
                 contactOptions={contactOptions}
                 onCreateAccount={(dealId, name) => createAndLink("account", dealId, name)}

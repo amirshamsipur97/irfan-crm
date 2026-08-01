@@ -11,10 +11,9 @@ import {
   Checkbox,
   InlineEdit,
   OwnerCell,
-  TimelineCell,
   Popover,
 } from "@/components/crm/leads/cells";
-import { leadHash, shortDate } from "@/components/crm/leads/board-config";
+import { shortDate } from "@/components/crm/leads/board-config";
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
 import { CUSTOM_COL_W } from "@/lib/custom-columns";
 import {
@@ -31,7 +30,6 @@ import {
   money,
 } from "./deals-config";
 import { CategoryCell, CloseDateCell, NumberCell } from "./deal-cells";
-import { ActivityComposer, ActivityLogMenu, type LogPayload } from "./activity-log";
 import { ConnectPicker, type PickerOption } from "./connect-picker";
 import { TimeCell } from "@/components/crm/activities/activity-cells";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
@@ -96,7 +94,6 @@ export function DealGroup({
   onRenameColumn,
   onDeleteColumn,
   onAddDeal,
-  onLogActivity,
   accountOptions,
   contactOptions,
   onCreateAccount,
@@ -118,7 +115,6 @@ export function DealGroup({
   onRenameColumn: (columnId: string, label: string) => void;
   onDeleteColumn: (columnId: string) => void;
   onAddDeal: (name: string) => void;
-  onLogActivity: (dealId: string, payload: LogPayload) => void;
   accountOptions: PickerOption[];
   contactOptions: PickerOption[];
   onCreateAccount: (dealId: string, name: string) => void;
@@ -128,8 +124,6 @@ export function DealGroup({
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [addDraft, setAddDraft] = useState("");
-  const [logMenuFor, setLogMenuFor] = useState<string | null>(null);
-  const [composer, setComposer] = useState<{ deal: CrmDeal; typeKey: string } | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
 
@@ -305,32 +299,6 @@ export function DealGroup({
                 {DEAL_COLUMNS.map((col) => {
                   const w = { width: col.w };
                   switch (col.key) {
-                    case "timeline":
-                      return (
-                        <span
-                          key={col.key}
-                          className={`${cellBorder} relative block bg-white`}
-                          style={w}
-                        >
-                          <TimelineCell
-                            leadId={deal.id}
-                            lastActivityAt={deal.last_interaction_at}
-                            hasActivity={!!deal.last_interaction_at || leadHash(deal.id) % 3 !== 0}
-                            onAdd={() =>
-                              setLogMenuFor((cur) => (cur === deal.id ? null : deal.id))
-                            }
-                            addActive={logMenuFor === deal.id}
-                          />
-                          <ActivityLogMenu
-                            open={logMenuFor === deal.id}
-                            onClose={() => setLogMenuFor(null)}
-                            onPick={(typeKey) => {
-                              setLogMenuFor(null);
-                              setComposer({ deal, typeKey });
-                            }}
-                          />
-                        </span>
-                      );
                     case "stage":
                       return (
                         <span key={col.key} className={`${cellBorder} block`} style={w}>
@@ -549,17 +517,6 @@ export function DealGroup({
         </div>
       )}
 
-      {composer && (
-        <ActivityComposer
-          typeKey={composer.typeKey}
-          target={composer.deal}
-          onClose={() => setComposer(null)}
-          onAdd={(payload) => {
-            onLogActivity(composer.deal.id, payload);
-            setComposer(null);
-          }}
-        />
-      )}
     </section>
   );
 }
