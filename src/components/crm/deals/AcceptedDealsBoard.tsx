@@ -40,6 +40,9 @@ const COLS: { key: string; label: string; w: number }[] = [
   { key: "paid", label: "Paid", w: 160 },
   { key: "remaining", label: "Remaining", w: 130 },
   { key: "payments", label: "Payments", w: 140 },
+  // once the downpayment is complete, the developer must be invoiced —
+  // this column is the reminder and the "done" stamp in one place
+  { key: "invoice", label: "Invoice", w: 200 },
   { key: "accepted", label: "Accepted", w: 110 },
 ];
 
@@ -548,11 +551,66 @@ export function AcceptedDealsBoard({
                                 canEdit={canEdit}
                                 onAdded={(row) => {
                                   setLocalPayments((prev) => [...prev, row]);
-                                  setToast({ message: `Part ${row.part_no} recorded on ${deal.name}` });
+                                  // the moment the last part covers the target,
+                                  // point the agent at the next step
+                                  const nowPaid = paid + Number(row.amount);
+                                  setToast(
+                                    target != null && target > 0 && nowPaid >= target
+                                      ? {
+                                          message: `Downpayment complete on ${deal.name} — send the invoice to ${deal.account_name ?? "the developer"}`,
+                                        }
+                                      : { message: `Part ${row.part_no} recorded on ${deal.name}` }
+                                  );
                                 }}
                                 onDeleted={(partId) => deletePart(deal, partId)}
                                 onError={(message) => setToast({ message, tone: "alert" })}
                               />
+                            </span>
+                          );
+                        case "invoice":
+                          return (
+                            <span
+                              key={col.key}
+                              className={`${cellBorder} flex items-center justify-center bg-white px-[6px] font-sans text-[13px] leading-[20px]`}
+                              style={w}
+                            >
+                              {deal.invoice_sent_at ? (
+                                <span
+                                  className="max-w-full truncate rounded-[10px] bg-[#00c875] px-[8px] py-[2px] text-white"
+                                  title={`Sent ${shortDate(deal.invoice_sent_at)}`}
+                                >
+                                  Invoice sent ✓
+                                </span>
+                              ) : complete ? (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const saved = await patchDeal(
+                                      deal.id,
+                                      { invoice_sent_at: new Date().toISOString() },
+                                      true
+                                    );
+                                    if (saved) {
+                                      setToast({
+                                        message: `Invoice to ${deal.account_name ?? "the developer"} marked sent`,
+                                        undo: () => {
+                                          patchDeal(deal.id, { invoice_sent_at: null }, true);
+                                        },
+                                      });
+                                    }
+                                  }}
+                                  className="h-[28px] w-full truncate rounded-[4px] bg-[#fdab3d] px-[8px] font-sans text-[12.5px] font-medium text-white transition-colors hover:bg-[#e8983a]"
+                                >
+                                  Send invoice to developer
+                                </button>
+                              ) : (
+                                <span
+                                  className="text-ink-muted"
+                                  title="Appears when the downpayment is complete"
+                                >
+                                  —
+                                </span>
+                              )}
                             </span>
                           );
                         case "accepted":
@@ -570,7 +628,6 @@ export function AcceptedDealsBoard({
                           return <span key={col.key} className={`${cellBorder} block bg-white`} style={w} />;
                       }
                     })}
-                    <span className="w-[40px] border-b border-line bg-white" />
                   </div>
                 );
               })}
@@ -612,7 +669,6 @@ export function AcceptedDealsBoard({
                     </span>
                   );
                 })}
-                <span className="w-[40px] border-b border-line bg-white" />
               </div>
             </section>
           )}

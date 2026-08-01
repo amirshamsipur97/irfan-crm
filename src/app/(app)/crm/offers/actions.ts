@@ -27,6 +27,7 @@ const PATCHABLE = new Set([
   "offer_details",
   "accepted_at",
   "downpayment_percent",
+  "invoice_sent_at",
   "custom",
 ]);
 

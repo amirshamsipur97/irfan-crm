@@ -161,6 +161,8 @@ export interface CrmDeal {
   downpayment_percent: number | null;
   /** generated in the database: deal_value × downpayment_percent / 100 */
   downpayment_amount: number | null;
+  /** when the developer's invoice went out — offered once the downpayment completes */
+  invoice_sent_at: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
   position?: number;
