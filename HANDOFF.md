@@ -2,7 +2,7 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-08-01 (late)** (committed through `632ae3d`, deployed;
+> Updated: **2026-08-01 (late)** (committed through `34833c8`, deployed;
 > repo is LOCAL-ONLY, no remote).
 
 ## START HERE — state as of 2026-08-01
@@ -51,6 +51,15 @@ Lead captured  →  Move to contact  →  the contact IS the client's Demand
 - E2E'd: accept from UI (percent prefilled 20 from developer), Part 1+2 to
   Complete ✓, delete part → "15K OMR left", RLS/generated column verified
   in SQL, all test rows cleaned.
+- **Invoice step (commit `34833c8`, migration `crm_deal_invoice_sent`)**:
+  when the downpayment completes, the Deals board's Invoice column turns
+  from "—" into an amber **Send invoice to developer** button
+  (`crm_deals.invoice_sent_at`; green "Invoice sent ✓" chip after, undo in
+  the toast) and the covering payment's toast says "Downpayment complete —
+  send the invoice to <developer>". Also removed the 40px row fillers that
+  stuck out past the header (the two stray lines at the table's right
+  edge). First real deal exists: "Offer — mehdi mehrjooyi" (139K, 20%,
+  2 parts) — user-created, do not touch.
 
 - **Leads** = capture only. Lead · Status · Owner · First name · Last name ·
   Telephone · Email · Lead Source (Meta / Google Ads / Dubizzle / Co-worker /
