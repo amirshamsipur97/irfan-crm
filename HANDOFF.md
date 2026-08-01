@@ -2,7 +2,7 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-08-01 (late)** (committed through `34833c8`, deployed;
+> Updated: **2026-08-01 (late)** (committed through `92b214d`, deployed;
 > repo is LOCAL-ONLY, no remote).
 
 ## START HERE — state as of 2026-08-01
@@ -59,7 +59,20 @@ Lead captured  →  Move to contact  →  the contact IS the client's Demand
   send the invoice to <developer>". Also removed the 40px row fillers that
   stuck out past the header (the two stray lines at the table's right
   edge). First real deal exists: "Offer — mehdi mehrjooyi" (139K, 20%,
-  2 parts) — user-created, do not touch.
+  now fully paid) — user-created, do not touch. ⚠️ several offers share
+  that name — always match by id, not name, when testing.
+- **"Deal done" across boards (commit `92b214d`, migration
+  `crm_downpayment_completed_flag`)**: `crm_deals.downpayment_completed_at`
+  is stamped by an AFTER trigger on crm_deal_downpayments the moment the
+  parts cover the downpayment, cleared when they drop below it, and a
+  BEFORE trigger on crm_deals rechecks it when deal_value /
+  downpayment_percent change (it computes the target itself — the
+  generated column is not available on NEW). Shared green badge
+  `components/crm/deal-done-badge.tsx` renders on the name cell of the
+  OFFER row, the CONTACT (FK match + name-cache fallback in
+  ContactGroup.hasDoneDeal), and the source LEAD
+  (converted_contact_id ∈ doneContactIds, fetched in the leads page).
+  Backfilled; verified on the real completed deal across all 3 boards.
 
 - **Leads** = capture only. Lead · Status · Owner · First name · Last name ·
   Telephone · Email · Lead Source (Meta / Google Ads / Dubizzle / Co-worker /
