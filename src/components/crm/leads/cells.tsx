@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CELL_BUTTON, CELL_INPUT } from "@/components/crm/cell-style";
 import { Avatar } from "@/components/ui/Avatar";
 import { Icon } from "@/components/ui/Icon";
@@ -133,7 +134,18 @@ export function anchorFixedPos(
   return { left, top };
 }
 
-/** Generic cell-anchored popover (fixed — never clipped by the board scroller). */
+/**
+ * Generic cell-anchored popover.
+ *
+ * The panel is rendered into <body> rather than next to its cell. Each board
+ * group is its own <section> with a sticky, z-indexed title, and a z-index only
+ * competes inside its own stacking context — so a menu opened in one group was
+ * painted over by the titles of the groups BELOW it. Portalling lifts the panel
+ * out of every group, where its z-index finally means what it says.
+ *
+ * A hidden anchor stays behind in the cell: the panel is positioned from that
+ * element's parent, which is still the cell it belongs to.
+ */
 export function Popover({
   open,
   onClose,
@@ -147,6 +159,7 @@ export function Popover({
   className?: string;
   align?: "center" | "right" | "left";
 }) {
+  const anchorRef = useRef<HTMLSpanElement>(null);
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
@@ -156,7 +169,7 @@ export function Popover({
       return;
     }
     const el = ref.current;
-    const anchor = el?.parentElement?.getBoundingClientRect();
+    const anchor = anchorRef.current?.parentElement?.getBoundingClientRect();
     if (el && anchor) setPos(anchorFixedPos(anchor, el.offsetWidth, el.offsetHeight, align));
   }, [open, align]);
 
@@ -177,8 +190,7 @@ export function Popover({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
-  return (
+  const panel = (
     <div
       ref={ref}
       className={`fixed z-[70] rounded-[8px] border border-line bg-white p-[8px] shadow-[0px_6px_20px_rgba(0,0,0,0.2)] ${className}`}
@@ -186,6 +198,15 @@ export function Popover({
     >
       {children}
     </div>
+  );
+
+  return (
+    <>
+      <span ref={anchorRef} className="hidden" aria-hidden />
+      {/* `open` only ever becomes true from a click, so this never runs on the
+          server, where document does not exist */}
+      {open && createPortal(panel, document.body)}
+    </>
   );
 }
 
