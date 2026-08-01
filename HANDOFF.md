@@ -2,7 +2,7 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-08-01 (late)** (committed through `334d41f`, deployed;
+> Updated: **2026-08-01 (late)** (committed through `632ae3d`, deployed;
 > repo is LOCAL-ONLY, no remote).
 
 ## START HERE — state as of 2026-08-01
@@ -16,9 +16,41 @@ serve it. Read this before changing any board:
 ```
 Lead captured  →  Move to contact  →  the contact IS the client's Demand
                                        (what they want + their documents)
-                                   →  one or more Sales Offers on Deals,
+                                   →  one or more OFFERS (/crm/offers),
                                       each priced against that demand
+                                   →  Move to deal on the accepted offer
+                                   →  DEAL (/crm/deals): downpayment % →
+                                      computed amount → Part 1..N payments
+                                      until the downpayment is complete
 ```
+
+**OFFERS / DEALS SPLIT (2026-08-01 late, commit `632ae3d`, migration
+`crm_offers_deals_downpayments`, DEPLOYED):**
+- The old Deals board is now **Offers** at `/crm/offers` (route folder
+  renamed from `app/(app)/crm/deals` — component files under
+  `components/crm/deals/` KEPT their names; only labels changed). board_key
+  rows migrated 'deals'→'offers' in crm_custom_columns / crm_board_visits /
+  crm_board_favorites / crm_group_prefs, and the crm_custom_columns
+  board_key CHECK gained 'offers'.
+- Every offer row has a green **Move to deal** button (last column): sets
+  `accepted_at`, prefills `downpayment_percent` from the developer's
+  `crm_accounts.default_downpayment_percent` (editable "Downpayment %"
+  column on Accounts), turns into a ✓, toast has undo. The row STAYS on
+  Offers (like leads after Move to contact).
+- **New Deals board** `/crm/deals` (`AcceptedDealsBoard.tsx` +
+  `app/(app)/crm/deals/{page,payment-actions}.tsx`): accepted offers only,
+  client + accepted offer mirrored read-only, editable Offer price /
+  Downpayment % (DB generated column `downpayment_amount` recomputes),
+  Paid progress bar, Remaining chip ("Complete ✓" when covered), and a
+  Payments popover recording **Part 1..N** into `crm_deal_downpayments`
+  (RLS: team-read; write = manage tier or parent deal owner/creator;
+  cascade-deleted with the deal). Part numbering continues from max.
+- Notify triggers' links repointed to /crm/offers; usage-stats RPC counts
+  offers (all rows) and deals (accepted). "New offer" button on Deals
+  routes to /crm/offers — deals only arrive by accepting an offer.
+- E2E'd: accept from UI (percent prefilled 20 from developer), Part 1+2 to
+  Complete ✓, delete part → "15K OMR left", RLS/generated column verified
+  in SQL, all test rows cleaned.
 
 - **Leads** = capture only. Lead · Status · Owner · First name · Last name ·
   Telephone · Email · Lead Source (Meta / Google Ads / Dubizzle / Co-worker /
