@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { anchorFixedPos } from "@/components/crm/leads/cells";
 import { BuildingGlyph, PersonGlyph } from "./deal-cells";
 
@@ -50,8 +51,10 @@ export function ConnectPicker({
   useEffect(() => {
     if (!open) return;
     setQuery("");
+    // the panel is portalled to <body>, so "inside" means the trigger OR the panel
     const handler = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (!rootRef.current?.contains(t) && !panelRef.current?.contains(t)) setOpen(false);
     };
     const scrollClose = (e: Event) => {
       if (!panelRef.current?.contains(e.target as Node)) setOpen(false);
@@ -102,7 +105,11 @@ export function ConnectPicker({
         )}
       </button>
 
-      {open && (
+      {/* portalled to <body>: each board group is its own stacking context, so
+          an inline fixed panel gets painted UNDER the next group's sticky
+          title no matter its z-index — same fix the shared Popover uses */}
+      {open &&
+        createPortal(
         <div
           ref={panelRef}
           className="fixed z-[70] w-[300px] rounded-[8px] border border-line bg-white p-[10px] shadow-[0px_6px_20px_rgba(0,0,0,0.2)]"
@@ -132,9 +139,11 @@ export function ConnectPicker({
           </div>
 
           <div className="thin-scroll mt-[6px] max-h-[240px] overflow-y-auto">
-            {filtered.map((o) => (
+            {/* names are NOT unique (several contacts share one) — a bare
+                name key made React drop/duplicate rows while filtering */}
+            {filtered.map((o, i) => (
               <button
-                key={o.name}
+                key={`${o.name}|${o.sub ?? ""}|${i}`}
                 type="button"
                 onClick={() => {
                   onPick(o.name);
@@ -184,7 +193,8 @@ export function ConnectPicker({
               </p>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
