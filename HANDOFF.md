@@ -2,8 +2,147 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-07-26 hardening pass** (committed through `7d0cf13`, deployed;
+> Updated: **2026-08-01** (committed through `c6e449c`, deployed;
 > repo is LOCAL-ONLY, no remote).
+
+## START HERE — state as of 2026-08-01
+
+**Live:** https://crm.irfaninvest.com (and irfan-crm.vercel.app).
+Deploy with `npx vercel deploy --prod --yes`. Push does NOT deploy.
+
+**The product now has one story end to end**, and every board was reshaped to
+serve it. Read this before changing any board:
+
+```
+Lead captured  →  Move to contact  →  the contact IS the client's Demand
+                                       (what they want + their documents)
+                                   →  one or more Sales Offers on Deals,
+                                      each priced against that demand
+```
+
+- **Leads** = capture only. Lead · Status · Owner · First name · Last name ·
+  Telephone · Email · Lead Source (Meta / Google Ads / Dubizzle / Co-worker /
+  Personal) · Date · Text · Move to contact. Nothing else — Score, activity
+  timeline, Company, Title and the rest were removed on request.
+- **Contacts** = the client's Demand. Property type · Size · Budget ·
+  Preferred area · Requirements sit on the row; the drawer adds documents
+  (passport etc.) and a **New sales offer** button. Title / Type / Priority
+  were removed as unusable.
+- **Deals** = one row per sales offer. The client's wants and budget are
+  MIRRORED from the linked contact (grey, read-only, never copied) next to what
+  we offer: Developer · Offer type · Offer size · Offer price · **vs budget**
+  (green "within X" / red "over X"). A client can hold many offers.
+- **Inventory is deliberately NOT tracked per unit.** Stock rotates weekly and
+  is shared with other agencies, so an offer is pinned to the developer and the
+  kind of unit. The Units/Developments boards still exist but are empty.
+
+**Blocked on the user, not on code:**
+1. `SUPABASE_SERVICE_ROLE_KEY` — without it the Team page's Approve button
+   returns "Admin key is not configured". Placeholders are in `.env.local`.
+2. `SMTP_HOST/USER/PASSWORD` (Zoho) — without them approval still works and
+   shows the temporary password on screen, but no email goes out. Supabase's
+   built-in sender is rate-limited and already returned
+   "email rate limit exceeded" during testing, so this is a real launch item.
+3. Supabase → Auth → URL Configuration: add
+   `https://crm.irfaninvest.com/**` to Redirect URLs (Google sign-in and
+   recovery links only work on irfan-crm.vercel.app until then).
+
+**Small things the user was asked about and never answered** — do not action
+without asking again: three leftover custom columns on Leads (a Dropdown from
+07-21, plus a Status and a Dropdown from 07-26 testing), two empty groups on
+Leads, and the stray account `a.shasmipur@irfaninvest.com` (a typo of
+`a.shamsipour@`, auto-approved as an agent because the domain is allow-listed).
+
+## SESSION 2026-07-26 → 08-01 (commits `b30e888` … `c6e449c`)
+
+Auth, then a board-by-board reshape driven by the user's own description of how
+the business works. In order:
+
+1. **Signup is now admin-approved with a temporary password** (`b30e888`).
+   The form no longer asks for a password; the trigger leaves self-signups
+   `is_active = false, approved_at = null`. /crm/team grew an approval queue:
+   pick the role, Approve, and the action issues a 14-char password via the
+   service-role client, confirms the address, activates the account and mails
+   it. **The password is also shown once to the approving admin**, so onboarding
+   is not blocked while SMTP is unconfigured. `FirstLoginPassword` is a blocking
+   dialog in the app layout for anyone with `must_change_password`.
+   Migrations: `crm_force_password_change`, `crm_signup_requires_admin_approval`,
+   `crm_users_approved_at`.
+2. **Google stayed on SIGN-IN only** (`81b9e34`). Removing it locked out
+   amiralishamsipur@gmail.com and amirshamsipur1997@kioskoman.com — both are
+   google-provider users with NO password at all. Sign-up has no Google button.
+3. **Sidebar split** (`691652c`): Home / Leads / Contacts / Deals / Sales
+   Dashboard above a rule, supporting boards below.
+4. **Leads rebuilt** (`510e59d`, `b887877`): new `first_name`, `last_name`,
+   `notes`, `lead_date` columns, backfilled; `crm_leads_name_parts` trigger
+   keeps the row title and the parts in step without overwriting typed values.
+5. **Contact = Demand page** (`0b1ff29`, `7764456`): demand columns on
+   crm_contacts, `crm_contact_documents` + a **private** `crm-documents` bucket
+   (identity papers — 5-minute signed URLs, no public read), and
+   `crm_convert_lead` now carries the whole lead across.
+6. **Deals = sales offers** (`425b927`, `70b884e`): offer fields on crm_deals,
+   client side mirrored, `createOfferForContact` seeds a new offer from the
+   client's own demand.
+7. **Developers imported** (`b3f65b0`): the website project in the SAME Supabase
+   database already had the register — all 24 are now Accounts. One-time copy,
+   not a live link. `PROPERTY_TYPES` was rebuilt from the 407 real units, and
+   the Units board's rival list (which said "Retail" where the other said
+   "Shop") now re-exports the shared one.
+
+### Bugs fixed this session, with their real causes
+
+- **`invalid input syntax for type uuid: "temp-…"`** (`198d7c2`) — adding a row
+  showed a placeholder with a client-side id and threw the insert's result
+  away, so clicking a cell before the insert returned sent that id to Postgres.
+  The nine add actions now return the saved row and each board swaps its
+  placeholder for it (matched on the exact id, so concurrent adds cannot
+  collide), and `isTempId()` guards every write path as a backstop.
+  The same commit fixed `crm_contacts` PATCHABLE missing every demand column —
+  editing Budget from the board silently did nothing.
+- **Row menu painted under the next group's title** (`3bad5b6`) — each group is
+  a `<section>` whose sticky title creates a stacking context, so z-index could
+  never win. `Popover` now portals to `document.body`. This fixed every popover
+  on every board at once.
+- **vs-budget chip overflowed its cell** (`9991868`) — money in a fixed-width
+  cell now renders compact ("3M OMR") with the exact figure on hover.
+- **Cells were near-impossible to click** (`b887877`, `6a36e60`) — an empty
+  InlineEdit rendered a button with no content. `src/components/crm/cell-style.ts`
+  is now the one editable-cell shape (whole cell is the target, hover tints it,
+  the editor fills the same box) and every inline editor uses it.
+- **Phone did not save the country code at all** (`c6e449c`) — the column
+  existed but nothing wrote to it. `src/components/crm/phone-input.tsx` is the
+  one phone control: 60+ countries with names (a dial code is ambiguous — +1 is
+  US and Canada), searchable, country first then number, stored in separate
+  columns so the generated `normalized_phone` finally works for dedup.
+
+### Conventions this session established — keep them
+
+- **Every write action must count affected rows.** RLS rejects by matching zero
+  rows, not by erroring. See `src/lib/mutate.ts`.
+- **Boards must await their writes and roll back on refusal** — use
+  `applyRowEdit` / `persist` from `src/components/crm/persist.ts`.
+- **New cell components import `CELL_BUTTON` / `CELL_INPUT`** from
+  `cell-style.ts` rather than writing their own classes.
+- **One list per concept.** `PROPERTY_TYPES`, `COUNTRIES`, `LEAD_SOURCES` each
+  live in exactly one file. Two lists of the same thing is how "Shop" vs
+  "Retail" happened.
+- **Mirror, do not copy**, when one board shows another's data (Deals shows the
+  contact's demand; Contacts computes deal counts).
+
+### Testing note that will save you an hour
+
+The Browser pane never hydrates while the `loading.tsx` Suspense boundaries are
+present — the board renders but every click is dead with no console error. To
+drive the UI, park them and restore afterwards:
+
+```
+mv "src/app/(app)/loading.tsx"{,.bak}; mv "src/app/(app)/crm/loading.tsx"{,.bak}
+# ... test ...
+mv "src/app/(app)/loading.tsx"{.bak,}; mv "src/app/(app)/crm/loading.tsx"{.bak,}
+```
+
+The pane also reports a zero viewport at random, which makes `getBoundingClientRect`
+and `elementFromPoint` unreliable — prefer asserting against the database.
 
 ## CUSTOM DOMAIN (2026-07-26) — https://crm.irfaninvest.com
 
