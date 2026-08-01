@@ -4,8 +4,7 @@ import { useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Icon } from "@/components/ui/Icon";
-import type { CrmDeal, CrmDealGroup, CrmDealStage, CrmUser } from "@/lib/types";
-import type { ForecastCategory } from "@/lib/types";
+import type { CrmContact, CrmDeal, CrmDealGroup, CrmDealStage, CrmUser } from "@/lib/types";
 import {
   BatteryBar,
   Checkbox,
@@ -13,7 +12,6 @@ import {
   OwnerCell,
   Popover,
 } from "@/components/crm/leads/cells";
-import { shortDate } from "@/components/crm/leads/board-config";
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
 import { CUSTOM_COL_W } from "@/lib/custom-columns";
 import {
@@ -26,12 +24,17 @@ import {
   DEAL_COLUMNS,
   DEAL_NAME_COL_W,
   FORECAST_CATEGORIES,
-  forecastValue,
   money,
 } from "./deals-config";
-import { CategoryCell, CloseDateCell, NumberCell } from "./deal-cells";
+import { CloseDateCell, NumberCell } from "./deal-cells";
+import { OptionCell, TextCell } from "@/components/crm/contacts/contact-cells";
+import {
+  BEDROOM_OPTIONS,
+  PROPERTY_TYPES,
+  bedroomLabel,
+  propertyTypeLabel,
+} from "@/components/crm/contacts/demand-config";
 import { ConnectPicker, type PickerOption } from "./connect-picker";
-import { TimeCell } from "@/components/crm/activities/activity-cells";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 
 const ROW_H = 36;
@@ -81,6 +84,7 @@ function DealStageCell({
 export function DealGroup({
   group,
   deals,
+  contacts,
   stages,
   users,
   isNew = false,
@@ -94,14 +98,13 @@ export function DealGroup({
   onRenameColumn,
   onDeleteColumn,
   onAddDeal,
-  accountOptions,
   contactOptions,
-  onCreateAccount,
   onCreateContact,
   tools,
 }: {
   group: CrmDealGroup;
   deals: CrmDeal[];
+  contacts: CrmContact[];
   stages: CrmDealStage[];
   users: CrmUser[];
   isNew?: boolean;
@@ -115,9 +118,7 @@ export function DealGroup({
   onRenameColumn: (columnId: string, label: string) => void;
   onDeleteColumn: (columnId: string) => void;
   onAddDeal: (name: string) => void;
-  accountOptions: PickerOption[];
   contactOptions: PickerOption[];
-  onCreateAccount: (dealId: string, name: string) => void;
   onCreateContact: (dealId: string, name: string) => void;
   tools?: RowToolsConfig;
 }) {
@@ -251,7 +252,15 @@ export function DealGroup({
           {deals.map((deal) => {
             const stage = stageById.get(deal.stage_id);
             const owner = deal.owner_id ? userById.get(deal.owner_id) : undefined;
-            const isClosed = !!stage && (stage.is_won || stage.is_lost);
+            // the client this offer is for — matched by FK first, then by the
+            // name cache the connected column keeps
+            const client =
+              contacts.find((c) => c.id === deal.contact_id) ??
+              contacts.find(
+                (c) =>
+                  !!deal.contact_name &&
+                  c.name.trim().toLowerCase() === deal.contact_name.trim().toLowerCase()
+              );
             return (
               <div
                 key={deal.id}
@@ -343,20 +352,102 @@ export function DealGroup({
                           />
                         </span>
                       );
-                    case "accounts":
+                    case "client_demand": {
+                      // mirrored from the linked contact so the two can never drift
+                      const want = [
+                        propertyTypeLabel(client?.property_type ?? null),
+                        bedroomLabel(client?.bedrooms ?? null),
+                      ].filter((v) => v !== "—");
+                      return (
+                        <span
+                          key={col.key}
+                          className={`${cellBorder} flex items-center justify-center gap-[4px] bg-canvas px-[6px]`}
+                          style={w}
+                          title="From the client's demand — edit it on the Contacts board"
+                        >
+                          {want.length === 0 ? (
+                            <span className="font-sans text-[13px] text-ink-muted">—</span>
+                          ) : (
+                            want.map((v) => (
+                              <span
+                                key={v}
+                                className="truncate rounded-[10px] bg-white px-[8px] py-[2px] font-sans text-[12px] leading-[18px] text-ink"
+                              >
+                                {v}
+                              </span>
+                            ))
+                          )}
+                        </span>
+                      );
+                    }
+                    case "client_budget":
+                      return (
+                        <span
+                          key={col.key}
+                          className={`${cellBorder} flex items-center justify-center bg-canvas font-sans text-[14px] leading-[20px] text-ink`}
+                          style={w}
+                          title="From the client's demand — edit it on the Contacts board"
+                        >
+                          {client?.budget != null ? money(Number(client.budget)) : "—"}
+                        </span>
+                      );
+                    case "offer_property":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
-                          <ConnectPicker
-                            value={deal.account_name}
-                            options={accountOptions}
-                            entityLabel="Accounts"
-                            kind="account"
-                            onPick={(name) => onPatchDeal(deal.id, { account_name: name })}
-                            onClear={() => onPatchDeal(deal.id, { account_name: null })}
-                            onCreate={(name) => onCreateAccount(deal.id, name)}
+                          <TextCell
+                            value={deal.offer_property}
+                            onSave={(next) =>
+                              onPatchDeal(deal.id, { offer_property: next || null })
+                            }
                           />
                         </span>
                       );
+                    case "offer_property_type":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block`} style={w}>
+                          <OptionCell
+                            value={deal.offer_property_type}
+                            options={PROPERTY_TYPES}
+                            onSelect={(next) =>
+                              onPatchDeal(deal.id, { offer_property_type: next })
+                            }
+                          />
+                        </span>
+                      );
+                    case "offer_bedrooms":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block`} style={w}>
+                          <OptionCell
+                            value={deal.offer_bedrooms}
+                            options={BEDROOM_OPTIONS}
+                            onSelect={(next) => onPatchDeal(deal.id, { offer_bedrooms: next })}
+                          />
+                        </span>
+                      );
+                    case "vs_budget": {
+                      // the whole point of the board: does this offer fit?
+                      const budget = client?.budget == null ? null : Number(client.budget);
+                      const price = deal.deal_value == null ? null : Number(deal.deal_value);
+                      const diff = budget != null && price != null ? price - budget : null;
+                      return (
+                        <span
+                          key={col.key}
+                          className={`${cellBorder} flex items-center justify-center bg-white font-sans text-[13px] leading-[20px]`}
+                          style={w}
+                        >
+                          {diff == null ? (
+                            <span className="text-ink-muted">—</span>
+                          ) : (
+                            <span
+                              className="rounded-[10px] px-[8px] py-[2px] text-white"
+                              style={{ backgroundColor: diff <= 0 ? "#00c875" : "#e2445c" }}
+                            >
+                              {diff <= 0 ? "within" : "over"} {money(Math.abs(diff))}
+                            </span>
+                          )}
+                        </span>
+                      );
+                    }
                     case "close_date":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
@@ -369,55 +460,13 @@ export function DealGroup({
                           />
                         </span>
                       );
-                    case "probability":
+                    case "offer_details":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
-                          <NumberCell
-                            value={deal.close_probability}
-                            format={(v) => `${v}`}
-                            suffix="%"
+                          <TextCell
+                            value={deal.offer_details}
                             onSave={(next) =>
-                              onPatchDeal(deal.id, {
-                                close_probability:
-                                  next == null ? null : Math.max(0, Math.min(100, next)),
-                              })
-                            }
-                          />
-                        </span>
-                      );
-                    case "forecast":
-                      return (
-                        <span
-                          key={col.key}
-                          className={`${cellBorder} flex items-center justify-center bg-white font-sans text-[14px] leading-[20px] text-ink`}
-                          style={w}
-                        >
-                          {deal.deal_value != null && deal.close_probability != null
-                            ? money(forecastValue(Number(deal.deal_value), deal.close_probability))
-                            : ""}
-                        </span>
-                      );
-                    case "last":
-                      return (
-                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
-                          <TimeCell
-                            value={deal.last_interaction_at}
-                            label="Last interaction"
-                            format={shortDate}
-                            onChange={(iso) =>
-                              onPatchDeal(deal.id, { last_interaction_at: iso })
-                            }
-                          />
-                        </span>
-                      );
-                    case "category":
-                      return (
-                        <span key={col.key} className={`${cellBorder} block`} style={w}>
-                          <CategoryCell
-                            value={deal.forecast_category}
-                            isClosed={isClosed}
-                            onSelect={(next: ForecastCategory | null) =>
-                              onPatchDeal(deal.id, { forecast_category: next })
+                              onPatchDeal(deal.id, { offer_details: next || null })
                             }
                           />
                         </span>

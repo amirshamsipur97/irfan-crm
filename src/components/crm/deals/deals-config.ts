@@ -2,18 +2,25 @@ import type { ForecastCategory } from "@/lib/types";
 
 export const DEAL_NAME_COL_W = 292;
 
+/**
+ * A row is one sales offer to a contact. The `client_*` columns are mirrored
+ * live from the linked contact's demand — they are read-only here so the two
+ * sides can never disagree — and sit next to what we are actually offering, so
+ * an agent can see at a glance whether the offer fits the budget.
+ */
 export const DEAL_COLUMNS: { key: string; label: string; w: number }[] = [
   { key: "stage", label: "Stage", w: 159 },
   { key: "owner", label: "Owner", w: 98 },
-  { key: "value", label: "Deal Value", w: 132 },
-  { key: "contacts", label: "Contacts", w: 213 },
-  { key: "accounts", label: "Accounts", w: 192 },
+  { key: "contacts", label: "Client", w: 200 },
+  { key: "client_demand", label: "Client wants", w: 170 },
+  { key: "client_budget", label: "Client budget", w: 140 },
+  { key: "offer_property", label: "Offered property", w: 190 },
+  { key: "offer_property_type", label: "Offer type", w: 150 },
+  { key: "offer_bedrooms", label: "Offer size", w: 110 },
+  { key: "value", label: "Offer price", w: 140 },
+  { key: "vs_budget", label: "vs budget", w: 130 },
   { key: "close_date", label: "Expected Close Date", w: 180 },
-  { key: "probability", label: "Close Probability", w: 150 },
-  { key: "forecast", label: "Forecast Value", w: 150 },
-  { key: "last", label: "Last interaction", w: 150 },
-  { key: "quotes", label: "Quotes & Invoices", w: 160 },
-  { key: "category", label: "Forecast categories", w: 180 },
+  { key: "offer_details", label: "Offer details", w: 240 },
 ];
 
 export const FORECAST_CATEGORIES: {

@@ -22,6 +22,10 @@ const PATCHABLE = new Set([
   "currency",
   "lost_reason",
   "next_step",
+  "offer_property",
+  "offer_property_type",
+  "offer_bedrooms",
+  "offer_details",
   "custom",
 ]);
 
@@ -208,4 +212,49 @@ export async function quickCreateContact(name: string) {
   revalidatePath(BOARD_PATH);
   revalidatePath("/crm/contacts");
   return {};
+}
+
+/**
+ * Start a sales offer for a contact. A client can have several offers, so this
+ * always creates a new row rather than reusing one, and seeds it with the
+ * client's own demand as the starting point for the offer.
+ */
+export async function createOfferForContact(contactName: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "not authenticated" };
+
+  const [{ data: stage }, { data: group }, { data: contact }] = await Promise.all([
+    supabase.from("crm_deal_stages").select("id").order("position").limit(1).maybeSingle<{ id: string }>(),
+    supabase.from("crm_deal_groups").select("id").order("position").limit(1).maybeSingle<{ id: string }>(),
+    supabase
+      .from("crm_contacts")
+      .select("id, name, property_type, bedrooms")
+      .ilike("name", contactName)
+      .maybeSingle<{ id: string; name: string; property_type: string | null; bedrooms: string | null }>(),
+  ]);
+  if (!stage) return { error: "no deal stages configured" };
+
+  const { data, error } = await supabase
+    .from("crm_deals")
+    .insert({
+      name: `Offer — ${contact?.name ?? contactName}`,
+      group_id: group?.id ?? null,
+      stage_id: stage.id,
+      contact_name: contact?.name ?? contactName,
+      // start from what the client asked for; the agent adjusts from here
+      offer_property_type: contact?.property_type ?? null,
+      offer_bedrooms: contact?.bedrooms ?? null,
+      owner_id: user.id,
+      created_by: user.id,
+    })
+    .select("id")
+    .single<{ id: string }>();
+
+  if (error) return { error: error.message };
+  revalidatePath(BOARD_PATH);
+  revalidatePath("/crm/contacts");
+  return { id: data.id };
 }

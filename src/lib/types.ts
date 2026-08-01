@@ -150,6 +150,11 @@ export interface CrmDeal {
   currency: string;
   lost_reason: string | null;
   next_step: string | null;
+  /** the sales offer itself — what we put in front of the client */
+  offer_property: string | null;
+  offer_property_type: string | null;
+  offer_bedrooms: string | null;
+  offer_details: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
   position?: number;

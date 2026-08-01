@@ -68,9 +68,6 @@ export function DealsBoard({
   const [personFilter, setPersonFilter] = useState<string | null>(null);
   const [localGroups, setLocalGroups] = useServerState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
-  const [accountOptions, setAccountOptions] = useState<PickerOption[]>(
-    accounts.map((a) => ({ name: a.name, sub: a.domain }))
-  );
   const [contactOptions, setContactOptions] = useState<PickerOption[]>(
     contacts.map((c) => ({ name: c.name, sub: c.account_name }))
   );
@@ -87,10 +84,6 @@ export function DealsBoard({
     onOpen: setOpenDealId,
   });
   const [localColumns, setLocalColumns] = useServerState(customColumns);
-  useEffect(
-    () => setAccountOptions(accounts.map((a) => ({ name: a.name, sub: a.domain }))),
-    [accounts]
-  );
   useEffect(
     () => setContactOptions(contacts.map((c) => ({ name: c.name, sub: c.account_name }))),
     [contacts]
@@ -168,7 +161,6 @@ export function DealsBoard({
     // await the insert first — the FK-resolve trigger on the deal must be able
     // to find the new row, otherwise the link stays name-only
     if (kind === "account") {
-      setAccountOptions((prev) => [...prev, { name }]);
       await quickCreateAccount(name);
       patchDeal(dealId, { account_name: name });
     } else {
@@ -222,6 +214,10 @@ export function DealsBoard({
         currency: "OMR",
         lost_reason: null,
         next_step: null,
+        offer_property: null,
+        offer_property_type: null,
+        offer_bedrooms: null,
+        offer_details: null,
         custom: {},
         forecast_category: null,
         last_interaction_at: null,
@@ -282,12 +278,11 @@ export function DealsBoard({
                 group={group}
                 isNew={group.id === newGroupId}
                 tools={rowTools}
-                deals={sortedRows.filter((d) => d.group_id === group.id)}
+                contacts={contacts}
+              deals={sortedRows.filter((d) => d.group_id === group.id)}
                 stages={stages}
                 users={users}
-                accountOptions={accountOptions}
                 contactOptions={contactOptions}
-                onCreateAccount={(dealId, name) => createAndLink("account", dealId, name)}
                 onCreateContact={(dealId, name) => createAndLink("contact", dealId, name)}
                 onOpenDeal={setOpenDealId}
                 customColumns={localColumns}

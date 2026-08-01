@@ -19,6 +19,7 @@ import {
   registerDocument,
   updateDemand,
 } from "@/app/(app)/crm/contacts/demand-actions";
+import { createOfferForContact } from "@/app/(app)/crm/deals/actions";
 
 const fieldCls =
   "h-[34px] w-full rounded-[4px] border border-line-strong bg-white px-[8px] font-sans text-[13px] text-ink outline-none focus:border-teal-deep";
@@ -63,6 +64,7 @@ export function DemandSection({
   const [docs, setDocs] = useState<CrmContactDocument[]>([]);
   const [uploading, setUploading] = useState(false);
   const [docType, setDocType] = useState("passport");
+  const [offering, setOffering] = useState(false);
 
   useEffect(() => {
     if (isTempId(contact.id)) return;
@@ -161,15 +163,34 @@ export function DemandSection({
         <h4 className="m-0 font-display text-[14px] font-semibold leading-[20px] text-ink">
           Demand
         </h4>
-        {canEdit && !editing && (
+        <span className="flex items-center gap-[6px]">
+          {canEdit && !editing && (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="rounded-[4px] border border-line-strong px-[8px] py-[2px] font-sans text-[12px] text-ink transition-colors hover:bg-[var(--hover-ghost)]"
+            >
+              Edit
+            </button>
+          )}
+          {/* a client can hold several offers, so this always starts a new one */}
           <button
             type="button"
-            onClick={() => setEditing(true)}
-            className="rounded-[4px] border border-line-strong px-[8px] py-[2px] font-sans text-[12px] text-ink transition-colors hover:bg-[var(--hover-ghost)]"
+            disabled={offering || isTempId(contact.id)}
+            onClick={async () => {
+              setOffering(true);
+              const result = await createOfferForContact(contact.name);
+              setOffering(false);
+              onToast?.(
+                result.error ?? `Sales offer started for ${contact.name} — open Deals to price it`,
+                result.error ? "alert" : "success"
+              );
+            }}
+            className="rounded-[4px] bg-teal-deep px-[10px] py-[3px] font-sans text-[12px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
           >
-            Edit
+            {offering ? "Creating…" : "New sales offer"}
           </button>
-        )}
+        </span>
       </div>
 
       {!editing ? (
