@@ -17,15 +17,13 @@ export const UNIT_COLUMNS: {
   { key: "handover", label: "Handover", w: 130 },
 ];
 
-export const UNIT_TYPES: { key: string; label: string; color: string }[] = [
-  { key: "apartment", label: "Apartment", color: "#579bfc" },
-  { key: "villa", label: "Villa", color: "#00c875" },
-  { key: "townhouse", label: "Townhouse", color: "#a25ddc" },
-  { key: "penthouse", label: "Penthouse", color: "#ff642e" },
-  { key: "office", label: "Office", color: "#66ccff" },
-  { key: "retail", label: "Retail", color: "#fdab3d" },
-  { key: "land", label: "Land", color: "#7f5347" },
-];
+/**
+ * One list, shared with the client's demand and the sales offer — see
+ * PROPERTY_TYPES in contacts/demand-config.ts. This used to be a second,
+ * slightly different list ("Retail" here against "Shop" there), which would
+ * have made any demand-to-stock matching quietly wrong.
+ */
+export { PROPERTY_TYPES as UNIT_TYPES } from "@/components/crm/contacts/demand-config";
 
 /**
  * Unit availability statuses. "Reserved" and "Contracted" are normally set by
