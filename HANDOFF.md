@@ -2,7 +2,7 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-08-02** (committed through `a4de053`, deployed;
+> Updated: **2026-08-02** (committed through `d5bef4e`, deployed;
 > repo is LOCAL-ONLY, no remote).
 
 ## START HERE — state as of 2026-08-01
@@ -104,6 +104,23 @@ Lead captured  →  Move to contact  →  the contact IS the client's Demand
   for this E2E and set back to inactive; /preview auto-login will not work
   until it is re-activated (privilege-guard trigger must be disabled
   around the SQL toggle).
+- **Member chat + TopBar cleanup (commit `d5bef4e`, migration
+  `crm_direct_messages`)**: NEW `crm_messages` (sender/recipient/body/
+  read_at; SELECT policy = either participant; writes ONLY via
+  security-definer RPCs `crm_send_dm(p_to, p_body)` and
+  `crm_mark_dm_read(p_from)`). The old notification-row DMs could never
+  show a conversation (own-rows RLS hides what you sent) — they were
+  migrated into crm_messages with their read state and deleted from
+  crm_notifications. TopBar: search pill REMOVED; inbox icon is now
+  `MessagesInbox.tsx` — conversation list (unread chips, last-line
+  previews, active members), thread bubbles, Enter-to-send, marks read on
+  open, 60s badge poll + 15s open-panel refresh. Bell = notifications
+  only: Messages tab + in-panel composer removed, fetches filter
+  `.neq(type,'message')`. Workspace-home tab "Collaborators" renamed
+  **"Send message"** (key string changed in all 3 spots incl. the Members
+  button); its MessageDialog now calls crm_send_dm. The real Persian test
+  DM (preview→amirali, 22 Jul) lives in crm_messages — keep it. E2E'd
+  both directions incl. live poll pickup + read marking.
 
 - **Leads** = capture only. Lead · Status · Owner · First name · Last name ·
   Telephone · Email · Lead Source (Meta / Google Ads / Dubizzle / Co-worker /
