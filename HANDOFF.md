@@ -2,7 +2,7 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-08-02** (committed through `a9a7737`, deployed;
+> Updated: **2026-08-02** (committed through `4a6e1ad`, deployed;
 > repo is LOCAL-ONLY, no remote).
 
 ## START HERE — state as of 2026-08-01
@@ -81,6 +81,17 @@ Lead captured  →  Move to contact  →  the contact IS the client's Demand
   an existing contact (case-insensitive). Deal-done badge + drawer-open
   button still live in that first cell. The offer name is no longer
   directly editable on the board (drawer/db keep the synced name).
+- **ConnectPicker portalled + unique keys (commit `4a6e1ad`)**: the
+  picker's fixed panel rendered inline, so LOWER groups' sticky titles
+  painted over it (per-group stacking contexts — the exact bug the shared
+  Popover fixed on 07-26 by portalling; the picker was missed then). Now
+  portalled to <body>; outside-click checks trigger AND panel. Also
+  option keys were bare names while several real contacts share one name
+  ("amir" ×3) — duplicate keys made React drop/duplicate rows WHILE
+  FILTERING (typed "mehdi", still saw "amir" rows). Keys are
+  name|sub|index now. ⚠️ name-based linking is still ambiguous for
+  same-named contacts (onPick carries a name; the FK trigger resolves one
+  of them) — a real fix needs id-based picking, noted as follow-up.
 
 - **Leads** = capture only. Lead · Status · Owner · First name · Last name ·
   Telephone · Email · Lead Source (Meta / Google Ads / Dubizzle / Co-worker /
