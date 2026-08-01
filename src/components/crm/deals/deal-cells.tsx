@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CELL_BUTTON, CELL_INPUT } from "@/components/crm/cell-style";
 import { Popover } from "@/components/crm/leads/cells";
 import type { CrmDeal, ForecastCategory } from "@/lib/types";
 import { FORECAST_CATEGORIES, categoryMeta } from "./deals-config";
@@ -61,7 +62,7 @@ export function ChipCell({
           if (e.key === "Enter") commit();
           if (e.key === "Escape") setEditing(false);
         }}
-        className="mx-[8px] h-[24px] w-full rounded-[4px] border border-teal-deep px-[6px] font-sans text-[14px] text-ink outline-none"
+        className={CELL_INPUT}
       />
     );
   }
@@ -237,7 +238,7 @@ export function NumberCell({
           if (e.key === "Enter") commit();
           if (e.key === "Escape") setEditing(false);
         }}
-        className="mx-[8px] h-[24px] w-full rounded-[4px] border border-teal-deep px-[6px] text-center font-sans text-[14px] text-ink outline-none"
+        className={CELL_INPUT}
       />
     );
   }
@@ -248,7 +249,7 @@ export function NumberCell({
         setDraft(value?.toString() ?? "");
         setEditing(true);
       }}
-      className="flex size-full items-center justify-center font-sans text-[14px] leading-[20px] text-ink"
+      className={CELL_BUTTON}
     >
       {value != null ? `${format(value)}${suffix}` : ""}
     </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { CELL_BUTTON, CELL_INPUT } from "@/components/crm/cell-style";
 import { Avatar } from "@/components/ui/Avatar";
 import { Icon } from "@/components/ui/Icon";
 import type { CrmStage, CrmUser } from "@/lib/types";
@@ -78,8 +79,10 @@ export function InlineEdit({
             setEditing(false);
           }
         }}
-        className={`rounded-[4px] border border-teal-deep bg-white px-[4px] outline-none ${
-          fill ? "size-full" : ""
+        className={`${
+          fill
+            ? CELL_INPUT
+            : "rounded-[4px] border border-teal-deep bg-white px-[4px] outline-none"
         } ${className}`}
         style={style}
       />
@@ -92,8 +95,10 @@ export function InlineEdit({
         setDraft(value);
         setEditing(true);
       }}
-      className={`truncate rounded-[4px] border border-transparent transition-colors hover:border-line-strong ${
-        fill ? "size-full px-[8px] hover:bg-[var(--hover-ghost)]" : "px-[5px]"
+      className={`${
+        fill
+          ? CELL_BUTTON
+          : "truncate rounded-[4px] border border-transparent px-[5px] text-left transition-colors hover:border-line-strong"
       } ${className}`}
       style={style}
       title={value}

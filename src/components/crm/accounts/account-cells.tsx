@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CELL_INPUT } from "@/components/crm/cell-style";
 import { PersonGlyph } from "@/components/crm/deals/deal-cells";
 import { PencilChip } from "@/components/crm/leads/lead-cells";
 
@@ -31,7 +32,7 @@ export function DomainCell({
           if (e.key === "Enter") commit();
           if (e.key === "Escape") setEditing(false);
         }}
-        className="mx-[8px] h-[24px] w-full rounded-[4px] border border-teal-deep px-[6px] text-center font-sans text-[14px] text-ink outline-none"
+        className={CELL_INPUT}
       />
     );
   }
@@ -110,7 +111,7 @@ export function IndustryCell({
           if (e.key === "Enter") commit();
           if (e.key === "Escape") setEditing(false);
         }}
-        className="mx-[8px] h-[24px] w-full rounded-[4px] border border-teal-deep px-[6px] font-sans text-[14px] text-ink outline-none"
+        className={CELL_INPUT}
       />
     );
   }

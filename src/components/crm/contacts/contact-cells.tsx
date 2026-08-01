@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CELL_BUTTON, CELL_INPUT } from "@/components/crm/cell-style";
 import { Popover } from "@/components/crm/leads/cells";
 
 /** Full-bleed colored option cell (Type / Priority), gray when empty. */
@@ -91,7 +92,7 @@ export function TitleCell({
           if (e.key === "Enter") commit();
           if (e.key === "Escape") setEditing(false);
         }}
-        className="mx-[8px] h-[24px] w-full rounded-[4px] border border-teal-deep px-[6px] text-center font-sans text-[14px] text-ink outline-none"
+        className={CELL_INPUT}
       />
     );
   }
@@ -102,7 +103,7 @@ export function TitleCell({
         setDraft(value ?? "");
         setEditing(true);
       }}
-      className="flex size-full items-center justify-center px-[8px]"
+      className={CELL_BUTTON}
       title={value ?? "Add title"}
     >
       {value ? (
@@ -144,7 +145,7 @@ export function TextCell({
           if (e.key === "Enter") commit();
           if (e.key === "Escape") setEditing(false);
         }}
-        className="mx-[8px] h-[24px] w-full rounded-[4px] border border-teal-deep px-[6px] font-sans text-[14px] text-ink outline-none"
+        className={CELL_INPUT}
       />
     );
   }
@@ -155,10 +156,10 @@ export function TextCell({
         setDraft(value ?? "");
         setEditing(true);
       }}
-      className="flex size-full items-center px-[16px]"
+      className={CELL_BUTTON}
       title={value ?? "Add comment"}
     >
-      <span className="truncate font-sans text-[14px] leading-[20px] text-ink">{value ?? ""}</span>
+      {value ?? ""}
     </button>
   );
 }
