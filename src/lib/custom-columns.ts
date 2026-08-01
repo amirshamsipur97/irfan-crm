@@ -1,12 +1,19 @@
 // Shared definitions for user-defined board columns (Monday-style "+" menu).
 
 export type CustomColumnType =
+  // the CRM's own column kinds — what the "+" menu offers
+  | "country"
+  | "money"
+  | "percent"
+  | "property_type"
+  | "bedrooms"
   | "text"
   | "number"
-  | "status"
-  | "dropdown"
   | "date"
   | "people"
+  // legacy Monday types: no longer creatable, kept so old columns render
+  | "status"
+  | "dropdown"
   | "checkbox"
   | "priority";
 
@@ -32,12 +39,17 @@ export interface CrmCustomColumn {
 export const CUSTOM_COL_W = 150;
 
 export const DEFAULT_LABELS: Record<CustomColumnType, string> = {
+  country: "Country",
+  money: "Amount (OMR)",
+  percent: "Percent %",
+  property_type: "Property type",
+  bedrooms: "Size",
   text: "Text",
   number: "Numbers",
-  status: "Status",
-  dropdown: "Dropdown",
   date: "Date",
   people: "People",
+  status: "Status",
+  dropdown: "Dropdown",
   checkbox: "Checkbox",
   priority: "Priority",
 };
@@ -61,24 +73,30 @@ export const DEFAULT_OPTIONS: Partial<Record<CustomColumnType, CustomColumnOptio
   ],
 };
 
-/** Menu layout mirrors the Monday reference (only types we actually support). */
+/**
+ * The "+" menu offers the CRM's own column kinds, matching how the boards
+ * are actually used (client's country, OMR amounts, downpayment-style
+ * percents, property type and size) — the generic Monday set was clutter
+ * nobody used. Legacy types still render but cannot be created.
+ */
 export const COLUMN_MENU: { section: string; items: { type: CustomColumnType; hint: string }[] }[] = [
   {
-    section: "Essentials",
+    section: "Client & property",
     items: [
-      { type: "status", hint: "Colored labels for stages of work" },
-      { type: "dropdown", hint: "Pick one of your own options" },
-      { type: "text", hint: "Any free text" },
-      { type: "date", hint: "A calendar date" },
-      { type: "people", hint: "Assign a team member" },
-      { type: "number", hint: "Amounts, sizes, counts" },
+      { type: "country", hint: "Pick the client's country (with flag)" },
+      { type: "property_type", hint: "Apartment, villa, shop…" },
+      { type: "bedrooms", hint: "Unit size: 1BHK, 2BHK…" },
+      { type: "money", hint: "An amount in OMR" },
+      { type: "percent", hint: "A percentage, e.g. a fee or share" },
     ],
   },
   {
-    section: "Super useful",
+    section: "Basics",
     items: [
-      { type: "checkbox", hint: "Simple yes / no" },
-      { type: "priority", hint: "High / Medium / Low" },
+      { type: "text", hint: "Any free text" },
+      { type: "number", hint: "Plain numbers and counts" },
+      { type: "date", hint: "A calendar date" },
+      { type: "people", hint: "Assign a team member" },
     ],
   },
 ];

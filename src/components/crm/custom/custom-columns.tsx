@@ -8,11 +8,19 @@ import { NumberCell } from "@/components/crm/deals/deal-cells";
 import { TimeCell } from "@/components/crm/activities/activity-cells";
 import { toLocalDateString } from "@/components/crm/activities/activities-config";
 import { shortDate } from "@/components/crm/leads/board-config";
+import { CountryCell } from "@/components/crm/country-cell";
+import { compactMoney, money } from "@/components/crm/deals/deals-config";
+import { BEDROOM_OPTIONS, PROPERTY_TYPES } from "@/components/crm/contacts/demand-config";
 import type { CrmUser } from "@/lib/types";
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
 import { COLUMN_MENU, CUSTOM_COL_W, DEFAULT_LABELS } from "@/lib/custom-columns";
 
 const TYPE_TILE_COLORS: Record<CustomColumnType, string> = {
+  country: "#00a0a0",
+  money: "#00c875",
+  percent: "#579bfc",
+  property_type: "#a25ddc",
+  bedrooms: "#66ccff",
   status: "#00c875",
   dropdown: "#00ca72",
   text: "#fdab3d",
@@ -153,6 +161,53 @@ export function CustomValueCell({
   const w = { width: CUSTOM_COL_W };
 
   switch (column.type) {
+    case "country":
+      return (
+        <span className={`${border} block bg-white`} style={w}>
+          <CountryCell value={(value as string) ?? null} onSave={(next) => onSave(next)} />
+        </span>
+      );
+    case "money":
+      return (
+        <span className={`${border} block bg-white`} style={w}>
+          <NumberCell
+            value={(value as number) ?? null}
+            format={(v) => compactMoney(v)}
+            title={value == null ? undefined : money(Number(value))}
+            onSave={(next) => onSave(next)}
+          />
+        </span>
+      );
+    case "percent":
+      return (
+        <span className={`${border} block bg-white`} style={w}>
+          <NumberCell
+            value={(value as number) ?? null}
+            format={(v) => (v == null ? "" : `${v}%`)}
+            onSave={(next) => onSave(next)}
+          />
+        </span>
+      );
+    case "property_type":
+      return (
+        <span className={`${border} block bg-white`} style={w}>
+          <OptionCell
+            value={(value as string) ?? null}
+            options={PROPERTY_TYPES}
+            onSelect={(next) => onSave(next)}
+          />
+        </span>
+      );
+    case "bedrooms":
+      return (
+        <span className={`${border} block bg-white`} style={w}>
+          <OptionCell
+            value={(value as string) ?? null}
+            options={BEDROOM_OPTIONS}
+            onSelect={(next) => onSave(next)}
+          />
+        </span>
+      );
     case "text":
       return (
         <span className={`${border} block bg-white`} style={w}>
