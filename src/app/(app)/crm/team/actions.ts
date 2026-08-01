@@ -3,10 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient, SERVICE_KEY_MISSING } from "@/lib/supabase/admin";
 import { generateTempPassword } from "@/lib/temp-password";
 import { sendTempPasswordEmail } from "@/lib/send-temp-password";
-import { isFullAccess } from "@/lib/permissions";
 import type { CrmRole, CrmUser } from "@/lib/types";
 
 const PAGE = "/crm/team";
@@ -16,7 +14,9 @@ const ROLES: CrmRole[] = ["developer", "ceo", "media", "manager", "agent", "fina
  * Approve a pending signup: issue a one-time temporary password, activate the
  * account, and mark it so the app forces a real password at first sign-in.
  *
- * The temporary password is returned to the approving admin as well as emailed,
+ * The heavy lifting happens in the crm_approve_member RPC (security definer,
+ * admin-gated in the database), so no service-role key is needed. The
+ * temporary password is returned to the approving admin as well as emailed,
  * so onboarding still works when mail delivery is not configured yet — that is
  * the only place it is ever readable, and it stops working the moment the new
  * member sets their own.
@@ -25,19 +25,6 @@ export async function approveMember(userId: string, role?: CrmRole) {
   if (role && !ROLES.includes(role)) return { error: "invalid role" };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "not authenticated" };
-
-  // the service-role client below ignores RLS, so the tier check is ours to make
-  const { data: me } = await supabase
-    .from("crm_users")
-    .select("role")
-    .eq("id", user.id)
-    .single<{ role: CrmRole }>();
-  if (!me || !isFullAccess(me.role))
-    return { error: "Only a Developer or CEO can approve members." };
 
   const { data: target } = await supabase
     .from("crm_users")
@@ -46,29 +33,17 @@ export async function approveMember(userId: string, role?: CrmRole) {
     .single<Pick<CrmUser, "id" | "email" | "full_name" | "is_active" | "requested_role">>();
   if (!target) return { error: "That account no longer exists." };
 
-  const admin = createAdminClient();
-  if (!admin) return { error: SERVICE_KEY_MISSING };
-
   const tempPassword = generateTempPassword();
 
-  // set the password and confirm the address in one call — an approved member
-  // should not also have to hunt for the original confirmation mail
-  const { error: authError } = await admin.auth.admin.updateUserById(userId, {
-    password: tempPassword,
-    email_confirm: true,
+  const { data, error } = await supabase.rpc("crm_approve_member", {
+    p_user_id: userId,
+    p_password: tempPassword,
+    p_role: role ?? null,
   });
-  if (authError) return { error: authError.message };
-
-  const { error: profileError } = await admin
-    .from("crm_users")
-    .update({
-      is_active: true,
-      must_change_password: true,
-      approved_at: new Date().toISOString(),
-      ...(role ? { role, requested_role: null } : {}),
-    })
-    .eq("id", userId);
-  if (profileError) return { error: profileError.message };
+  if (error) return { error: error.message };
+  const approved = (data ?? {}) as { ok?: boolean; error?: string };
+  if (approved.error || !approved.ok)
+    return { error: approved.error ?? "approval failed" };
 
   const mail = await sendTempPasswordEmail({
     to: target.email,

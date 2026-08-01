@@ -7,6 +7,7 @@ import { ROLE_LABELS } from "@/lib/permissions";
 import type { CrmCustomColumn } from "@/lib/custom-columns";
 import type { CrmInvite, CrmRole, CrmUser } from "@/lib/types";
 import {
+  approveMember,
   createInvite,
   deleteInvite,
   setMemberActive,
@@ -148,6 +149,32 @@ export function AdminView({
   const [invEmail, setInvEmail] = useState("");
   const [invName, setInvName] = useState("");
   const [invRole, setInvRole] = useState<CrmRole>("agent");
+  // one-time temporary passwords issued from this screen, keyed by member id
+  const [issued, setIssued] = useState<Record<string, string>>({});
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+
+  const approve = async (m: CrmUser) => {
+    setApprovingId(m.id);
+    const result = await approveMember(m.id, m.role);
+    setApprovingId(null);
+    if (result.error || !result.tempPassword) {
+      say(`⚠ ${result.error ?? "approval failed"}`);
+      return;
+    }
+    setIssued((prev) => ({ ...prev, [m.id]: result.tempPassword as string }));
+    setLocalMembers((prev) =>
+      prev.map((x) =>
+        x.id === m.id
+          ? { ...x, is_active: true, requested_role: null, approved_at: new Date().toISOString() }
+          : x
+      )
+    );
+    say(
+      result.emailed
+        ? "Approved — the temporary password was emailed"
+        : "Approved — no mail server yet, copy the password below"
+    );
+  };
 
   /* ---- customization ---- */
   const [localColumns, setLocalColumns] = useState(customColumns);
@@ -383,16 +410,19 @@ export function AdminView({
 
               <Panel title="Members">
                 {localMembers.map((m) => (
-                  <div
-                    key={m.id}
-                    className="flex items-center gap-[12px] border-b border-white/10 py-[10px] last:border-0"
-                  >
+                  <div key={m.id} className="border-b border-white/10 py-[10px] last:border-0">
+                  <div className="flex items-center gap-[12px]">
                     <Avatar name={m.full_name || m.email} src={m.avatar_url} size={32} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-sans text-[14px] leading-[20px]">
                         {m.full_name || m.email}
                         {m.id === profile.id && (
                           <span className="pl-[6px] text-[12px] text-[#9ba0c0]">(you)</span>
+                        )}
+                        {!m.approved_at && (
+                          <span className="ml-[8px] rounded-[10px] bg-[#fdab3d]/20 px-[8px] py-[2px] text-[11px] text-[#fdab3d]">
+                            waiting for approval
+                          </span>
                         )}
                       </span>
                       <span className="block truncate font-sans text-[12px] leading-[16px] text-[#9ba0c0]">
@@ -443,25 +473,50 @@ export function AdminView({
                         </option>
                       ))}
                     </select>
-                    <button
-                      type="button"
-                      disabled={m.id === profile.id}
-                      onClick={async () => {
-                        const next = !m.is_active;
-                        setLocalMembers((prev) =>
-                          prev.map((x) => (x.id === m.id ? { ...x, is_active: next } : x))
-                        );
-                        const result = await setMemberActive(m.id, next);
-                        if (result.error) say(`⚠ ${result.error}`);
-                      }}
-                      className={`w-[86px] rounded-[12px] px-[10px] py-[4px] font-sans text-[12px] transition-colors disabled:opacity-40 ${
-                        m.is_active
-                          ? "bg-[#00c875]/20 text-[#7de3b5] hover:bg-[#00c875]/30"
-                          : "bg-white/10 text-[#9ba0c0] hover:bg-white/20"
-                      }`}
-                    >
-                      {m.is_active ? "Active" : "Deactivated"}
-                    </button>
+                    {m.approved_at ? (
+                      <button
+                        type="button"
+                        disabled={m.id === profile.id}
+                        onClick={async () => {
+                          const next = !m.is_active;
+                          setLocalMembers((prev) =>
+                            prev.map((x) => (x.id === m.id ? { ...x, is_active: next } : x))
+                          );
+                          const result = await setMemberActive(m.id, next);
+                          if (result.error) say(`⚠ ${result.error}`);
+                        }}
+                        className={`w-[86px] rounded-[12px] px-[10px] py-[4px] font-sans text-[12px] transition-colors disabled:opacity-40 ${
+                          m.is_active
+                            ? "bg-[#00c875]/20 text-[#7de3b5] hover:bg-[#00c875]/30"
+                            : "bg-white/10 text-[#9ba0c0] hover:bg-white/20"
+                        }`}
+                      >
+                        {m.is_active ? "Active" : "Deactivated"}
+                      </button>
+                    ) : (
+                      // a pending signup has no usable password yet — a bare
+                      // "activate" would strand them, so the only path is Approve
+                      <button
+                        type="button"
+                        disabled={approvingId === m.id}
+                        onClick={() => approve(m)}
+                        className="w-[86px] rounded-[12px] bg-[#00c875] px-[10px] py-[4px] font-sans text-[12px] text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                      >
+                        {approvingId === m.id ? "…" : "Approve"}
+                      </button>
+                    )}
+                  </div>
+                  {issued[m.id] && (
+                    <p className="m-0 mt-[8px] rounded-[6px] bg-white/[0.06] px-[12px] py-[8px] font-sans text-[12.5px] leading-[18px]">
+                      Temporary password:{" "}
+                      <code className="rounded-[4px] border border-white/20 bg-white/10 px-[7px] py-[2px] text-[13px] tracking-[0.4px]">
+                        {issued[m.id]}
+                      </code>
+                      <span className="pl-[8px] text-[#9ba0c0]">
+                        shown once — it is replaced at first sign-in
+                      </span>
+                    </p>
+                  )}
                   </div>
                 ))}
               </Panel>
@@ -585,15 +640,20 @@ export function AdminView({
                       >
                         <input
                           defaultValue={c.label}
-                          onBlur={(e) => {
+                          onBlur={async (e) => {
                             const label = e.target.value.trim();
-                            if (label && label !== c.label) {
+                            if (!label || label === c.label) return;
+                            setLocalColumns((prev) =>
+                              prev.map((x) => (x.id === c.id ? { ...x, label } : x))
+                            );
+                            const result = await renameCustomColumn(c.id, label, c.board_key);
+                            if (result.error) {
                               setLocalColumns((prev) =>
-                                prev.map((x) => (x.id === c.id ? { ...x, label } : x))
+                                prev.map((x) => (x.id === c.id ? { ...x, label: c.label } : x))
                               );
-                              renameCustomColumn(c.id, label, c.board_key);
-                              say("Column renamed");
-                            }
+                              e.target.value = c.label;
+                              say(`⚠ ${result.error}`);
+                            } else say("Column renamed");
                           }}
                           className={`${inputCls} w-[220px]`}
                         />
