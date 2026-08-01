@@ -2,7 +2,7 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-08-02** (committed through `4a6e1ad`, deployed;
+> Updated: **2026-08-02** (committed through `a4de053`, deployed;
 > repo is LOCAL-ONLY, no remote).
 
 ## START HERE — state as of 2026-08-01
@@ -89,9 +89,21 @@ Lead captured  →  Move to contact  →  the contact IS the client's Demand
   option keys were bare names while several real contacts share one name
   ("amir" ×3) — duplicate keys made React drop/duplicate rows WHILE
   FILTERING (typed "mehdi", still saw "amir" rows). Keys are
-  name|sub|index now. ⚠️ name-based linking is still ambiguous for
-  same-named contacts (onPick carries a name; the FK trigger resolves one
-  of them) — a real fix needs id-based picking, noted as follow-up.
+  name|sub|index now.
+- **Contact codes + exact picking (commit `a4de053`, migration
+  `crm_contact_codes`)**: `crm_contacts.code` = simple unique code
+  C-0001… (sequence + BEFORE INSERT trigger, backfilled by created_at;
+  unique index). Shown in the picker sub line ("C-0004 · Muriya…") and on
+  the Contacts board name cell. PickerOption gained `id`,
+  `onPick(name, id)` passes it, the offers board patches
+  contact_id/account_id directly (both added to PATCHABLE), and
+  `crm_resolve_deal_links` now TRUSTS an explicitly-changed id instead of
+  overwriting it with a `limit 1` name lookup — picking "amir · C-0006"
+  verifiably links exactly that amir. ⚠️ preview@irfancrm.local was found
+  DEACTIVATED (user did it from Team) — it was temporarily re-activated
+  for this E2E and set back to inactive; /preview auto-login will not work
+  until it is re-activated (privilege-guard trigger must be disabled
+  around the SQL toggle).
 
 - **Leads** = capture only. Lead · Status · Owner · First name · Last name ·
   Telephone · Email · Lead Source (Meta / Google Ads / Dubizzle / Co-worker /
