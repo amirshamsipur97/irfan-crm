@@ -37,6 +37,7 @@ import {
 } from "@/components/crm/contacts/demand-config";
 import { ConnectPicker, type PickerOption } from "./connect-picker";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
+import { DealDoneBadge } from "@/components/crm/deal-done-badge";
 
 const ROW_H = 36;
 
@@ -333,6 +334,7 @@ export function DealGroup({
                       onSave={(name) => onPatchDeal(deal.id, { name })}
                       className="min-w-0 flex-1 font-sans text-[14px] leading-[20px] text-ink"
                     />
+                    {deal.downpayment_completed_at && <DealDoneBadge />}
                     <button
                       type="button"
                       aria-label={`Open ${deal.name}`}

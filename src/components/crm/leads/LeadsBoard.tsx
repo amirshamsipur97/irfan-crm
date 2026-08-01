@@ -49,6 +49,7 @@ export function LeadsBoard({
   users,
   units = [],
   customColumns = [],
+  doneContactIds = [],
 }: {
   profile: CrmUser;
   groups: CrmLeadGroup[];
@@ -57,6 +58,8 @@ export function LeadsBoard({
   users: CrmUser[];
   units?: CrmUnit[];
   customColumns?: CrmCustomColumn[];
+  /** contacts whose deal completed its downpayment — marks the source lead */
+  doneContactIds?: string[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [localLeads, setLocalLeads] = useServerState(leads);
@@ -302,6 +305,7 @@ export function LeadsBoard({
               tools={rowTools}
               onEmailLead={setEmailLead}
               leads={sortedRows.filter((l) => l.group_id === group.id)}
+              doneContactIds={doneContactIds}
               stages={stages}
               users={users}
               onToggleCollapse={(collapsed) => {

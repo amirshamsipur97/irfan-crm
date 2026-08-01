@@ -21,6 +21,7 @@ import { BEDROOM_OPTIONS, PROPERTY_TYPES } from "./demand-config";
 import { NumberCell } from "@/components/crm/deals/deal-cells";
 import { EmailCell, PhoneCell } from "@/components/crm/leads/lead-cells";
 import { ConnectPicker, type PickerOption } from "@/components/crm/deals/connect-picker";
+import { DealDoneBadge } from "@/components/crm/deal-done-badge";
 import type { CrmUser } from "@/lib/types";
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
 import { CUSTOM_COL_W } from "@/lib/custom-columns";
@@ -120,6 +121,17 @@ export function ContactGroup({
         d.contact_name &&
         contact.name &&
         d.contact_name.trim().toLowerCase() === contact.name.trim().toLowerCase()
+    );
+
+  // FK match first, name-cache match as fallback — same rule the drawer uses
+  const hasDoneDeal = (contact: CrmContact) =>
+    deals.some(
+      (d) =>
+        !!d.downpayment_completed_at &&
+        (d.contact_id === contact.id ||
+          (!!d.contact_name &&
+            !!contact.name &&
+            d.contact_name.trim().toLowerCase() === contact.name.trim().toLowerCase()))
     );
 
 
@@ -243,6 +255,7 @@ export function ContactGroup({
                       onSave={(name) => onPatchContact(contact.id, { name })}
                       className="min-w-0 flex-1 font-sans text-[14px] leading-[20px] text-ink"
                     />
+                    {hasDoneDeal(contact) && <DealDoneBadge />}
                     <button
                       type="button"
                       aria-label={`Open ${contact.name}`}

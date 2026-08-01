@@ -9,7 +9,7 @@ import type { CrmLead, CrmLeadGroup, CrmStage, CrmUnit, CrmUser } from "@/lib/ty
 export default async function LeadsBoardPage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient(), recordBoardVisit("leads")]);
 
-  const [{ data: groups }, { data: leads }, { data: stages }, { data: users }, { data: units }, { data: customColumns }] =
+  const [{ data: groups }, { data: leads }, { data: stages }, { data: users }, { data: units }, { data: customColumns }, { data: doneDeals }] =
     await Promise.all([
       supabase
         .from("crm_lead_groups")
@@ -36,6 +36,13 @@ export default async function LeadsBoardPage() {
         .eq("board_key", "leads")
         .order("position")
         .returns<CrmCustomColumn[]>(),
+      // contacts whose deal completed its downpayment — lights the lead's badge
+      supabase
+        .from("crm_deals")
+        .select("contact_id")
+        .not("downpayment_completed_at", "is", null)
+        .not("contact_id", "is", null)
+        .returns<{ contact_id: string }[]>(),
     ]);
 
   return (
@@ -47,6 +54,7 @@ export default async function LeadsBoardPage() {
       users={users ?? []}
       units={units ?? []}
       customColumns={customColumns ?? []}
+      doneContactIds={(doneDeals ?? []).map((d) => d.contact_id)}
     />
   );
 }

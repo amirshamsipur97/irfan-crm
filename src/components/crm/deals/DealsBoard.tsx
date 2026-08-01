@@ -255,6 +255,7 @@ export function DealsBoard({
         downpayment_percent: null,
         downpayment_amount: null,
         invoice_sent_at: null,
+        downpayment_completed_at: null,
         custom: {},
         forecast_category: null,
         last_interaction_at: null,

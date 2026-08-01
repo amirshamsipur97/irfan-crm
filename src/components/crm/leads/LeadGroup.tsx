@@ -37,6 +37,7 @@ import { toLocalDateString } from "@/components/crm/activities/activities-config
 import { OptionCell } from "@/components/crm/contacts/contact-cells";
 import { CenterEditCell, EmailCell, MoveToContactsCell, PhoneCell } from "./lead-cells";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
+import { DealDoneBadge } from "@/components/crm/deal-done-badge";
 
 const ROW_H = 36;
 
@@ -63,6 +64,7 @@ export function LeadGroup({
   onOpenLead,
   onEmailLead,
   tools,
+  doneContactIds = [],
 }: {
   group: CrmLeadGroup;
   leads: CrmLead[];
@@ -86,6 +88,8 @@ export function LeadGroup({
   onOpenLead?: (leadId: string) => void;
   onEmailLead?: (lead: CrmLead) => void;
   tools?: RowToolsConfig;
+  /** contacts whose deal completed its downpayment — marks the source lead */
+  doneContactIds?: string[];
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -239,6 +243,8 @@ export function LeadGroup({
                       onSave={(name) => onRenameLead(lead.id, name)}
                       className="min-w-0 flex-1 font-sans text-[14px] leading-[20px] text-ink"
                     />
+                    {!!lead.converted_contact_id &&
+                      doneContactIds.includes(lead.converted_contact_id) && <DealDoneBadge />}
                     <button
                       type="button"
                       aria-label={`Open ${lead.name}`}
