@@ -11,49 +11,6 @@ import { useRef, useState, useEffect } from "react";
 import type { CrmUser } from "@/lib/types";
 import { isFullAccess, ROLE_LABELS } from "@/lib/permissions";
 
-function TopIconButton({
-  icon,
-  counter,
-  counterInverted = false,
-  dot = false,
-  label,
-}: {
-  icon: React.ReactNode;
-  counter?: string;
-  counterInverted?: boolean;
-  dot?: boolean;
-  label: string;
-}) {
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        aria-label={label}
-        title={label}
-        className="flex size-[40px] items-center justify-center rounded-[4px] transition-colors duration-150 hover:bg-[var(--hover-ghost)]"
-      >
-        {icon}
-      </button>
-      {counter && (
-        <span
-          className={`absolute -top-[3px] right-[-3px] flex min-w-[18px] items-center justify-center rounded-[30px] px-[6px] font-sans text-[12px] leading-[18px] ${
-            counterInverted
-              ? "bg-white text-ink shadow-[0_0_0_1px_var(--color-line)]"
-              : "bg-alert text-white"
-          }`}
-        >
-          {counter}
-        </span>
-      )}
-      {dot && (
-        <span className="absolute right-[1px] top-0 flex rounded-[16px] border-2 border-white p-[2px]">
-          <span className="size-[8px] rounded-[4px] bg-alert" />
-        </span>
-      )}
-    </div>
-  );
-}
-
 export function TopBar({ profile }: { profile: CrmUser }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -92,13 +49,15 @@ export function TopBar({ profile }: { profile: CrmUser }) {
         <span className="w-[4px]" />
         <MessagesInbox profile={profile} />
         <span className="w-[4px]" />
-        <TopIconButton label="Invite members" icon={<Icon name="invite" size={20} />} />
-        <span className="w-[4px]" />
-        <TopIconButton label="Apps marketplace" icon={<Icon name="marketplace" size={20} />} />
-        <span className="w-[4px]" />
-        <TopIconButton label="Settings" icon={<Icon name="settings" size={20} />} />
-        <span className="w-[4px]" />
-        <TopIconButton label="Help" dot icon={<Icon name="help" size={20} />} />
+        <Link
+          href="/help"
+          aria-label="Help & guide"
+          title="Help & guide"
+          className="relative flex size-[40px] items-center justify-center rounded-[4px] transition-colors duration-150 hover:bg-[var(--hover-ghost)]"
+        >
+          <Icon name="help" size={20} />
+          <LinkSpinner className="absolute right-[2px] top-[2px]" />
+        </Link>
         {isFullAccess(profile.role) && (
           <>
             <div className="px-[4px]">
