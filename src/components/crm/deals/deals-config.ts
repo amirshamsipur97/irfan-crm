@@ -14,7 +14,9 @@ export const DEAL_COLUMNS: { key: string; label: string; w: number }[] = [
   { key: "contacts", label: "Client", w: 200 },
   { key: "client_demand", label: "Client wants", w: 170 },
   { key: "client_budget", label: "Client budget", w: 140 },
-  { key: "offer_property", label: "Offered property", w: 190 },
+  // stock rotates weekly and is shared with other agencies, so an offer is
+  // pinned to the developer and the kind of unit, never to a specific unit
+  { key: "accounts", label: "Developer", w: 200 },
   { key: "offer_property_type", label: "Offer type", w: 150 },
   { key: "offer_bedrooms", label: "Offer size", w: 110 },
   { key: "value", label: "Offer price", w: 140 },

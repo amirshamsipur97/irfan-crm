@@ -85,6 +85,8 @@ export function DealGroup({
   group,
   deals,
   contacts,
+  accountOptions,
+  onCreateAccount,
   stages,
   users,
   isNew = false,
@@ -119,6 +121,8 @@ export function DealGroup({
   onDeleteColumn: (columnId: string) => void;
   onAddDeal: (name: string) => void;
   contactOptions: PickerOption[];
+  accountOptions: PickerOption[];
+  onCreateAccount: (dealId: string, name: string) => void;
   onCreateContact: (dealId: string, name: string) => void;
   tools?: RowToolsConfig;
 }) {
@@ -391,14 +395,17 @@ export function DealGroup({
                           {client?.budget != null ? money(Number(client.budget)) : "—"}
                         </span>
                       );
-                    case "offer_property":
+                    case "accounts":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
-                          <TextCell
-                            value={deal.offer_property}
-                            onSave={(next) =>
-                              onPatchDeal(deal.id, { offer_property: next || null })
-                            }
+                          <ConnectPicker
+                            value={deal.account_name}
+                            options={accountOptions}
+                            entityLabel="Developer"
+                            kind="account"
+                            onPick={(name) => onPatchDeal(deal.id, { account_name: name })}
+                            onClear={() => onPatchDeal(deal.id, { account_name: null })}
+                            onCreate={(name) => onCreateAccount(deal.id, name)}
                           />
                         </span>
                       );

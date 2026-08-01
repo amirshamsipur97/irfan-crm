@@ -68,6 +68,9 @@ export function DealsBoard({
   const [personFilter, setPersonFilter] = useState<string | null>(null);
   const [localGroups, setLocalGroups] = useServerState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
+  const [accountOptions, setAccountOptions] = useState<PickerOption[]>(
+    accounts.map((a) => ({ name: a.name, sub: a.domain }))
+  );
   const [contactOptions, setContactOptions] = useState<PickerOption[]>(
     contacts.map((c) => ({ name: c.name, sub: c.account_name }))
   );
@@ -84,6 +87,10 @@ export function DealsBoard({
     onOpen: setOpenDealId,
   });
   const [localColumns, setLocalColumns] = useServerState(customColumns);
+  useEffect(
+    () => setAccountOptions(accounts.map((a) => ({ name: a.name, sub: a.domain }))),
+    [accounts]
+  );
   useEffect(
     () => setContactOptions(contacts.map((c) => ({ name: c.name, sub: c.account_name }))),
     [contacts]
@@ -214,7 +221,6 @@ export function DealsBoard({
         currency: "OMR",
         lost_reason: null,
         next_step: null,
-        offer_property: null,
         offer_property_type: null,
         offer_bedrooms: null,
         offer_details: null,
@@ -283,6 +289,8 @@ export function DealsBoard({
                 stages={stages}
                 users={users}
                 contactOptions={contactOptions}
+                accountOptions={accountOptions}
+                onCreateAccount={(dealId, name) => createAndLink("account", dealId, name)}
                 onCreateContact={(dealId, name) => createAndLink("contact", dealId, name)}
                 onOpenDeal={setOpenDealId}
                 customColumns={localColumns}

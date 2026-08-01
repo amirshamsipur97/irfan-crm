@@ -22,7 +22,6 @@ const PATCHABLE = new Set([
   "currency",
   "lost_reason",
   "next_step",
-  "offer_property",
   "offer_property_type",
   "offer_bedrooms",
   "offer_details",
@@ -231,9 +230,15 @@ export async function createOfferForContact(contactName: string) {
     supabase.from("crm_deal_groups").select("id").order("position").limit(1).maybeSingle<{ id: string }>(),
     supabase
       .from("crm_contacts")
-      .select("id, name, property_type, bedrooms")
+      .select("id, name, property_type, bedrooms, account_name")
       .ilike("name", contactName)
-      .maybeSingle<{ id: string; name: string; property_type: string | null; bedrooms: string | null }>(),
+      .maybeSingle<{
+        id: string;
+        name: string;
+        property_type: string | null;
+        bedrooms: string | null;
+        account_name: string | null;
+      }>(),
   ]);
   if (!stage) return { error: "no deal stages configured" };
 
