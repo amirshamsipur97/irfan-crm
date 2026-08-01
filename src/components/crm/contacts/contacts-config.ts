@@ -17,8 +17,8 @@ export const CONTACT_COLUMNS: {
   { key: "property_type", label: "Property type", w: 150 },
   { key: "bedrooms", label: "Size", w: 110 },
   { key: "budget", label: "Budget", w: 140 },
-  { key: "preferred_area", label: "Preferred area", w: 170 },
-  { key: "requirements", label: "Requirements", w: 240 },
+  // Preferred area + Requirements were dropped from the board as clutter —
+  // both stay editable in the contact drawer's demand section
   { key: "accounts", label: "Accounts", w: 192 },
   { key: "deals", label: "Deals", w: 181, connected: true },
   { key: "deals_value", label: "Deals value", w: 132, connected: true },

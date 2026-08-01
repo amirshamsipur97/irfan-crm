@@ -388,28 +388,6 @@ export function ContactGroup({
                           />
                         </span>
                       );
-                    case "preferred_area":
-                      return (
-                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
-                          <TextCell
-                            value={contact.preferred_area}
-                            onSave={(next) =>
-                              onPatchContact(contact.id, { preferred_area: next || null })
-                            }
-                          />
-                        </span>
-                      );
-                    case "requirements":
-                      return (
-                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
-                          <TextCell
-                            value={contact.requirements}
-                            onSave={(next) =>
-                              onPatchContact(contact.id, { requirements: next || null })
-                            }
-                          />
-                        </span>
-                      );
                     case "comments":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
