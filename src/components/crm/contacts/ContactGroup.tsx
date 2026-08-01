@@ -318,7 +318,9 @@ export function ContactGroup({
                           <PhoneCell
                             phone={contact.phone}
                             countryCode={contact.country_code}
-                            onSave={(phone) => onPatchContact(contact.id, { phone })}
+                            onSave={(phone, code) =>
+                              onPatchContact(contact.id, { phone, country_code: code })
+                            }
                           />
                         </span>
                       );

@@ -1,8 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import {
+  DEFAULT_DIAL,
+  PhoneFields,
+  cleanNumber,
+  countryFor,
+  dialFlagFor,
+} from "@/components/crm/phone-input";
 import { InlineEdit, Popover } from "./cells";
-import { dialFlag } from "./board-config";
 
 /** Gray pencil chip — appears when the CELL is hovered (Monday style). */
 export function PencilChip({ label, onClick }: { label: string; onClick: () => void }) {
@@ -143,65 +149,81 @@ export function PhoneCell({
 }: {
   phone: string | null;
   countryCode: string | null;
-  onSave: (phone: string | null) => void;
+  /** country code and number are stored separately, never as one string */
+  onSave: (phone: string | null, countryCode: string | null) => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState("");
+  const [open, setOpen] = useState(false);
+  const [dial, setDial] = useState(countryCode ?? DEFAULT_DIAL);
+  const [number, setNumber] = useState(phone ?? "");
 
-  if (editing) {
-    const commit = () => {
-      setEditing(false);
-      const next = draft.trim() || null;
-      if (next !== (phone ?? null)) onSave(next);
-    };
-    return (
-      <input
-        autoFocus
-        type="tel"
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") commit();
-          if (e.key === "Escape") setEditing(false);
-        }}
-        className="mx-[8px] h-[26px] w-full rounded-[4px] border border-teal-deep px-[6px] text-center font-sans text-[14px] text-ink outline-none"
-      />
-    );
-  }
+  const start = () => {
+    setDial(countryCode ?? DEFAULT_DIAL);
+    setNumber(phone ?? "");
+    setOpen(true);
+  };
+
+  const commit = () => {
+    setOpen(false);
+    const nextNumber = cleanNumber(number) || null;
+    const nextDial = nextNumber ? dial : null;
+    if (nextNumber !== (phone ?? null) || nextDial !== (countryCode ?? null)) {
+      onSave(nextNumber, nextDial);
+    }
+  };
 
   return (
-    <span className="group/cell flex size-full items-center justify-center gap-[4px] px-[8px]">
+    <span className="group/cell relative flex size-full items-center justify-center gap-[4px] px-[8px]">
       {phone ? (
         <>
-          {dialFlag(countryCode) && <span aria-hidden>{dialFlag(countryCode)}</span>}
+          <span aria-hidden>{dialFlagFor(countryCode)}</span>
           <a
             href={`tel:${countryCode ?? ""}${phone}`}
             className="truncate font-sans text-[14px] leading-[20px] text-link hover:underline"
+            title={countryFor(countryCode)?.name ?? undefined}
           >
             {countryCode ? `${countryCode} ` : ""}
             {phone}
           </a>
-          <PencilChip
-            label="Edit phone"
-            onClick={() => {
-              setDraft(phone ?? "");
-              setEditing(true);
-            }}
-          />
+          <PencilChip label="Edit phone" onClick={start} />
         </>
       ) : (
         <button
           type="button"
-          onClick={() => {
-            setDraft("");
-            setEditing(true);
-          }}
-          className="flex size-full items-center justify-center font-sans text-[14px] text-transparent transition-colors hover:text-ink-muted"
+          onClick={start}
+          className="flex size-full items-center justify-center font-sans text-[14px] text-transparent transition-colors hover:bg-[var(--hover-ghost)] hover:text-ink-muted"
         >
           +
         </button>
       )}
+
+      <Popover open={open} onClose={commit} className="w-[300px]">
+        <p className="m-0 pb-[6px] font-sans text-[12px] leading-[16px] text-ink-muted">
+          Pick the country, then type the number
+        </p>
+        <PhoneFields
+          dial={dial}
+          number={number}
+          onDialChange={setDial}
+          onNumberChange={setNumber}
+          onEnter={commit}
+        />
+        <div className="flex justify-end gap-[6px] pt-[10px]">
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="h-[28px] rounded-[4px] border border-line-strong px-[10px] font-sans text-[12px] text-ink transition-colors hover:bg-[var(--hover-ghost)]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={commit}
+            className="h-[28px] rounded-[4px] bg-teal-deep px-[12px] font-sans text-[12px] font-medium text-white transition-opacity hover:opacity-90"
+          >
+            Save
+          </button>
+        </div>
+      </Popover>
     </span>
   );
 }

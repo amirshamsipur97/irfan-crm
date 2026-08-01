@@ -3,8 +3,8 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { signUp, type AuthState } from "@/app/(auth)/actions";
+import { COUNTRIES, DEFAULT_DIAL } from "@/components/crm/phone-input";
 
-const DIAL_CODES = ["+968", "+971", "+98", "+966", "+974", "+965", "+973", "+1", "+44", "+7", "+91"];
 
 const inputCls =
   "h-[38px] w-full rounded-[8px] border border-line-strong bg-white px-[12px] font-sans text-[14px] text-ink outline-none placeholder:text-ink-muted focus:border-teal-deep";
@@ -107,16 +107,18 @@ export function SignupCard() {
           <FieldLabel htmlFor="su_phone" required>
             Phone number
           </FieldLabel>
+          {/* same country picker the boards use, so a number entered at signup
+              is stored exactly like every other number in the CRM */}
           <div className="flex gap-[8px]">
             <select
               aria-label="Country code"
               name="country_code"
-              defaultValue="+968"
-              className="h-[38px] w-[92px] cursor-pointer rounded-[8px] border border-line-strong bg-white px-[8px] font-sans text-[14px] text-ink outline-none focus:border-teal-deep"
+              defaultValue={DEFAULT_DIAL}
+              className="h-[38px] w-[150px] cursor-pointer rounded-[8px] border border-line-strong bg-white px-[8px] font-sans text-[14px] text-ink outline-none focus:border-teal-deep"
             >
-              {DIAL_CODES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              {COUNTRIES.map((c) => (
+                <option key={`${c.code}-${c.name}`} value={c.code}>
+                  {c.flag} {c.name} {c.code}
                 </option>
               ))}
             </select>
@@ -124,8 +126,10 @@ export function SignupCard() {
               id="su_phone"
               name="phone"
               type="tel"
+              inputMode="tel"
               required
               autoComplete="tel-national"
+              placeholder="9123 4567"
               className={inputCls}
             />
           </div>

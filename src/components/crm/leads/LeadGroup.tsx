@@ -405,7 +405,9 @@ export function LeadGroup({
                           <PhoneCell
                             phone={lead.phone}
                             countryCode={lead.country_code}
-                            onSave={(phone) => onPatchLead(lead.id, { phone })}
+                            onSave={(phone, code) =>
+                              onPatchLead(lead.id, { phone, country_code: code })
+                            }
                           />
                         </span>
                       );
