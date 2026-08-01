@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
 import { HomeView, type HomeData } from "@/components/home/HomeView";
-import type { CrmLead, CrmStage } from "@/lib/types";
 
 function compactMoney(value: number, currency = "OMR"): string {
   return `${new Intl.NumberFormat("en", {
@@ -16,17 +15,25 @@ function greetingFor(hour: number): string {
   return "Good evening";
 }
 
+/**
+ * Home — every number on this page is live and follows the product's real
+ * funnel: leads → contacts (demand) → offers → accepted deals → downpayment.
+ * (The old version summed LEAD budgets by lead stage and called it a deal
+ * pipeline — believable-looking numbers that measured nothing.)
+ */
 export default async function HomePage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient()]);
 
   const monthStart = new Date();
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
 
   const [
-    { data: stages },
+    { data: offers },
+    { data: parts },
     { data: leads },
-    { data: wonThisMonth },
+    { data: viewings },
     { data: reg },
     { data: layoutRow },
     { count: accountsTotal },
@@ -34,18 +41,49 @@ export default async function HomePage() {
     { count: contactsTotal },
     { count: contactsEngaged },
   ] = await Promise.all([
-    supabase.from("crm_stages").select("id, is_won, is_lost").returns<
-      Pick<CrmStage, "id" | "is_won" | "is_lost">[]
+    supabase
+      .from("crm_deals")
+      .select("id, deal_value, accepted_at, downpayment_amount, downpayment_completed_at, invoice_sent_at")
+      .returns<
+        {
+          id: string;
+          deal_value: number | null;
+          accepted_at: string | null;
+          downpayment_amount: number | null;
+          downpayment_completed_at: string | null;
+          invoice_sent_at: string | null;
+        }[]
+      >(),
+    supabase.from("crm_deal_downpayments").select("deal_id, amount").returns<
+      { deal_id: string; amount: number }[]
     >(),
     supabase
       .from("crm_leads")
-      .select("id, budget, stage_id")
+      .select("id, lead_source, converted_contact_id, created_at")
       .eq("is_archived", false)
-      .returns<Pick<CrmLead, "id" | "budget" | "stage_id">[]>(),
+      .returns<
+        {
+          id: string;
+          lead_source: string | null;
+          converted_contact_id: string | null;
+          created_at: string;
+        }[]
+      >(),
     supabase
-      .from("crm_lead_stage_history")
-      .select("lead_id, to_stage_id, changed_at")
-      .gte("changed_at", monthStart.toISOString()),
+      .from("crm_viewings")
+      .select("id, name, contact_name, scheduled_start, status")
+      .gte("scheduled_start", new Date().toISOString())
+      .order("scheduled_start", { ascending: true })
+      .limit(5)
+      .returns<
+        {
+          id: string;
+          name: string;
+          contact_name: string | null;
+          scheduled_start: string | null;
+          status: string | null;
+        }[]
+      >(),
     supabase
       .from("crm_registration_settings")
       .select("default_currency")
@@ -67,23 +105,34 @@ export default async function HomePage() {
       .gte("last_interaction_at", monthStart.toISOString()),
   ]);
 
-  const wonStages = new Set((stages ?? []).filter((s) => s.is_won).map((s) => s.id));
-  const closedStages = new Set(
-    (stages ?? []).filter((s) => s.is_won || s.is_lost).map((s) => s.id)
-  );
+  const currency = reg?.default_currency ?? "OMR";
+  const allOffers = offers ?? [];
+  const openOffers = allOffers.filter((o) => !o.accepted_at);
+  const deals = allOffers.filter((o) => o.accepted_at);
 
-  const openLeads = (leads ?? []).filter((l) => !closedStages.has(l.stage_id));
-  const totalPipeline = openLeads.reduce((sum, l) => sum + (Number(l.budget) || 0), 0);
+  const openOffersValue = openOffers.reduce((s, o) => s + (Number(o.deal_value) || 0), 0);
+  const dealsValue = deals.reduce((s, o) => s + (Number(o.deal_value) || 0), 0);
 
-  const wonLeadIds = new Set(
-    (wonThisMonth ?? []).filter((h) => wonStages.has(h.to_stage_id)).map((h) => h.lead_id)
-  );
-  const leadById = new Map((leads ?? []).map((l) => [l.id, l]));
-  let closedWon = 0;
-  for (const id of wonLeadIds) {
-    const lead = leadById.get(id);
-    if (lead && wonStages.has(lead.stage_id)) closedWon += Number(lead.budget) || 0;
+  const dealIds = new Set(deals.map((d) => d.id));
+  const dpTarget = deals.reduce((s, d) => s + (Number(d.downpayment_amount) || 0), 0);
+  const dpCollected = (parts ?? [])
+    .filter((p) => dealIds.has(p.deal_id))
+    .reduce((s, p) => s + (Number(p.amount) || 0), 0);
+  const invoicesPending = deals.filter(
+    (d) => d.downpayment_completed_at && !d.invoice_sent_at
+  ).length;
+
+  const allLeads = leads ?? [];
+  const leads30d = allLeads.filter((l) => l.created_at >= thirtyDaysAgo);
+  const sourceCounts = new Map<string, number>();
+  for (const l of leads30d) {
+    const key = l.lead_source?.trim() || "No source";
+    sourceCounts.set(key, (sourceCounts.get(key) ?? 0) + 1);
   }
+  const leadSources = [...sourceCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([source, count]) => ({ source, count }));
 
   const now = new Date();
   const data: HomeData = {
@@ -96,9 +145,25 @@ export default async function HomePage() {
       year: "numeric",
     }),
     greeting: greetingFor(now.getHours()),
-    totalPipelineLabel: compactMoney(totalPipeline, reg?.default_currency ?? "OMR"),
-    openDealsLabel: `${openLeads.length} open deal${openLeads.length === 1 ? "" : "s"}`,
-    closedWonLabel: compactMoney(closedWon, reg?.default_currency ?? "OMR"),
+    openOffersValueLabel: compactMoney(openOffersValue, currency),
+    openOffersChip: `${openOffers.length} open offer${openOffers.length === 1 ? "" : "s"}`,
+    dealsValueLabel: compactMoney(dealsValue, currency),
+    dealsChip: `${deals.length} accepted deal${deals.length === 1 ? "" : "s"}`,
+    dpCollectedLabel: compactMoney(dpCollected, currency),
+    dpChip:
+      dpTarget > 0
+        ? `${Math.min(100, Math.round((dpCollected / dpTarget) * 100))}% of ${compactMoney(dpTarget, currency)}`
+        : "no downpayments yet",
+    invoicesPending,
+    leadsNewCount: leads30d.length,
+    leadsConvertedCount: allLeads.filter((l) => l.converted_contact_id).length,
+    leadSources,
+    viewingsUpcoming: (viewings ?? []).map((v) => ({
+      id: v.id,
+      name: v.contact_name || v.name,
+      when: v.scheduled_start,
+      status: v.status,
+    })),
     accountsTotal: accountsTotal ?? 0,
     accountsContacted: accountsContacted ?? 0,
     contactsTotal: contactsTotal ?? 0,

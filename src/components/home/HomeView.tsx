@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { IconButton } from "@/components/ui/IconButton";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
-import { ICONS, type IconName } from "@/lib/figma-icons";
+import { type IconName } from "@/lib/figma-icons";
 import { canAnimate } from "@/lib/motion";
 import { AiFloaty } from "@/components/shell/AiFloaty";
 import { Surface } from "@/components/shell/AppChrome";
@@ -20,9 +20,20 @@ export interface HomeData {
   avatarUrl: string | null;
   dateLabel: string;
   greeting: string;
-  totalPipelineLabel: string;
-  openDealsLabel: string;
-  closedWonLabel: string;
+  /** open offers = proposals the client has not accepted yet */
+  openOffersValueLabel: string;
+  openOffersChip: string;
+  /** accepted offers — rows on the Deals board */
+  dealsValueLabel: string;
+  dealsChip: string;
+  /** part payments collected toward all deals' downpayments */
+  dpCollectedLabel: string;
+  dpChip: string;
+  invoicesPending: number;
+  leadsNewCount: number;
+  leadsConvertedCount: number;
+  leadSources: { source: string; count: number }[];
+  viewingsUpcoming: { id: string; name: string; when: string | null; status: string | null }[];
   accountsTotal: number;
   accountsContacted: number;
   contactsTotal: number;
@@ -36,14 +47,15 @@ export const HOME_WIDGETS: {
   badge: string;
   description: string;
 }[] = [
-  { key: "pipeline", title: "Sales pipeline", badge: "Metrics", description: "Total open pipeline value and what was closed-won this month." },
-  { key: "meetings", title: "Meetings", badge: "Calendar", description: "Connect your calendar to turn meetings into opportunities." },
+  { key: "pipeline", title: "Sales pipeline", badge: "Metrics", description: "Open offers, accepted deals and collected downpayments — live." },
+  { key: "leads", title: "Leads", badge: "Metrics", description: "New leads over the last 30 days, where they came from, and conversions." },
+  { key: "viewings", title: "Upcoming viewings", badge: "Schedule", description: "The next scheduled property viewings from the Viewings board." },
   { key: "recents", title: "Recently visited", badge: "Navigation", description: "Jump back into the boards you use the most." },
   { key: "accounts", title: "Accounts", badge: "Metrics", description: "See your total accounts and which ones were actively contacted this month." },
   { key: "contacts", title: "Contacts", badge: "Metrics", description: "See your total contacts and who's been actively engaged this month." },
 ];
 
-const DEFAULT_LAYOUT = ["pipeline", "meetings", "recents"];
+const DEFAULT_LAYOUT = ["pipeline", "leads", "recents"];
 
 const RECENT_BOARDS: { title: string; icon: IconName }[] = [
   { title: "Leads", icon: "boardLeads" },
@@ -230,64 +242,81 @@ export function HomeView({ data, layout }: { data: HomeData; layout: string[] | 
           icon="widgetPipeline"
           title="Sales pipeline"
           right={
-            <div className="flex items-center gap-[8px]">
-              <Button variant="outline" size={24} icon="filterAll">
-                All
-              </Button>
-              <Button variant="outline" size={24} icon="filterDeals">
-                Deals
-              </Button>
-              <IconButton icon="expand" size={24} label="Expand" />
-            </div>
+            data.invoicesPending > 0 ? (
+              <span className="flex h-[24px] items-center rounded-[4px] bg-[#fdab3d]/20 px-[8px] font-sans text-[13px] leading-[20px] text-[#b97416]">
+                {data.invoicesPending} invoice{data.invoicesPending > 1 ? "s" : ""} to send
+              </span>
+            ) : undefined
           }
         />
         <div className="flex w-full flex-1 items-stretch gap-[16px]">
           <KpiCard
-            title="Total pipeline value"
-            value={data.totalPipelineLabel}
-            chip={data.openDealsLabel}
+            title="Open offers"
+            value={data.openOffersValueLabel}
+            chip={data.openOffersChip}
           />
-          <KpiCard title="Closed won (this month)" value={data.closedWonLabel} />
+          <KpiCard title="Deals (accepted)" value={data.dealsValueLabel} chip={data.dealsChip} />
+          <KpiCard
+            title="Downpayments collected"
+            value={data.dpCollectedLabel}
+            chip={data.dpChip}
+          />
         </div>
       </WidgetCard>
     ),
-    meetings: () => (
+    leads: () => (
       <WidgetCard>
-        <WidgetHeader
-          icon="widgetMeetings"
-          title="Meetings"
-          right={
-            <p className="font-sans text-[14px] leading-[20px] text-ink-muted">Not connected</p>
-          }
-        />
-        <div className="flex w-full overflow-hidden rounded-[8px] border border-line p-px">
-          <div className="flex w-[380px] shrink-0 flex-col justify-center gap-[24px] px-[24px] py-[34px]">
-            <div className="flex flex-col gap-[4px]">
-              <p className="font-sans text-[16px] font-semibold leading-[22px] text-ink">
-                Turn meetings into opportunities
-              </p>
-              <p className="max-w-[307px] font-sans text-[14px] leading-[20px] text-ink-muted">
-                Connect your calendar to get automatic meeting prep, AI summaries, and more.
-              </p>
-            </div>
-            <div className="flex items-center gap-[8px]">
-              <Button variant="outline" iconImage={ICONS.googleLogo}>
-                Google
-              </Button>
-              <Button variant="outline" iconImage={ICONS.outlookLogo}>
-                Outlook
-              </Button>
-            </div>
-          </div>
-          <div className="flex min-w-[259px] flex-1 items-stretch justify-end">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={ICONS.calendarPreview}
-              alt=""
-              className="block h-[190px] w-[259px] object-cover"
-            />
-          </div>
+        <WidgetHeader icon="widgetPipeline" title="Leads" />
+        <div className="flex w-full flex-1 items-stretch gap-[16px]">
+          <KpiCard
+            title="New leads (30 days)"
+            value={String(data.leadsNewCount)}
+            chip={
+              data.leadSources.length > 0
+                ? data.leadSources.map((s) => `${s.source} ${s.count}`).join(" · ")
+                : undefined
+            }
+          />
+          <KpiCard title="Converted to contacts" value={String(data.leadsConvertedCount)} />
         </div>
+      </WidgetCard>
+    ),
+    viewings: () => (
+      <WidgetCard>
+        <WidgetHeader icon="widgetRecent" title="Upcoming viewings" />
+        {data.viewingsUpcoming.length === 0 ? (
+          <p className="m-0 rounded-[8px] border border-line bg-canvas px-[16px] py-[18px] font-sans text-[13.5px] leading-[20px] text-ink-muted">
+            No upcoming viewings — schedule one on the Viewings board and it appears here.
+          </p>
+        ) : (
+          <div className="flex flex-col">
+            {data.viewingsUpcoming.map((v) => (
+              <div
+                key={v.id}
+                className="flex items-center gap-[10px] border-b border-line-soft py-[9px] last:border-b-0"
+              >
+                <span className="min-w-0 flex-1 truncate font-sans text-[14px] leading-[20px] text-ink">
+                  {v.name}
+                </span>
+                {v.status && (
+                  <span className="shrink-0 rounded-[10px] bg-cyan-soft px-[8px] py-[2px] font-sans text-[12px] leading-[18px] text-ink">
+                    {v.status}
+                  </span>
+                )}
+                <span className="shrink-0 font-sans text-[13px] leading-[20px] text-ink-muted">
+                  {v.when
+                    ? new Date(v.when).toLocaleString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "—"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </WidgetCard>
     ),
     recents: () => (
