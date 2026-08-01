@@ -2,7 +2,7 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-08-01 (late)** (committed through `1651c0d`, deployed;
+> Updated: **2026-08-01 (late)** (committed through `334d41f`, deployed;
 > repo is LOCAL-ONLY, no remote).
 
 ## START HERE — state as of 2026-08-01
@@ -82,6 +82,22 @@ E2E (ghost signup `ghost.approve.test@…`, then deleted): agent caller
 refused ✓, admin RPC approves ✓, GoTrue login with the temp password ✓,
 UI approve from /admin Directory through the real server action ✓, all
 five /admin sections render after the DOM restructure ✓. tsc + build clean.
+
+5. **NESTED POPOVER FIX** (`334d41f`, user-reported): scrolling the country
+   list inside the phone editor closed the whole popup, and picking a
+   country was silently swallowed — the picker is a second `Popover`, both
+   panels portal to `<body>` as SIBLINGS, so the parent's close-on-scroll /
+   outside-click checks saw the child's DOM as "outside". Open panels now
+   report themselves to ancestor popovers via the `PopoverAncestors` context
+   in `leads/cells.tsx`; ancestors treat events inside a registered
+   descendant as their own, while events in an ancestor still close the
+   descendant (clicking the number field closes the list) and board
+   scrolling still commits-and-closes. Country list got `overscroll-contain`
+   (+ `touch-pan-y`) so wheeling past its end does not chain into the page.
+   Any future popover-inside-popover gets this for free. Verified in the
+   pane: inner scroll keeps both open ✓, country pick lands (+974) ✓,
+   number-field click closes only the list ✓, board scroll closes ✓.
+   (Test flipped lead "Manager" to +974 — restored to +968 in DB.)
 
 ## SESSION 2026-07-26 → 08-01 (commits `b30e888` … `c6e449c`)
 
