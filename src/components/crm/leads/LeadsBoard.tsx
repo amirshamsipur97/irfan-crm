@@ -168,6 +168,7 @@ export function LeadsBoard({
         lead_date: new Date().toISOString().slice(0, 10),
         phone: null,
         country_code: null,
+        country: null,
         email: null,
         company: null,
         title: null,
@@ -241,6 +242,7 @@ export function LeadsBoard({
       format: (v) => sourceLabel(String(v ?? "")),
       color: (v) => sourceColor(String(v ?? "")),
     },
+    { key: "country", label: "Country", get: (r) => r.country },
   ];
   const sortedRows = applyQuickFilters([...visibleLeads].sort(byPosition), filterDims, qf.state);
 

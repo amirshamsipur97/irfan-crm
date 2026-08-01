@@ -25,6 +25,7 @@ import {
   propertyTypeLabel,
 } from "@/components/crm/contacts/demand-config";
 import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmUser } from "@/lib/types";
+import { countryFlag } from "@/components/crm/country-cell";
 
 const ROW_H = 36;
 const STRIPE = "#00a0a0";
@@ -32,6 +33,7 @@ const STRIPE = "#00a0a0";
 const COLS: { key: string; label: string; w: number }[] = [
   { key: "owner", label: "Owner", w: 98 },
   { key: "client", label: "Client", w: 180 },
+  { key: "country", label: "Country", w: 130 },
   { key: "developer", label: "Developer", w: 170 },
   { key: "offer", label: "Accepted offer", w: 190 },
   { key: "price", label: "Offer price", w: 130 },
@@ -399,6 +401,24 @@ export function AcceptedDealsBoard({
                                 <span className="truncate border-b border-[#037f4c] text-ink">
                                   {deal.contact_name}
                                 </span>
+                              ) : (
+                                <span className="text-ink-muted">—</span>
+                              )}
+                            </span>
+                          );
+                        case "country":
+                          return (
+                            <span
+                              key={col.key}
+                              className={`${cellBorder} flex items-center justify-center gap-[5px] truncate bg-canvas px-[6px] font-sans text-[13px] leading-[20px] text-ink`}
+                              style={w}
+                              title="From the client's profile — edit it on the Contacts board"
+                            >
+                              {client?.country ? (
+                                <>
+                                  <span aria-hidden>{countryFlag(client.country)}</span>
+                                  <span className="truncate">{client.country}</span>
+                                </>
                               ) : (
                                 <span className="text-ink-muted">—</span>
                               )}

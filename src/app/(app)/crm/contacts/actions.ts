@@ -14,6 +14,7 @@ const PATCHABLE = new Set([
   "email_label",
   "phone",
   "country_code",
+  "country",
   "title",
   "contact_type",
   "priority",

@@ -124,6 +124,7 @@ export function ContactsBoard({
     { key: "priority", label: "Priority", get: (r) => r.priority },
     { key: "account", label: "Account", get: (r) => r.account_name },
     { key: "title", label: "Title", get: (r) => r.title },
+    { key: "country", label: "Country", get: (r) => r.country },
   ];
   const sortedRows = applyQuickFilters([...localContacts].sort(byPosition), filterDims, qf.state);
   const [accountOptions, setAccountOptions] = useState<PickerOption[]>(
@@ -177,6 +178,7 @@ export function ContactsBoard({
         email_label: null,
         phone: null,
         country_code: null,
+        country: null,
         title: null,
         contact_type: null,
         priority: null,

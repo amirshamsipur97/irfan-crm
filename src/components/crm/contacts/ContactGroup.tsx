@@ -22,6 +22,7 @@ import { NumberCell } from "@/components/crm/deals/deal-cells";
 import { EmailCell, PhoneCell } from "@/components/crm/leads/lead-cells";
 import { ConnectPicker, type PickerOption } from "@/components/crm/deals/connect-picker";
 import { DealDoneBadge } from "@/components/crm/deal-done-badge";
+import { CountryCell } from "@/components/crm/country-cell";
 import type { CrmUser } from "@/lib/types";
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
 import { CUSTOM_COL_W } from "@/lib/custom-columns";
@@ -342,6 +343,15 @@ export function ContactGroup({
                             onSave={(phone, code) =>
                               onPatchContact(contact.id, { phone, country_code: code })
                             }
+                          />
+                        </span>
+                      );
+                    case "country":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <CountryCell
+                            value={contact.country}
+                            onSave={(next) => onPatchContact(contact.id, { country: next })}
                           />
                         </span>
                       );

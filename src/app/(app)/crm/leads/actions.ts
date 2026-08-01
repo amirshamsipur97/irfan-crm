@@ -182,6 +182,7 @@ const LEAD_PATCHABLE = new Set([
   "email",
   "phone",
   "country_code",
+  "country",
   "company",
   "title",
   "source",

@@ -19,6 +19,8 @@ export const BOARD_COLUMNS: {
   { key: "first_name", label: "First name", w: 150 },
   { key: "last_name", label: "Last name", w: 150 },
   { key: "phone", label: "Telephone", w: 170 },
+  // nationality, picked separately — the dial code can't stand in for it
+  { key: "country", label: "Country", w: 150 },
   { key: "email", label: "Email", w: 200 },
   { key: "source", label: "Lead Source", w: 160 },
   { key: "date", label: "Date", w: 130 },

@@ -38,6 +38,7 @@ import {
 import { ConnectPicker, type PickerOption } from "./connect-picker";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 import { DealDoneBadge } from "@/components/crm/deal-done-badge";
+import { countryFlag } from "@/components/crm/country-cell";
 
 const ROW_H = 36;
 
@@ -428,6 +429,24 @@ export function DealGroup({
                         </span>
                       );
                     }
+                    case "client_country":
+                      return (
+                        <span
+                          key={col.key}
+                          className={`${cellBorder} flex items-center justify-center gap-[5px] truncate bg-canvas px-[6px] font-sans text-[13px] leading-[20px] text-ink`}
+                          style={w}
+                          title="From the client's profile — edit it on the Contacts board"
+                        >
+                          {client?.country ? (
+                            <>
+                              <span aria-hidden>{countryFlag(client.country)}</span>
+                              <span className="truncate">{client.country}</span>
+                            </>
+                          ) : (
+                            <span className="text-ink-muted">—</span>
+                          )}
+                        </span>
+                      );
                     case "client_budget":
                       return (
                         <span

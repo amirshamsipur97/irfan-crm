@@ -14,6 +14,7 @@ export const DEAL_COLUMNS: { key: string; label: string; w: number }[] = [
   { key: "stage", label: "Stage", w: 159 },
   { key: "owner", label: "Owner", w: 98 },
   { key: "client_demand", label: "Client wants", w: 170 },
+  { key: "client_country", label: "Country", w: 130 },
   { key: "client_budget", label: "Client budget", w: 140 },
   // stock rotates weekly and is shared with other agencies, so an offer is
   // pinned to the developer and the kind of unit, never to a specific unit
