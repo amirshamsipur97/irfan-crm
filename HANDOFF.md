@@ -2,7 +2,7 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-08-02** (committed through `6892299`, deployed;
+> Updated: **2026-08-02** (committed through `22c4fe9`, deployed;
 > repo is LOCAL-ONLY, no remote).
 
 ## START HERE — state as of 2026-08-01
@@ -152,6 +152,13 @@ Lead captured  →  Move to contact  →  the contact IS the client's Demand
   (`client_country`) and the Deals board; `crm_convert_lead` copies it
   (fill-the-gap on match, straight copy on create); country quick-filter
   dim on Leads + Contacts. E2E: pick India on a lead → DB, Clear → null.
+- **Board declutter (commit `22c4fe9`)**: Contacts board dropped the
+  built-in Preferred area + Requirements columns (user request — both
+  still editable in the contact drawer's demand section; DB columns and
+  values untouched). Leftover TEST custom columns deleted from
+  crm_custom_columns: Numbers/Text/Priority (offers, 07-21) + Checkbox
+  (contacts, 07-26). Only ONE custom column remains anywhere: "Status" on
+  Activities — user has not asked about it.
 
 - **Leads** = capture only. Lead · Status · Owner · First name · Last name ·
   Telephone · Email · Lead Source (Meta / Google Ads / Dubizzle / Co-worker /
