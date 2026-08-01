@@ -255,6 +255,14 @@ export function ContactGroup({
                       onSave={(name) => onPatchContact(contact.id, { name })}
                       className="min-w-0 flex-1 font-sans text-[14px] leading-[20px] text-ink"
                     />
+                    {contact.code && (
+                      <span
+                        className="shrink-0 pl-[6px] font-sans text-[11px] leading-[16px] text-ink-muted"
+                        title="Unique contact code — same-named people have different codes"
+                      >
+                        {contact.code}
+                      </span>
+                    )}
                     {hasDoneDeal(contact) && <DealDoneBadge />}
                     <button
                       type="button"

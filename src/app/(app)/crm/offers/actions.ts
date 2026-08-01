@@ -17,6 +17,9 @@ const PATCHABLE = new Set([
   "is_done",
   "contact_name",
   "account_name",
+  // set by the picker when an option is chosen — pins same-named people/companies
+  "contact_id",
+  "account_id",
   "forecast_category",
   "last_interaction_at",
   "currency",

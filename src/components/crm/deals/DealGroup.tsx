@@ -337,8 +337,14 @@ export function DealGroup({
                         options={contactOptions}
                         entityLabel="Contacts"
                         kind="contact"
-                        onPick={(name) =>
-                          onPatchDeal(deal.id, { contact_name: name, name: `Offer — ${name}` })
+                        onPick={(name, id) =>
+                          onPatchDeal(deal.id, {
+                            contact_name: name,
+                            name: `Offer — ${name}`,
+                            // several people can share a name — the picked row's
+                            // id pins the link to exactly this person
+                            ...(id ? { contact_id: id } : {}),
+                          })
                         }
                         onClear={() => onPatchDeal(deal.id, { contact_name: null })}
                         onCreate={(name) => onCreateContact(deal.id, name)}
@@ -445,7 +451,12 @@ export function DealGroup({
                             options={accountOptions}
                             entityLabel="Developer"
                             kind="account"
-                            onPick={(name) => onPatchDeal(deal.id, { account_name: name })}
+                            onPick={(name, id) =>
+                              onPatchDeal(deal.id, {
+                                account_name: name,
+                                ...(id ? { account_id: id } : {}),
+                              })
+                            }
                             onClear={() => onPatchDeal(deal.id, { account_name: null })}
                             onCreate={(name) => onCreateAccount(deal.id, name)}
                           />

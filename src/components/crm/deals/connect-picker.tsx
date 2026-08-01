@@ -7,8 +7,10 @@ import { BuildingGlyph, PersonGlyph } from "./deal-cells";
 
 export interface PickerOption {
   name: string;
-  /** gray second line, e.g. the account a contact belongs to */
+  /** gray second line, e.g. "C-0004 · Muriya Tourism Development" */
   sub?: string | null;
+  /** the row's real id — several people can share one name, this cannot */
+  id?: string;
 }
 
 /**
@@ -28,7 +30,8 @@ export function ConnectPicker({
   options: PickerOption[];
   entityLabel: string;
   kind: "account" | "contact";
-  onPick: (name: string) => void;
+  /** id is set when the option carries one — patch the FK with it, not the name */
+  onPick: (name: string, id?: string) => void;
   onClear: () => void;
   onCreate: (name: string) => void;
 }) {
@@ -128,7 +131,7 @@ export function ConnectPicker({
                 if (e.key === "Escape") setOpen(false);
                 if (e.key === "Enter" && query.trim()) {
                   const hit = options.find((o) => o.name.toLowerCase() === q);
-                  if (hit) onPick(hit.name);
+                  if (hit) onPick(hit.name, hit.id);
                   else onCreate(query.trim());
                   setOpen(false);
                 }
@@ -146,7 +149,7 @@ export function ConnectPicker({
                 key={`${o.name}|${o.sub ?? ""}|${i}`}
                 type="button"
                 onClick={() => {
-                  onPick(o.name);
+                  onPick(o.name, o.id);
                   setOpen(false);
                 }}
                 className={`flex w-full items-center gap-[10px] rounded-[6px] px-[10px] py-[8px] text-left transition-colors ${

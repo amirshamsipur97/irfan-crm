@@ -68,11 +68,17 @@ export function DealsBoard({
   const [personFilter, setPersonFilter] = useState<string | null>(null);
   const [localGroups, setLocalGroups] = useServerState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
+  // options carry the row id so picking one of several same-named people
+  // links EXACTLY that person; the C-code in the sub line tells them apart
   const [accountOptions, setAccountOptions] = useState<PickerOption[]>(
-    accounts.map((a) => ({ name: a.name, sub: a.domain }))
+    accounts.map((a) => ({ id: a.id, name: a.name, sub: a.domain }))
   );
   const [contactOptions, setContactOptions] = useState<PickerOption[]>(
-    contacts.map((c) => ({ name: c.name, sub: c.account_name }))
+    contacts.map((c) => ({
+      id: c.id,
+      name: c.name,
+      sub: [c.code, c.account_name].filter(Boolean).join(" · ") || null,
+    }))
   );
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
   const [lostPrompt, setLostPrompt] = useState<{ dealId: string; stageId: string } | null>(null);
@@ -88,11 +94,18 @@ export function DealsBoard({
   });
   const [localColumns, setLocalColumns] = useServerState(customColumns);
   useEffect(
-    () => setAccountOptions(accounts.map((a) => ({ name: a.name, sub: a.domain }))),
+    () => setAccountOptions(accounts.map((a) => ({ id: a.id, name: a.name, sub: a.domain }))),
     [accounts]
   );
   useEffect(
-    () => setContactOptions(contacts.map((c) => ({ name: c.name, sub: c.account_name }))),
+    () =>
+      setContactOptions(
+        contacts.map((c) => ({
+          id: c.id,
+          name: c.name,
+          sub: [c.code, c.account_name].filter(Boolean).join(" · ") || null,
+        }))
+      ),
     [contacts]
   );
 

@@ -183,6 +183,8 @@ export interface CrmContactGroup {
 
 export interface CrmContact {
   id: string;
+  /** simple human-readable unique code (C-0001) — tells same-named people apart */
+  code: string | null;
   name: string;
   email: string | null;
   email_label: string | null;

@@ -171,6 +171,7 @@ export function ContactsBoard({
       ...prev,
       {
         id: tempId,
+        code: null,
         name: name.trim() || "New Contact",
         email: null,
         email_label: null,
