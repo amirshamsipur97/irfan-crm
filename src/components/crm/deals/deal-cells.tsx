@@ -212,11 +212,14 @@ export function NumberCell({
   format,
   onSave,
   suffix = "",
+  title,
 }: {
   value: number | null;
   format: (v: number | null) => string;
   onSave: (next: number | null) => void;
   suffix?: string;
+  /** exact figure, shown on hover when `format` shortens it for a narrow cell */
+  title?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value?.toString() ?? "");
@@ -250,6 +253,7 @@ export function NumberCell({
         setEditing(true);
       }}
       className={CELL_BUTTON}
+      title={title}
     >
       {value != null ? `${format(value)}${suffix}` : ""}
     </button>

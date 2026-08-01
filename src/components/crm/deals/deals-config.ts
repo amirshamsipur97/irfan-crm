@@ -45,6 +45,19 @@ export function money(value: number | null | undefined, currency = "OMR"): strin
   return `${n.toLocaleString("en-US")} ${currency}`;
 }
 
+/**
+ * Short form for narrow cells: "3.2M OMR" instead of "3,200,000 OMR".
+ * Board columns are a fixed width, so a full figure wraps to a second line and
+ * spills into the row below — always pair this with the exact value in a title.
+ */
+export function compactMoney(value: number | null | undefined, currency = "OMR"): string {
+  const n = value == null ? 0 : Number(value);
+  return `${new Intl.NumberFormat("en", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(n)} ${currency}`;
+}
+
 /** Monday computes forecast value as deal value × close probability. */
 export function forecastValue(value: number | null, probability: number | null): number {
   if (!value || probability == null) return 0;

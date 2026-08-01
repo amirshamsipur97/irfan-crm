@@ -10,7 +10,7 @@ import {
   InlineEdit,
   OwnerCell,
 } from "@/components/crm/leads/cells";
-import { money } from "@/components/crm/deals/deals-config";
+import { compactMoney, money } from "@/components/crm/deals/deals-config";
 import {
   CONNECTED_UNDERLINE,
   CONTACT_COLUMNS,
@@ -349,7 +349,8 @@ export function ContactGroup({
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
                           <NumberCell
                             value={contact.budget}
-                            format={(n) => money(n)}
+                            format={(n) => compactMoney(n)}
+                            title={contact.budget == null ? undefined : money(contact.budget)}
                             onSave={(next) => onPatchContact(contact.id, { budget: next })}
                           />
                         </span>

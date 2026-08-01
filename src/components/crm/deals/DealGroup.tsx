@@ -24,6 +24,7 @@ import {
   DEAL_COLUMNS,
   DEAL_NAME_COL_W,
   FORECAST_CATEGORIES,
+  compactMoney,
   money,
 } from "./deals-config";
 import { CloseDateCell, NumberCell } from "./deal-cells";
@@ -337,7 +338,12 @@ export function DealGroup({
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
                           <NumberCell
                             value={deal.deal_value == null ? null : Number(deal.deal_value)}
-                            format={(v) => money(v)}
+                            format={(v) => compactMoney(v)}
+                            title={
+                              deal.deal_value == null
+                                ? undefined
+                                : money(Number(deal.deal_value))
+                            }
                             onSave={(next) => onPatchDeal(deal.id, { deal_value: next })}
                           />
                         </span>
@@ -388,11 +394,15 @@ export function DealGroup({
                       return (
                         <span
                           key={col.key}
-                          className={`${cellBorder} flex items-center justify-center bg-canvas font-sans text-[14px] leading-[20px] text-ink`}
+                          className={`${cellBorder} flex items-center justify-center truncate whitespace-nowrap bg-canvas px-[6px] font-sans text-[14px] leading-[20px] text-ink`}
                           style={w}
-                          title="From the client's demand — edit it on the Contacts board"
+                          title={
+                            client?.budget != null
+                              ? `${money(Number(client.budget))} — from the client's demand`
+                              : "From the client's demand — edit it on the Contacts board"
+                          }
                         >
-                          {client?.budget != null ? money(Number(client.budget)) : "—"}
+                          {client?.budget != null ? compactMoney(Number(client.budget)) : "—"}
                         </span>
                       );
                     case "accounts":
@@ -439,17 +449,21 @@ export function DealGroup({
                       return (
                         <span
                           key={col.key}
-                          className={`${cellBorder} flex items-center justify-center bg-white font-sans text-[13px] leading-[20px]`}
+                          className={`${cellBorder} flex items-center justify-center overflow-hidden bg-white px-[6px] font-sans text-[13px] leading-[20px]`}
                           style={w}
                         >
                           {diff == null ? (
                             <span className="text-ink-muted">—</span>
                           ) : (
                             <span
-                              className="rounded-[10px] px-[8px] py-[2px] text-white"
+                              // one line, clipped to the cell: a full figure wraps
+                              // and spills the chip into the row below
+                              className="max-w-full truncate whitespace-nowrap rounded-[10px] px-[8px] py-[2px] text-white"
                               style={{ backgroundColor: diff <= 0 ? "#00c875" : "#e2445c" }}
+                              title={`${diff <= 0 ? "within" : "over"} ${money(Math.abs(Math.round(diff)))}`}
                             >
-                              {diff <= 0 ? "within" : "over"} {money(Math.abs(diff))}
+                              {diff <= 0 ? "within" : "over"}{" "}
+                              {compactMoney(Math.abs(Math.round(diff)))}
                             </span>
                           )}
                         </span>
