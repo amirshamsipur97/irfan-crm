@@ -49,7 +49,7 @@ export interface WorkspaceHomeData {
 const TABS: { label: string; icon: IconName; disabled?: boolean }[] = [
   { label: "Recents", icon: "tabRecents" },
   { label: "Content", icon: "tabContent" },
-  { label: "Collaborators", icon: "tabCollaborators" },
+  { label: "Send message", icon: "tabCollaborators" },
 ];
 
 function StarButton({ active, onToggle }: { active: boolean; onToggle: () => void }) {
@@ -184,7 +184,7 @@ export function WorkspaceHome({ data }: { data: WorkspaceHomeData }) {
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-[8px] pt-[12px]">
-              <span onClick={() => setActiveTab("Collaborators")}>
+              <span onClick={() => setActiveTab("Send message")}>
                 <Button variant="outline">Members</Button>
               </span>
             </div>
@@ -389,7 +389,7 @@ export function WorkspaceHome({ data }: { data: WorkspaceHomeData }) {
           )}
 
           {/* ------- Collaborators ------- */}
-          {activeTab === "Collaborators" && (
+          {activeTab === "Send message" && (
             <div className="flex flex-col pt-[24px]">
               {/* Users */}
               <h2 className="ws-row font-display text-[20px] font-medium leading-[28px] tracking-[-0.1px] text-ink">

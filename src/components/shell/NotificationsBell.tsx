@@ -114,9 +114,10 @@ function rowText(n: CrmNotification) {
   return n.title.charAt(0).toUpperCase() + n.title.slice(1);
 }
 
+// member-to-member messages moved to the TopBar inbox (MessagesInbox) —
+// the bell is notifications only, so nothing ever arrives in two places
 const TABS = [
   { key: "all", label: "All" },
-  { key: "message", label: "Messages" },
   { key: "assigned", label: "Assigned to me" },
 ] as const;
 
@@ -130,12 +131,6 @@ export function NotificationsBell({ profile }: { profile: CrmUser }) {
   const [items, setItems] = useState<CrmNotification[]>([]);
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [composeOpen, setComposeOpen] = useState(false);
-  const [msgTo, setMsgTo] = useState("");
-  const [msgText, setMsgText] = useState("");
-  const [msgBusy, setMsgBusy] = useState(false);
-  const [msgError, setMsgError] = useState<string | null>(null);
-  const [members, setMembers] = useState<CrmUser[]>([]);
   const wrapRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   // lazy state initialiser, not a ref: reading ref.current during render is
@@ -146,6 +141,7 @@ export function NotificationsBell({ profile }: { profile: CrmUser }) {
     const { count } = await supabase
       .from("crm_notifications")
       .select("id", { count: "exact", head: true })
+      .neq("type", "message")
       .is("read_at", null);
     if (typeof count === "number") setUnread(count);
   }, [supabase]);
@@ -155,6 +151,7 @@ export function NotificationsBell({ profile }: { profile: CrmUser }) {
     const { data } = await supabase
       .from("crm_notifications")
       .select("*")
+      .neq("type", "message")
       .order("created_at", { ascending: false })
       .limit(80);
     if (data) {
@@ -176,16 +173,6 @@ export function NotificationsBell({ profile }: { profile: CrmUser }) {
     setOpen(true);
     fetchList();
   };
-
-  useEffect(() => {
-    if (!composeOpen || members.length > 0) return;
-    supabase
-      .from("crm_users")
-      .select("*")
-      .eq("is_active", true)
-      .order("full_name")
-      .then(({ data }) => setMembers((data ?? []) as CrmUser[]));
-  }, [composeOpen, members.length, supabase]);
 
   useEffect(() => {
     if (!open) return;
@@ -213,24 +200,6 @@ export function NotificationsBell({ profile }: { profile: CrmUser }) {
     await supabase.from("crm_notifications").update({ read_at: now }).is("read_at", null);
   }, [supabase]);
 
-  const sendMessage = async () => {
-    setMsgBusy(true);
-    setMsgError(null);
-    const { data, error } = await supabase.rpc("crm_send_message", {
-      p_to: msgTo,
-      p_text: msgText,
-    });
-    setMsgBusy(false);
-    const result = (data ?? {}) as { ok?: boolean; error?: string };
-    if (error || result.error) {
-      setMsgError(error?.message ?? result.error ?? "failed");
-      return;
-    }
-    setComposeOpen(false);
-    setMsgTo("");
-    setMsgText("");
-  };
-
   const q = search.trim().toLowerCase();
   const visible = items.filter(
     (n) =>
@@ -241,8 +210,6 @@ export function NotificationsBell({ profile }: { profile: CrmUser }) {
         (n.body ?? "").toLowerCase().includes(q) ||
         (boardChip(n.link) ?? "").toLowerCase().includes(q))
   );
-
-  const teammates = members.filter((m) => m.id !== profile.id && m.is_active);
 
   let lastDay = "";
 
@@ -272,69 +239,16 @@ export function NotificationsBell({ profile }: { profile: CrmUser }) {
             <p className="font-sans text-[18px] font-semibold leading-[26px] text-ink">
               Notifications
             </p>
-            <div className="flex items-center gap-[4px]">
+            {unread > 0 && (
               <button
                 type="button"
-                onClick={() => setComposeOpen((v) => !v)}
-                className={`rounded-[4px] px-[8px] py-[3px] font-sans text-[13px] transition-colors ${
-                  composeOpen
-                    ? "bg-[var(--active-nav)] text-ink"
-                    : "text-[#00a0a0] hover:bg-[var(--hover-ghost)]"
-                }`}
+                onClick={markAllRead}
+                className="rounded-[4px] px-[8px] py-[3px] font-sans text-[13px] text-[#00a0a0] hover:bg-[var(--hover-ghost)]"
               >
-                New message
+                Mark all as read
               </button>
-              {unread > 0 && (
-                <button
-                  type="button"
-                  onClick={markAllRead}
-                  className="rounded-[4px] px-[8px] py-[3px] font-sans text-[13px] text-[#00a0a0] hover:bg-[var(--hover-ghost)]"
-                >
-                  Mark all as read
-                </button>
-              )}
-            </div>
+            )}
           </div>
-
-          {/* message composer */}
-          {composeOpen && (
-            <div className="mx-[16px] mb-[6px] rounded-[8px] border border-line bg-canvas p-[10px]">
-              <select
-                value={msgTo}
-                onChange={(e) => setMsgTo(e.target.value)}
-                className="h-[32px] w-full rounded-[4px] border border-line-strong bg-white px-[8px] font-sans text-[13px] text-ink outline-none focus:border-teal-deep"
-              >
-                <option value="">Send a message to…</option>
-                {teammates.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.full_name || m.email}
-                  </option>
-                ))}
-              </select>
-              <textarea
-                value={msgText}
-                onChange={(e) => setMsgText(e.target.value)}
-                rows={2}
-                placeholder="Write a message…"
-                className="mt-[6px] w-full resize-none rounded-[4px] border border-line-strong bg-white px-[8px] py-[6px] font-sans text-[13px] leading-[19px] text-ink outline-none focus:border-teal-deep"
-              />
-              <div className="mt-[6px] flex items-center justify-between">
-                {msgError ? (
-                  <p className="m-0 font-sans text-[12px] text-alert">{msgError}</p>
-                ) : (
-                  <span />
-                )}
-                <button
-                  type="button"
-                  disabled={msgBusy || !msgTo || !msgText.trim()}
-                  onClick={sendMessage}
-                  className="h-[30px] rounded-[4px] bg-teal-deep px-[14px] font-sans text-[13px] text-white transition-opacity disabled:opacity-40"
-                >
-                  {msgBusy ? "Sending…" : "Send"}
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* tabs */}
           <div className="flex gap-[16px] border-b border-line-soft px-[16px]">

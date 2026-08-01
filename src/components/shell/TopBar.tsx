@@ -5,6 +5,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { signOut } from "@/app/(auth)/actions";
 import { NotificationsBell } from "./NotificationsBell";
+import { MessagesInbox } from "./MessagesInbox";
 import { LinkSpinner } from "@/components/ui/LinkSpinner";
 import { useRef, useState, useEffect } from "react";
 import type { CrmUser } from "@/lib/types";
@@ -85,26 +86,11 @@ export function TopBar({ profile }: { profile: CrmUser }) {
         </Link>
       </div>
 
-      {/* center: global search */}
-      <div className="pointer-events-none absolute inset-x-0 top-[8px] flex justify-center">
-        <button
-          type="button"
-          className="pointer-events-auto flex h-[32px] w-[400px] items-center rounded-[100px] bg-[rgba(103,104,121,0.1)] p-px transition-colors hover:bg-[rgba(103,104,121,0.16)]"
-        >
-          <span className="flex w-[24px] flex-col items-start pl-[8px]">
-            <Icon name="search" size={16} />
-          </span>
-          <span className="pl-[4px] font-sans text-[14px] leading-[20px] text-ink-muted">
-            Search for anything...
-          </span>
-        </button>
-      </div>
-
       {/* right: tools cluster */}
       <div className="flex items-center">
         <NotificationsBell profile={profile} />
         <span className="w-[4px]" />
-        <TopIconButton label="Inbox" icon={<Icon name="inbox" size={20} />} />
+        <MessagesInbox profile={profile} />
         <span className="w-[4px]" />
         <TopIconButton label="Invite members" icon={<Icon name="invite" size={20} />} />
         <span className="w-[4px]" />

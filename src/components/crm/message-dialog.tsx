@@ -1,6 +1,6 @@
 "use client";
 
-/** Small in-system message dialog — delivers via crm_send_message as a notification. */
+/** Small in-system message dialog — delivers into the member's Messages inbox. */
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -27,9 +27,9 @@ export function MessageDialog({
     setBusy(true);
     setError(null);
     const supabase = createClient();
-    const { data, error: rpcError } = await supabase.rpc("crm_send_message", {
+    const { data, error: rpcError } = await supabase.rpc("crm_send_dm", {
       p_to: toId,
-      p_text: text,
+      p_body: text,
     });
     setBusy(false);
     const result = (data ?? {}) as { ok?: boolean; error?: string };
@@ -72,7 +72,7 @@ export function MessageDialog({
           onChange={(e) => setText(e.target.value)}
           rows={4}
           maxLength={2000}
-          placeholder="Write a message… it arrives in their notifications instantly."
+          placeholder="Write a message… it arrives in their Messages inbox instantly."
           className="mt-[12px] w-full resize-none rounded-[6px] border border-line-strong px-[10px] py-[8px] font-sans text-[13px] leading-[20px] text-ink outline-none placeholder:text-ink-muted focus:border-teal-deep"
         />
         <div className="mt-[10px] flex items-center justify-between">

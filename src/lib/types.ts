@@ -262,6 +262,16 @@ export interface CrmAccount {
   updated_at: string;
 }
 
+/** One direct message between two members — both participants can read it. */
+export interface CrmMessage {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  body: string;
+  created_at: string;
+  read_at: string | null;
+}
+
 /** One part payment toward a deal's downpayment (Part 1, Part 2, ...). */
 export interface CrmDealDownpayment {
   id: string;
