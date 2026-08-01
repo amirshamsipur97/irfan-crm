@@ -2,7 +2,7 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-08-02** (committed through `22c4fe9`, deployed;
+> Updated: **2026-08-02** (committed through `7cbe4ce`, deployed;
 > repo is LOCAL-ONLY, no remote).
 
 ## START HERE — state as of 2026-08-01
@@ -159,6 +159,20 @@ Lead captured  →  Move to contact  →  the contact IS the client's Demand
   crm_custom_columns: Numbers/Text/Priority (offers, 07-21) + Checkbox
   (contacts, 07-26). Only ONE custom column remains anywhere: "Status" on
   Activities — user has not asked about it.
+- **Add-column menu = domain types (commit `7cbe4ce`, migration
+  `crm_custom_column_domain_types`)**: the "+" menu now offers
+  "Client & property" (country / property_type / bedrooms / money /
+  percent — new CustomColumnType values, rendered by CountryCell,
+  OptionCell over the SHARED demand lists, and NumberCell with OMR/%
+  formats) + "Basics" (text / number / date / people). Legacy Monday
+  types (status/dropdown/checkbox/priority) are NOT creatable any more
+  but still render (the Activities "Status" column survives); DB type
+  CHECK widened to all 13 values. E2E'd add-Country-column → pick Iran →
+  jsonb save → column + test value cleaned. ⚠️ 2026-08-02 note: one
+  Vercel edge IP (76.76.21.241) timed out from the dev machine while the
+  other anycast IPs served crm.irfaninvest.com fine — transient edge
+  issue, NOT a DNS/deploy problem; verify with
+  `curl --resolve crm.irfaninvest.com:443:<other-ip>` before touching DNS.
 
 - **Leads** = capture only. Lead · Status · Owner · First name · Last name ·
   Telephone · Email · Lead Source (Meta / Google Ads / Dubizzle / Co-worker /
