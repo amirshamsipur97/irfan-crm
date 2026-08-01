@@ -2,7 +2,7 @@
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-08-01 (late)** (committed through `92b214d`, deployed;
+> Updated: **2026-08-02** (committed through `a9a7737`, deployed;
 > repo is LOCAL-ONLY, no remote).
 
 ## START HERE — state as of 2026-08-01
@@ -73,6 +73,14 @@ Lead captured  →  Move to contact  →  the contact IS the client's Demand
   ContactGroup.hasDoneDeal), and the source LEAD
   (converted_contact_id ∈ doneContactIds, fetched in the leads page).
   Backfilled; verified on the real completed deal across all 3 boards.
+- **Offers first column = the CLIENT (commit `a9a7737`)**: the sticky first
+  column is a Contacts ConnectPicker (find-or-create), not free text — an
+  offer is made TO a person. The separate Client column was removed as a
+  duplicate. Picking (or creating) a client syncs the stored row name to
+  "Offer — <client>"; "+ Add offer" auto-links when the typed text matches
+  an existing contact (case-insensitive). Deal-done badge + drawer-open
+  button still live in that first cell. The offer name is no longer
+  directly editable on the board (drawer/db keep the synced name).
 
 - **Leads** = capture only. Lead · Status · Owner · First name · Last name ·
   Telephone · Email · Lead Source (Meta / Google Ads / Dubizzle / Co-worker /
