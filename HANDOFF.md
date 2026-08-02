@@ -201,6 +201,24 @@ flow: approval confirms the address server-side, so nobody clicks a
 confirmation link at all. It still matters for Google sign-in and
 password-recovery links, which is why item 3 below is still open.
 
+**LEAD TRACKING PER OFFER (2026-08-02, migration `crm_offer_tracking`)** —
+the contact drawer's list is labelled **Offers** now (it always held
+Offers-board rows), and under it each offer keeps its own follow-up trail:
+`crm_offer_tracking` (deal_id, entry_date, note, remind_at,
+reminder_done, file_name/storage_path/mime_type/size_bytes). RLS follows
+the parent offer — read if you can see the offer, write if you could edit
+it. Files go straight from the browser into the private `crm-documents`
+bucket under `tracking/<deal_id>/…` and open via 5-minute signed URLs.
+UI: `components/crm/contacts/tracking-section.tsx` — node-and-line
+timeline, oldest first; node is amber while a reminder is pending, teal
+otherwise; the reminder chip toggles done (strike-through) in place.
+⚠️ PANE-TESTING NOTE: the drawer has TWO `input[type=file]` —
+`[0]` is the Documents uploader, `[1]` is tracking. Driving `[0]` by
+mistake really uploads contact documents (4 stray rows had to be deleted).
+Also React ignores a synthetic `change` on a file input (its value tracker
+sees no change) — call the element's `__reactProps$…onChange({target})`
+directly after setting `.files`.
+
 **LEAD VISIBILITY IS NOW PER-AGENT (2026-08-02, migration
 `crm_leads_owner_visibility`)** — agents see ONLY leads they own or
 created; seeing everyone's leads is Developer/CEO only (`crm_is_admin`).
