@@ -93,6 +93,29 @@ export async function renameAccountGroup(groupId: string, name: string) {
   return {};
 }
 
+/** Delete an EMPTY group (admin tier by RLS) — rows must move out first. */
+export async function deleteAccountGroup(groupId: string) {
+  const supabase = await createClient();
+  const { count: rows } = await supabase
+    .from("crm_accounts")
+    .select("id", { count: "exact", head: true })
+    .eq("group_id", groupId);
+  if (rows)
+    return { error: `This group still holds ${rows} account${rows === 1 ? "" : "s"} — move or delete them first.` };
+  const { count: total } = await supabase
+    .from("crm_account_groups")
+    .select("id", { count: "exact", head: true });
+  if ((total ?? 0) <= 1) return { error: "At least one group must remain." };
+  const { error, count } = await supabase
+    .from("crm_account_groups")
+    .delete({ count: "exact" })
+    .eq("id", groupId);
+  if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
+  revalidatePath(BOARD_PATH);
+  return {};
+}
+
 /** Log a meeting / call / note / email from a accounts row's Activities timeline. */
 export async function logAccountActivity(
   rowId: string,

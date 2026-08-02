@@ -105,6 +105,19 @@ newline, drawer section verified on BOTH boards, test note reverted.
 - E2E on Offers: add group → trash → confirm → deleted (toast), trash on
   Active Deals (8 offers) → refused with toast, no dialog. Build clean.
 
+**Round 7 (2026-08-03) — group delete extended to ALL nine boards**: the
+user asked for it everywhere, so Accounts / Client Projects / Activities /
+Developments / Units / Viewings got the same guarded delete as the funnel
+boards — new actions deleteAccountGroup / deleteProjectGroup /
+deleteActivityGroup / deleteDevelopmentGroup / deleteUnitGroup /
+deleteViewingGroup (empty-only + never-the-last, admin tier; all six
+group tables already had crm_is_admin DELETE RLS), hover trash on every
+group header, shared ConfirmDialog. Applied by a scripted patterned edit
+over 18 files (the boards are byte-uniform); tsc + build clean; verified
+on Accounts: trash renders, dialog correctly refuses to open for the
+24-row Companies group. ⚠️ pane note: synthetic JS clicks were dead on
+this session's pages (hydration) — real computer clicks worked.
+
 **Round 5 (2026-08-03) — quick filters match each board's real columns**:
 - Contacts: Type/Priority/Title dims (columns removed ages ago) replaced
   with Owner / Property type / Size (demand lists w/ colors) / Country /

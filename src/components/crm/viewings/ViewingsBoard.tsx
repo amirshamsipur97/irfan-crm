@@ -16,7 +16,8 @@ import { AiFloaty } from "@/components/shell/AiFloaty";
 import { Icon } from "@/components/ui/Icon";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { applyRowEdit } from "@/components/crm/persist";
-import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { canEditRow, isFullAccess, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { canAnimate } from "@/lib/motion";
 import type { CrmContact, CrmUnit, CrmUser, CrmViewing, CrmViewingGroup } from "@/lib/types";
 import { BoardHeader } from "@/components/crm/leads/BoardHeader";
@@ -31,6 +32,7 @@ import {
   addViewingGroup,
   renameViewingGroup,
   updateViewing,
+  deleteViewingGroup,
 } from "@/app/(app)/crm/viewings/actions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
@@ -60,6 +62,25 @@ export function ViewingsBoard({
   const [localGroups, setLocalGroups] = useServerState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+  const [deleteGroupPrompt, setDeleteGroupPrompt] = useState<(typeof groups)[number] | null>(null);
+
+  // only an EMPTY group may go, and never the last one — the checks repeat
+  // server-side, this just gives an instant, friendly answer
+  const requestDeleteGroup = (group: (typeof groups)[number]) => {
+    const count = localViewings.filter((r) => r.group_id === group.id).length;
+    if (count) {
+      setToast({
+        message: `"${group.name}" still holds ${count} viewing${count === 1 ? "" : "s"} — move or delete them first.`,
+        tone: "alert",
+      });
+      return;
+    }
+    if (localGroups.length <= 1) {
+      setToast({ message: "At least one group must remain.", tone: "alert" });
+      return;
+    }
+    setDeleteGroupPrompt(group);
+  };
   const rowTools = useRowTools({
     boardKey: "viewings",
     rows: localViewings,
@@ -225,6 +246,7 @@ export function ViewingsBoard({
           {localGroups.map((group) => (
             <ViewingGroup
               key={group.id}
+              onDeleteGroup={isFullAccess(profile.role) ? () => requestDeleteGroup(group) : undefined}
               group={group}
               isNew={group.id === newGroupId}
               tools={rowTools}
@@ -287,6 +309,26 @@ export function ViewingsBoard({
           tone={toast.tone}
           onUndo={toast.undo}
           onClose={() => setToast(null)}
+        />
+      )}
+      {deleteGroupPrompt && (
+        <ConfirmDialog
+          title={`Delete “${deleteGroupPrompt.name}”?`}
+          message="The empty group will be removed from this board. This can't be undone."
+          onCancel={() => setDeleteGroupPrompt(null)}
+          onConfirm={async () => {
+            const g = deleteGroupPrompt;
+            setDeleteGroupPrompt(null);
+            const prev = localGroups;
+            setLocalGroups((gs) => gs.filter((x) => x.id !== g.id));
+            const result = await deleteViewingGroup(g.id);
+            if (result.error) {
+              setLocalGroups(prev);
+              setToast({ message: result.error, tone: "alert" });
+            } else {
+              setToast({ message: `Group “${g.name}” deleted` });
+            }
+          }}
         />
       )}
       <AiFloaty />

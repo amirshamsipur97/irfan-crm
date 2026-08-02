@@ -88,6 +88,29 @@ export async function renameDevelopmentGroup(groupId: string, name: string) {
   return {};
 }
 
+/** Delete an EMPTY group (admin tier by RLS) — rows must move out first. */
+export async function deleteDevelopmentGroup(groupId: string) {
+  const supabase = await createClient();
+  const { count: rows } = await supabase
+    .from("crm_developments")
+    .select("id", { count: "exact", head: true })
+    .eq("group_id", groupId);
+  if (rows)
+    return { error: `This group still holds ${rows} development${rows === 1 ? "" : "s"} — move or delete them first.` };
+  const { count: total } = await supabase
+    .from("crm_development_groups")
+    .select("id", { count: "exact", head: true });
+  if ((total ?? 0) <= 1) return { error: "At least one group must remain." };
+  const { error, count } = await supabase
+    .from("crm_development_groups")
+    .delete({ count: "exact" })
+    .eq("id", groupId);
+  if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
+  revalidatePath(BOARD_PATH);
+  return {};
+}
+
 /** find-or-create used by pickers (Units board "Create development"). */
 export async function quickCreateDevelopment(name: string) {
   const supabase = await createClient();

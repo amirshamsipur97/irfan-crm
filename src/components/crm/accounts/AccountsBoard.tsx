@@ -24,11 +24,13 @@ import {
   addAccountGroup,
   renameAccountGroup,
   updateAccount,
+  deleteAccountGroup,
 } from "@/app/(app)/crm/accounts/actions";
 import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { applyRowEdit } from "@/components/crm/persist";
-import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { canEditRow, isFullAccess, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
@@ -75,6 +77,25 @@ export function AccountsBoard({
   );
 
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+  const [deleteGroupPrompt, setDeleteGroupPrompt] = useState<(typeof groups)[number] | null>(null);
+
+  // only an EMPTY group may go, and never the last one — the checks repeat
+  // server-side, this just gives an instant, friendly answer
+  const requestDeleteGroup = (group: (typeof groups)[number]) => {
+    const count = localAccounts.filter((r) => r.group_id === group.id).length;
+    if (count) {
+      setToast({
+        message: `"${group.name}" still holds ${count} account${count === 1 ? "" : "s"} — move or delete them first.`,
+        tone: "alert",
+      });
+      return;
+    }
+    if (localGroups.length <= 1) {
+      setToast({ message: "At least one group must remain.", tone: "alert" });
+      return;
+    }
+    setDeleteGroupPrompt(group);
+  };
 
   const [emailAccount, setEmailAccount] = useState<CrmAccount | null>(null);
   const rowTools = useRowTools({
@@ -207,6 +228,7 @@ export function AccountsBoard({
           {localGroups.map((group) => (
             <AccountGroup
               key={group.id}
+              onDeleteGroup={isFullAccess(profile.role) ? () => requestDeleteGroup(group) : undefined}
               group={group}
               isNew={group.id === newGroupId}
               tools={rowTools}
@@ -268,6 +290,26 @@ export function AccountsBoard({
           target={{ type: "account", id: emailAccount.id, name: emailAccount.name }}
           onClose={() => setEmailAccount(null)}
           onDone={(message, tone) => setToast({ message, tone })}
+        />
+      )}
+      {deleteGroupPrompt && (
+        <ConfirmDialog
+          title={`Delete “${deleteGroupPrompt.name}”?`}
+          message="The empty group will be removed from this board. This can't be undone."
+          onCancel={() => setDeleteGroupPrompt(null)}
+          onConfirm={async () => {
+            const g = deleteGroupPrompt;
+            setDeleteGroupPrompt(null);
+            const prev = localGroups;
+            setLocalGroups((gs) => gs.filter((x) => x.id !== g.id));
+            const result = await deleteAccountGroup(g.id);
+            if (result.error) {
+              setLocalGroups(prev);
+              setToast({ message: result.error, tone: "alert" });
+            } else {
+              setToast({ message: `Group “${g.name}” deleted` });
+            }
+          }}
         />
       )}
       <AiFloaty />

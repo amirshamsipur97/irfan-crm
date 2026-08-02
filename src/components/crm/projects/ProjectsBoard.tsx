@@ -2,7 +2,8 @@
 
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
 import { useServerState } from "@/lib/use-server-state";
-import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { canEditRow, isFullAccess, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { applyRowEdit } from "@/components/crm/persist";
 import {
   addCustomColumn,
@@ -27,6 +28,7 @@ import {
   addProjectGroup,
   renameProjectGroup,
   updateProject,
+  deleteProjectGroup,
 } from "@/app/(app)/crm/projects/actions";
 import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
@@ -54,6 +56,25 @@ export function ProjectsBoard({
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
 
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert" } | null>(null);
+  const [deleteGroupPrompt, setDeleteGroupPrompt] = useState<(typeof groups)[number] | null>(null);
+
+  // only an EMPTY group may go, and never the last one — the checks repeat
+  // server-side, this just gives an instant, friendly answer
+  const requestDeleteGroup = (group: (typeof groups)[number]) => {
+    const count = localProjects.filter((r) => r.group_id === group.id).length;
+    if (count) {
+      setToast({
+        message: `"${group.name}" still holds ${count} project${count === 1 ? "" : "s"} — move or delete them first.`,
+        tone: "alert",
+      });
+      return;
+    }
+    if (localGroups.length <= 1) {
+      setToast({ message: "At least one group must remain.", tone: "alert" });
+      return;
+    }
+    setDeleteGroupPrompt(group);
+  };
   const rowTools = useRowTools({
     boardKey: "projects",
     rows: localProjects,
@@ -202,6 +223,7 @@ export function ProjectsBoard({
           {localGroups.map((group) => (
             <ProjectGroup
               key={group.id}
+              onDeleteGroup={isFullAccess(profile.role) ? () => requestDeleteGroup(group) : undefined}
               group={group}
               isNew={group.id === newGroupId}
               tools={rowTools}
@@ -250,6 +272,26 @@ export function ProjectsBoard({
       </div>
       {toast && (
         <SuccessToast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} />
+      )}
+      {deleteGroupPrompt && (
+        <ConfirmDialog
+          title={`Delete “${deleteGroupPrompt.name}”?`}
+          message="The empty group will be removed from this board. This can't be undone."
+          onCancel={() => setDeleteGroupPrompt(null)}
+          onConfirm={async () => {
+            const g = deleteGroupPrompt;
+            setDeleteGroupPrompt(null);
+            const prev = localGroups;
+            setLocalGroups((gs) => gs.filter((x) => x.id !== g.id));
+            const result = await deleteProjectGroup(g.id);
+            if (result.error) {
+              setLocalGroups(prev);
+              setToast({ message: result.error, tone: "alert" });
+            } else {
+              setToast({ message: `Group “${g.name}” deleted` });
+            }
+          }}
+        />
       )}
       <AiFloaty />
     </Surface>
