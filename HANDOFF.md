@@ -201,6 +201,23 @@ flow: approval confirms the address server-side, so nobody clicks a
 confirmation link at all. It still matters for Google sign-in and
 password-recovery links, which is why item 3 below is still open.
 
+**LEAD VISIBILITY IS NOW PER-AGENT (2026-08-02, migration
+`crm_leads_owner_visibility`)** — agents see ONLY leads they own or
+created; seeing everyone's leads is Developer/CEO only (`crm_is_admin`).
+SELECT on `crm_leads` was team-wide before; the satellite tables
+(`crm_activities`, `crm_lead_stage_history`, lead-linked
+`crm_property_interests`) now test `exists (select 1 from crm_leads
+where id = …)`, which the lead policy itself filters — so no API path
+leaks another agent's timeline. ⚠️ Consequences to know:
+- `crm_leads_update` still allows `crm_can_manage()` (media/manager), but
+  they can no longer SEE others' leads, so that grant is inert. No
+  media/manager accounts exist today. Say the word to widen SELECT to
+  `crm_can_manage()` if a sales manager should see the whole board.
+- **Unassigned leads are invisible to agents** (owner null + created by an
+  admin) — an admin must set the Owner before an agent can work one.
+- Contacts / Offers / Deals are still team-visible; only Leads changed.
+  The same client reappears on Contacts after Move to contact.
+
 **Blocked on the user, not on code:**
 1. ~~`SUPABASE_SERVICE_ROLE_KEY`~~ — NO LONGER NEEDED (2026-08-01 late):
    approval now runs through the `crm_approve_member` security-definer RPC.
