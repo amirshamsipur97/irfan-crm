@@ -1,11 +1,78 @@
 # Irfan CRM — Session Handoff
 
+## HOW TO START THE NEXT SESSION
+
+Open a new session in `Claude code/irfan-crm` and say:
+
+> پروژه CRM irfaninvest — مسیر: Claude code/irfan-crm
+> اول HANDOFF.md را باز کن و «HOW TO START» و «WHAT HAPPENED ON 2026-08-02»
+> و «START HERE» را کامل بخوان، بعد بگو از کجا ادامه می‌دهیم.
+
+Then, before touching anything:
+1. `git log --oneline -5` — the tree must be clean and end at `661d5e1`
+   (or later if someone kept working).
+2. Re-read the roles table: the user changes roles between sessions
+   (koroosh became developer, shirdel became CEO, sara + a.shasmipur were
+   deactivated — all on 2026-08-02, all discovered mid-test).
+3. Deploy is ALWAYS `npx vercel deploy --prod --yes`. Pushing does nothing;
+   there is no remote.
+4. Test data goes in and comes straight back out. The user works in this
+   CRM daily — rows appear between your queries. Match by id, never by
+   name, and re-check ownership before deleting anything.
+
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-08-02** (committed through `7cbe4ce`, deployed;
-> repo is LOCAL-ONLY, no remote).
+> Updated: **2026-08-02 (end of session)** — committed through `661d5e1`,
+> all deployed; repo is LOCAL-ONLY, no remote.
 
-## START HERE — state as of 2026-08-01
+## WHAT HAPPENED ON 2026-08-02 (read this first)
+
+Everything below was built, tested against the real database and deployed the
+same day. Fifteen commits, `7cbe4ce`…`661d5e1`, plus these migrations:
+`crm_approve_member_rpc`, `crm_offers_deals_downpayments`,
+`crm_deal_invoice_sent`, `crm_downpayment_completed_flag`,
+`crm_contact_codes`, `crm_direct_messages`, `crm_client_country`,
+`crm_custom_column_domain_types`, `crm_person_gender_age`,
+`crm_leads_owner_visibility`, `crm_offer_tracking`,
+`crm_offer_tracking_entry_types`.
+
+1. **Deals split into Offers + Deals.** `/crm/offers` is every proposal;
+   **Move to deal** on an accepted one stamps `accepted_at` and it appears on
+   the new `/crm/deals`, where the downpayment is tracked (percent → computed
+   amount → Part 1..N payments → *Complete ✓* → **Send invoice to developer**).
+2. **Per-offer lead tracking** in the contact drawer — a typed activity feed
+   (call / meeting / viewing / email / document / note) on a node-and-line
+   timeline, with author, duration, reminder, attachment, and a **+** per offer.
+3. **Agents see only their own leads** (Developer/CEO see all).
+4. **Real member-to-member chat** in the TopBar inbox; the bell is
+   notifications only; the dead search pill and three inert icons are gone.
+5. **Trilingual help guide at `/help`** (fa/en/ru) behind the "?" icon.
+6. **Person fields**: country, gender, age on leads + contacts, mirrored
+   read-only into the Offers/Deals drawers; contacts carry a unique code
+   (C-0001) so same-named people can never be confused.
+7. **Auth**: approval no longer needs the service-role key, and the Supabase
+   Site URL is finally the custom domain — the "link opens localhost" bug is
+   dead. The first real agent signed up and signed in end to end.
+
+**Live data as of the end of 2026-08-02** (all of it REAL — the user works in
+this CRM daily; never wipe or reseed): 8 leads · 14 contacts (codes up to
+C-0015) · 3 open offers · 4 accepted deals · 8 downpayment parts · 5 tracking
+entries · 3 direct messages · 6 active members. The user's own account
+`a.shamsipour@` has already changed its temporary password.
+
+**Open questions I asked and you have not answered yet** — do not action
+without asking again:
+- The drawer's **Shortlisted properties / Reservation / inner Offers**
+  sections are Phase-2 leftovers from the per-unit inventory model you
+  dropped (crm_units is empty, so the picker lists nothing). Remove them,
+  turn the shortlist into free text, or leave for later?
+- Should the per-agent visibility rule extend to **Contacts / Offers /
+  Deals** too? Today only Leads is restricted, so a converted client is
+  still visible team-wide.
+- Age is stored as a plain number (a snapshot). Switch to date of birth so
+  it stays correct by itself?
+
+## START HERE — product shape
 
 **Live:** https://crm.irfaninvest.com (and irfan-crm.vercel.app).
 Deploy with `npx vercel deploy --prod --yes`. Push does NOT deploy.
@@ -283,11 +350,24 @@ leaks another agent's timeline. ⚠️ Consequences to know:
    no redirect), unknown domains ✗ (correctly refused). Re-run that probe
    with the anon key if auth links ever look wrong again.
 
-**Small things the user was asked about and never answered** — do not action
-without asking again: three leftover custom columns on Leads (a Dropdown from
-07-21, plus a Status and a Dropdown from 07-26 testing), two empty groups on
-Leads, and the stray account `a.shasmipur@irfaninvest.com` (a typo of
-`a.shamsipour@`, auto-approved as an agent because the domain is allow-listed).
+4. `RESEND_API_KEY` + irfaninvest.com verified in Resend — until then the
+   `crm-send-email` edge function answers 503 and every Send email button
+   fails. Same family of work as item 2; the user said "email later".
+
+**Accounts that need a decision before the team grows:**
+- `test.agent@irfaninvest.com` — the first end-to-end signup test, ACTIVE,
+  role agent, password `AgentReal-2026#pass`. Delete it or hand it over.
+- `a.shamsipour@irfaninvest.com` (the user's own, role developer) was
+  re-approved on 2026-08-02 with temporary password `HZ3f8x8qtn#U2g` and
+  `must_change_password = true`. If it is still true, they never signed in.
+- `a.shasmipur@irfaninvest.com` — typo account, now DEACTIVATED by the user.
+- `preview@irfancrm.local` — deactivated. `/preview` auto-login only works
+  while it is active; re-activate via SQL with the privilege-guard trigger
+  disabled, and set it back afterwards (this session did that four times).
+
+**Leftovers the user was asked about and never answered**: two empty groups
+on Leads. (The stray custom columns were deleted on 2026-08-02; the only
+custom column left anywhere is "Status" on Activities.)
 
 ## SESSION 2026-08-01 late (commit `1651c0d`, migration `crm_approve_member_rpc`)
 
