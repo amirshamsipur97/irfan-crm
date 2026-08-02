@@ -188,6 +188,12 @@ export function ContactDrawer({
             <DetailRow label="Lead date">{shortDate(contact.lead_date)}</DetailRow>
           )}
           {contact.notes && <DetailRow label="Lead notes">{contact.notes}</DetailRow>}
+          <DetailRow label="First negotiation">
+            {contact.first_negotiation_at ? shortDate(contact.first_negotiation_at) : "—"}
+          </DetailRow>
+          {contact.first_negotiation_note && (
+            <DetailRow label="Negotiation notes">{contact.first_negotiation_note}</DetailRow>
+          )}
           <DetailRow label="Last interaction">
             {contact.last_interaction_at ? activityTime(contact.last_interaction_at) : "—"}
           </DetailRow>

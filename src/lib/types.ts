@@ -220,6 +220,9 @@ export interface CrmContact {
   budget: number | null;
   preferred_area: string | null;
   requirements: string | null;
+  /** when the first negotiation with the client happened, and what was said */
+  first_negotiation_at: string | null;
+  first_negotiation_note: string | null;
   last_interaction_at: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;

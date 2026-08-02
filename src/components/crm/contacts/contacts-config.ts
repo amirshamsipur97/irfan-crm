@@ -22,8 +22,11 @@ export const CONTACT_COLUMNS: {
   // Preferred area + Requirements were dropped from the board as clutter —
   // both stay editable in the contact drawer's demand section
   { key: "accounts", label: "Accounts", w: 192 },
-  { key: "deals", label: "Deals", w: 181, connected: true },
-  { key: "deals_value", label: "Deals value", w: 132, connected: true },
+  // Deals / Deals value chips were replaced on request — the first
+  // negotiation's date + notes matter more day to day; linked offers stay
+  // visible in the drawer and via the deal-done badge
+  { key: "first_negotiation_at", label: "First negotiation", w: 150 },
+  { key: "first_negotiation_note", label: "Negotiation notes", w: 220 },
   { key: "comments", label: "Comments", w: 220 },
 ];
 

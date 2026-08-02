@@ -25,10 +25,24 @@ Then, before touching anything:
 > Updated: **2026-08-02 (end of session)** — committed through `661d5e1`,
 > all deployed; repo is LOCAL-ONLY, no remote.
 
-## WHAT HAPPENED LATER ON 2026-08-02 (second session — drawer swap)
+## WHAT HAPPENED LATER ON 2026-08-02 (second session — drawer swap + first-negotiation columns)
 
-One user request, one change set: the row drawers moved one step down the
-funnel, deployed the same day.
+**First negotiation replaces Deals chips on Contacts (migration
+`crm_contact_first_negotiation`)**: the user asked for "date + text of the
+first negotiation" in place of the Deals / Deals value columns. New
+`crm_contacts.first_negotiation_at` (date) + `first_negotiation_note` (text),
+editable on the board (TimeCell calendar + TextCell, same patterns as
+Lead date / Comments), added to PATCHABLE, shown read-only in the contact
+drawer's Details. The Deals/Deals value chip columns, DealsChipCell usage
+and the per-row linked-deal math were removed from ContactGroup (the
+deal-done badge and the drawer's Offers list still show linked offers).
+E2E'd through the UI on C-0013: date → DB (2026-08-02, no TZ shift),
+note → DB, both test values reverted to null. ⚠️ synthetic Enter from the
+browser driver doesn't commit TextCell — commit fires on blur; that's a
+test-driver artifact, not an app bug.
+
+Earlier the same session — one user request, one change set: the row
+drawers moved one step down the funnel, deployed the same day.
 - **Offers board rows now open the CLIENT drawer** — the same ContactDrawer
   the Contacts board uses (details, demand, documents, offers list, per-offer
   tracking feed). The client is resolved by `contact_id` with a

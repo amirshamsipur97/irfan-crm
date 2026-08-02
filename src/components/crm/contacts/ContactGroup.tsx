@@ -11,12 +11,15 @@ import {
   OwnerCell,
 } from "@/components/crm/leads/cells";
 import { compactMoney, money } from "@/components/crm/deals/deals-config";
+import { shortDate } from "@/components/crm/leads/board-config";
+import { TimeCell } from "@/components/crm/activities/activity-cells";
+import { toLocalDateString } from "@/components/crm/activities/activities-config";
 import {
   CONNECTED_UNDERLINE,
   CONTACT_COLUMNS,
   CONTACT_NAME_COL_W,
 } from "./contacts-config";
-import { DealsChipCell, OptionCell, TextCell } from "./contact-cells";
+import { OptionCell, TextCell } from "./contact-cells";
 import { BEDROOM_OPTIONS, PROPERTY_TYPES } from "./demand-config";
 import { NumberCell } from "@/components/crm/deals/deal-cells";
 import { EmailCell, PhoneCell } from "@/components/crm/leads/lead-cells";
@@ -117,14 +120,6 @@ export function ContactGroup({
     }
   });
 
-  const dealsForContact = (contact: CrmContact) =>
-    deals.filter(
-      (d) =>
-        d.contact_name &&
-        contact.name &&
-        d.contact_name.trim().toLowerCase() === contact.name.trim().toLowerCase()
-    );
-
   // FK match first, name-cache match as fallback — same rule the drawer uses
   const hasDoneDeal = (contact: CrmContact) =>
     deals.some(
@@ -222,8 +217,6 @@ export function ContactGroup({
 
           {/* rows */}
           {contacts.map((contact) => {
-            const linkedDeals = dealsForContact(contact);
-            const dealsValue = linkedDeals.reduce((s, d) => s + (Number(d.deal_value) || 0), 0);
             return (
               <div
                 key={contact.id}
@@ -319,20 +312,34 @@ export function ContactGroup({
                           />
                         </span>
                       );
-                    case "deals":
+                    case "first_negotiation_at":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
-                          <DealsChipCell dealNames={linkedDeals.map((d) => d.name)} />
+                          <TimeCell
+                            value={contact.first_negotiation_at}
+                            label="First negotiation"
+                            format={shortDate}
+                            // slicing the ISO string would shift the date a day
+                            // in +04, so go through the local-date helper
+                            onChange={(iso) =>
+                              onPatchContact(contact.id, {
+                                first_negotiation_at: toLocalDateString(iso),
+                              })
+                            }
+                          />
                         </span>
                       );
-                    case "deals_value":
+                    case "first_negotiation_note":
                       return (
-                        <span
-                          key={col.key}
-                          className={`${cellBorder} flex items-center justify-center bg-white font-sans text-[14px] leading-[20px] text-ink`}
-                          style={w}
-                        >
-                          {linkedDeals.length > 0 ? money(dealsValue) : ""}
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <TextCell
+                            value={contact.first_negotiation_note}
+                            onSave={(next) =>
+                              onPatchContact(contact.id, {
+                                first_negotiation_note: next || null,
+                              })
+                            }
+                          />
                         </span>
                       );
                     case "phone":

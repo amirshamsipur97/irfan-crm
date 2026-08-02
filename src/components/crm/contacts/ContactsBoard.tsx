@@ -200,6 +200,8 @@ export function ContactsBoard({
         budget: null,
         preferred_area: null,
         requirements: null,
+        first_negotiation_at: null,
+        first_negotiation_note: null,
         custom: {},
         group_id: groupId,
         last_interaction_at: null,

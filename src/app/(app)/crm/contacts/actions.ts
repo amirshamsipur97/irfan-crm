@@ -36,6 +36,9 @@ const PATCHABLE = new Set([
   "budget",
   "preferred_area",
   "requirements",
+  // first negotiation with the client, editable straight from the board
+  "first_negotiation_at",
+  "first_negotiation_note",
 ]);
 
 export async function addContact(groupId: string, name: string) {
