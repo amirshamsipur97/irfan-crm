@@ -8,6 +8,7 @@ import { money } from "@/components/crm/deals/deals-config";
 import { shortDate, sourceLabel } from "@/components/crm/leads/board-config";
 import { canEditRow } from "@/lib/permissions";
 import { DemandSection } from "./demand-section";
+import { TrackingSection } from "./tracking-section";
 import { activityTime } from "@/components/crm/activities/activities-config";
 import type { CrmActivityItem, CrmContact, CrmDeal, CrmPropertyInterest, CrmUser } from "@/lib/types";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
@@ -189,9 +190,9 @@ export function ContactDrawer({
             <p className="pt-[24px] font-sans text-[14px] text-ink-muted">Loading…</p>
           ) : (
             <>
-              {/* deals */}
+              {/* offers (rows of the Offers board — a deal is an ACCEPTED offer) */}
               <SectionTitle>
-                Deals
+                Offers
                 {deals.length > 0 && (
                   <span className="pl-[6px] font-sans text-[12px] font-normal text-ink-muted">
                     {deals.length} · {money(dealsValue, deals[0]?.currency ?? "OMR")}
@@ -199,7 +200,7 @@ export function ContactDrawer({
                 )}
               </SectionTitle>
               {deals.length === 0 && (
-                <p className="m-0 font-sans text-[13px] text-ink-muted">No deals linked yet.</p>
+                <p className="m-0 font-sans text-[13px] text-ink-muted">No offers linked yet.</p>
               )}
               {deals.map((d) => (
                 <div
@@ -259,6 +260,9 @@ export function ContactDrawer({
                   </span>
                 </div>
               ))}
+
+              {/* per-offer follow-up trails */}
+              <TrackingSection offers={deals} onToast={onToast} />
             </>
           )}
         </div>

@@ -266,6 +266,23 @@ export interface CrmAccount {
   updated_at: string;
 }
 
+/** One follow-up entry on an offer's tracking trail (date + note + reminder + file). */
+export interface CrmOfferTracking {
+  id: string;
+  deal_id: string;
+  entry_date: string;
+  note: string;
+  remind_at: string | null;
+  reminder_done: boolean;
+  file_name: string | null;
+  storage_path: string | null;
+  mime_type: string | null;
+  size_bytes: number | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 /** One direct message between two members — both participants can read it. */
 export interface CrmMessage {
   id: string;
