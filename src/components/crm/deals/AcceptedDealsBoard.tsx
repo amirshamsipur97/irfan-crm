@@ -28,6 +28,7 @@ import {
 } from "@/components/crm/contacts/demand-config";
 import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmDealStage, CrmUser } from "@/lib/types";
 import { countryFlag } from "@/components/crm/country-cell";
+import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 
 const ROW_H = 36;
 const STRIPE = "#00a0a0";
@@ -263,14 +264,51 @@ export function AcceptedDealsBoard({
     }
   };
 
+  // one client lookup for cells AND filter dims — FK first, name-cache fallback
+  const clientOf = (deal: CrmDeal): CrmContact | undefined =>
+    contacts.find((c) => c.id === deal.contact_id) ??
+    contacts.find(
+      (c) =>
+        !!deal.contact_name &&
+        c.name.trim().toLowerCase() === deal.contact_name.trim().toLowerCase()
+    );
+
+  const qf = useQuickFilters();
+  // dims follow this board's columns: who owns it, whose deal it is, which
+  // developer, and how far the downpayment/invoice has come
+  const filterDims: QuickFilterDim<CrmDeal>[] = [
+    { key: "owner", label: "Owner", get: (r) => r.owner_id, format: (v) => userById.get(String(v))?.full_name ?? "—" },
+    { key: "client", label: "Client", get: (r) => clientOf(r)?.name ?? r.contact_name },
+    { key: "country", label: "Country", get: (r) => clientOf(r)?.country ?? null },
+    { key: "developer", label: "Developer", get: (r) => r.account_name },
+    {
+      key: "downpayment",
+      label: "Downpayment",
+      get: (r) => (r.downpayment_completed_at ? "complete" : downpaymentOf(r) != null ? "pending" : null),
+      format: (v) => (v === "complete" ? "Complete" : "In progress"),
+      color: (v) => (v === "complete" ? "#00c875" : "#fdab3d"),
+    },
+    {
+      key: "invoice",
+      label: "Invoice",
+      get: (r) => (r.invoice_sent_at ? "sent" : r.downpayment_completed_at ? "to_send" : null),
+      format: (v) => (v === "sent" ? "Invoice sent" : "To send"),
+      color: (v) => (v === "sent" ? "#00c875" : "#fdab3d"),
+    },
+  ];
+
   const q = search.trim().toLowerCase();
-  const visible = localDeals.filter(
-    (d) =>
-      (!q ||
-        d.name.toLowerCase().includes(q) ||
-        (d.contact_name ?? "").toLowerCase().includes(q) ||
-        (d.account_name ?? "").toLowerCase().includes(q)) &&
-      (!personFilter || d.owner_id === personFilter)
+  const visible = applyQuickFilters(
+    localDeals.filter(
+      (d) =>
+        (!q ||
+          d.name.toLowerCase().includes(q) ||
+          (d.contact_name ?? "").toLowerCase().includes(q) ||
+          (d.account_name ?? "").toLowerCase().includes(q)) &&
+        (!personFilter || d.owner_id === personFilter)
+    ),
+    filterDims,
+    qf.state
   );
 
   const cellBorder = "border-b border-r border-line";
@@ -280,6 +318,7 @@ export function AcceptedDealsBoard({
       <div ref={rootRef} className="flex h-full flex-col">
         <div className="board-anim">
           <BoardHeader
+            quickFilters={{ dims: filterDims, rows: localDeals, state: qf.state, onToggle: qf.toggle, onClear: qf.clear, visible: visible.length, noun: "deals" }}
             profile={profile}
             title="Deals"
             tabs={["Main table"]}
@@ -347,13 +386,7 @@ export function AcceptedDealsBoard({
               {/* rows */}
               {visible.map((deal) => {
                 const owner = deal.owner_id ? userById.get(deal.owner_id) : undefined;
-                const client =
-                  contacts.find((c) => c.id === deal.contact_id) ??
-                  contacts.find(
-                    (c) =>
-                      !!deal.contact_name &&
-                      c.name.trim().toLowerCase() === deal.contact_name.trim().toLowerCase()
-                  );
+                const client = clientOf(deal);
                 const parts = localPayments.filter((p) => p.deal_id === deal.id);
                 const paid = parts.reduce((s, p) => s + Number(p.amount), 0);
                 const target = downpaymentOf(deal);

@@ -37,6 +37,12 @@ import {
 } from "@/app/(app)/crm/custom-columns-actions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
+import {
+  BEDROOM_OPTIONS,
+  PROPERTY_TYPES,
+  bedroomLabel,
+  propertyTypeLabel,
+} from "@/components/crm/contacts/demand-config";
 
 const VIEWS = ["Main table", "Sales report", "Pipeline"];
 
@@ -249,12 +255,19 @@ export function DealsBoard({
   );
   const qf = useQuickFilters();
 
+  // dims speak the Offers board's language: client + developer + what is
+  // being offered, not generic Contact/Account
   const filterDims: QuickFilterDim<CrmDeal>[] = [
     { key: "group", label: "Group", get: (r) => r.group_id, format: (v) => localGroups.find((g) => g.id === v)?.name ?? "—", color: (v) => localGroups.find((g) => g.id === v)?.color },
     { key: "stage", label: "Stage", get: (r) => r.stage_id, format: (v) => stages.find((s) => s.id === v)?.name ?? "—", color: (v) => stages.find((s) => s.id === v)?.color },
     { key: "owner", label: "Owner", get: (r) => r.owner_id, format: (v) => users.find((u) => u.id === v)?.full_name ?? "—" },
-    { key: "contact", label: "Contact", get: (r) => r.contact_name },
-    { key: "account", label: "Account", get: (r) => r.account_name },
+    { key: "client", label: "Client", get: (r) => r.contact_name },
+    { key: "country", label: "Country", get: (r) => resolveClient(r)?.country ?? null },
+    { key: "developer", label: "Developer", get: (r) => r.account_name },
+    { key: "offer_type", label: "Offer type", get: (r) => r.offer_property_type, format: (v) => propertyTypeLabel(String(v ?? "")), color: (v) => PROPERTY_TYPES.find((p) => p.key === v)?.color },
+    { key: "offer_size", label: "Offer size", get: (r) => r.offer_bedrooms, format: (v) => bedroomLabel(String(v ?? "")), color: (v) => BEDROOM_OPTIONS.find((b) => b.key === v)?.color },
+    // Blank = still an open offer
+    { key: "accepted", label: "Moved to deal", get: (r) => (r.accepted_at ? "yes" : null), format: () => "Moved ✓", color: () => "#00c875" },
   ];
   const sortedRows = applyQuickFilters([...visibleDeals].sort(byPosition), filterDims, qf.state);
 

@@ -88,6 +88,21 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
+**Round 5 (2026-08-03) — quick filters match each board's real columns**:
+- Contacts: Type/Priority/Title dims (columns removed ages ago) replaced
+  with Owner / Property type / Size (demand lists w/ colors) / Country /
+  Gender / Developer account; Group kept.
+- Leads: added a "Moved to contact" dim (converted_contact_id; Blank =
+  still open).
+- Offers: Contact/Account renamed Client/Developer + new dims Country
+  (via resolveClient), Offer type, Offer size, "Moved to deal"
+  (accepted_at; Blank = open offer).
+- Deals board got quick filters for the FIRST time: Owner / Client /
+  Country / Developer / Downpayment (Complete·In progress, from
+  downpayment_completed_at + downpaymentOf) / Invoice (Sent·To send).
+  `clientOf()` hoisted and reused by cells + dims. Verified in the
+  browser on all boards; Downpayment=Complete correctly showed 2 of 4.
+
 Earlier the same session — one user request, one change set: the row
 drawers moved one step down the funnel, deployed the same day.
 - **Offers board rows now open the CLIENT drawer** — the same ContactDrawer

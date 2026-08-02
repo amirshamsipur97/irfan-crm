@@ -36,6 +36,12 @@ import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
 import { GENDER_OPTIONS, genderLabel } from "@/lib/person-fields";
+import {
+  BEDROOM_OPTIONS,
+  PROPERTY_TYPES,
+  bedroomLabel,
+  propertyTypeLabel,
+} from "./demand-config";
 
 export function ContactsBoard({
   profile,
@@ -119,14 +125,16 @@ export function ContactsBoard({
   });
   const qf = useQuickFilters();
 
+  // dims mirror what actually sits on the board: the client's demand +
+  // identity (Type/Priority/Title columns were removed long ago)
   const filterDims: QuickFilterDim<CrmContact>[] = [
     { key: "group", label: "Group", get: (r) => r.group_id, format: (v) => localGroups.find((g) => g.id === v)?.name ?? "—", color: (v) => localGroups.find((g) => g.id === v)?.color },
-    { key: "type", label: "Type", get: (r) => r.contact_type },
-    { key: "priority", label: "Priority", get: (r) => r.priority },
-    { key: "account", label: "Account", get: (r) => r.account_name },
-    { key: "title", label: "Title", get: (r) => r.title },
+    { key: "owner", label: "Owner", get: (r) => r.owner_id, format: (v) => users.find((u) => u.id === v)?.full_name ?? "—" },
+    { key: "property_type", label: "Property type", get: (r) => r.property_type, format: (v) => propertyTypeLabel(String(v ?? "")), color: (v) => PROPERTY_TYPES.find((p) => p.key === v)?.color },
+    { key: "bedrooms", label: "Size", get: (r) => r.bedrooms, format: (v) => bedroomLabel(String(v ?? "")), color: (v) => BEDROOM_OPTIONS.find((b) => b.key === v)?.color },
     { key: "country", label: "Country", get: (r) => r.country },
     { key: "gender", label: "Gender", get: (r) => r.gender, format: (v) => genderLabel(String(v ?? "")), color: (v) => GENDER_OPTIONS.find((g) => g.key === v)?.color },
+    { key: "account", label: "Developer account", get: (r) => r.account_name },
   ];
   const sortedRows = applyQuickFilters([...localContacts].sort(byPosition), filterDims, qf.state);
   const [accountOptions, setAccountOptions] = useState<PickerOption[]>(
