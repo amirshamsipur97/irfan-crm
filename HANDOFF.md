@@ -152,6 +152,17 @@ Lead captured  →  Move to contact  →  the contact IS the client's Demand
   (`client_country`) and the Deals board; `crm_convert_lead` copies it
   (fill-the-gap on match, straight copy on create); country quick-filter
   dim on Leads + Contacts. E2E: pick India on a lead → DB, Clear → null.
+- **Gender + age (2026-08-02, migration `crm_person_gender_age`)**:
+  `gender` ('male'|'female' check) and `age` (int, 16..120) on BOTH
+  crm_leads and crm_contacts, editable next to Country on both boards
+  (OptionCell over `GENDER_OPTIONS` in the new `src/lib/person-fields.ts`
+  — one list per concept, with `genderLabel` / `ageLabel` helpers), shown
+  in the Details block of BOTH drawers alongside Country, carried across
+  by `crm_convert_lead`, and a Gender quick-filter dim on both boards.
+  Age is a snapshot the agent was told, NOT a birthday — it does not age
+  itself; switch to date_of_birth if that ever matters. E2E'd through the
+  UI (Male + 42 → DB) and through a converted test lead (female/29/India
+  reached the new contact); every test value reverted afterwards.
 - **Board declutter (commit `22c4fe9`)**: Contacts board dropped the
   built-in Preferred area + Requirements columns (user request — both
   still editable in the contact drawer's demand section; DB columns and
