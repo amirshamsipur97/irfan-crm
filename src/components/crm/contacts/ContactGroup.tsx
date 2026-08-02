@@ -23,6 +23,7 @@ import { EmailCell, PhoneCell } from "@/components/crm/leads/lead-cells";
 import { ConnectPicker, type PickerOption } from "@/components/crm/deals/connect-picker";
 import { DealDoneBadge } from "@/components/crm/deal-done-badge";
 import { CountryCell } from "@/components/crm/country-cell";
+import { GENDER_OPTIONS } from "@/lib/person-fields";
 import type { CrmUser } from "@/lib/types";
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
 import { CUSTOM_COL_W } from "@/lib/custom-columns";
@@ -352,6 +353,26 @@ export function ContactGroup({
                           <CountryCell
                             value={contact.country}
                             onSave={(next) => onPatchContact(contact.id, { country: next })}
+                          />
+                        </span>
+                      );
+                    case "gender":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block`} style={w}>
+                          <OptionCell
+                            value={contact.gender}
+                            options={GENDER_OPTIONS}
+                            onSelect={(next) => onPatchContact(contact.id, { gender: next })}
+                          />
+                        </span>
+                      );
+                    case "age":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <NumberCell
+                            value={contact.age}
+                            format={(v) => (v == null ? "" : String(v))}
+                            onSave={(next) => onPatchContact(contact.id, { age: next })}
                           />
                         </span>
                       );

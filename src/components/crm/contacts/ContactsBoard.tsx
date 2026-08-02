@@ -35,6 +35,7 @@ import {
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
+import { GENDER_OPTIONS, genderLabel } from "@/lib/person-fields";
 
 export function ContactsBoard({
   profile,
@@ -125,6 +126,7 @@ export function ContactsBoard({
     { key: "account", label: "Account", get: (r) => r.account_name },
     { key: "title", label: "Title", get: (r) => r.title },
     { key: "country", label: "Country", get: (r) => r.country },
+    { key: "gender", label: "Gender", get: (r) => r.gender, format: (v) => genderLabel(String(v ?? "")), color: (v) => GENDER_OPTIONS.find((g) => g.key === v)?.color },
   ];
   const sortedRows = applyQuickFilters([...localContacts].sort(byPosition), filterDims, qf.state);
   const [accountOptions, setAccountOptions] = useState<PickerOption[]>(
@@ -179,6 +181,8 @@ export function ContactsBoard({
         phone: null,
         country_code: null,
         country: null,
+        gender: null,
+        age: null,
         title: null,
         contact_type: null,
         priority: null,

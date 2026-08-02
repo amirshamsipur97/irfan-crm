@@ -12,6 +12,8 @@ export const CONTACT_COLUMNS: {
   { key: "phone", label: "Phone", w: 170 },
   // nationality, picked separately — the dial code can't stand in for it
   { key: "country", label: "Country", w: 150 },
+  { key: "gender", label: "Gender", w: 120 },
+  { key: "age", label: "Age", w: 90 },
   // the client's demand, readable straight from the board instead of only in
   // the side panel — Title / Type / Priority were dropped as unusable noise
   { key: "property_type", label: "Property type", w: 150 },

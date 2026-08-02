@@ -39,6 +39,8 @@ import { CenterEditCell, EmailCell, MoveToContactsCell, PhoneCell } from "./lead
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 import { DealDoneBadge } from "@/components/crm/deal-done-badge";
 import { CountryCell } from "@/components/crm/country-cell";
+import { NumberCell } from "@/components/crm/deals/deal-cells";
+import { GENDER_OPTIONS } from "@/lib/person-fields";
 
 const ROW_H = 36;
 
@@ -424,6 +426,26 @@ export function LeadGroup({
                           <CountryCell
                             value={lead.country}
                             onSave={(next) => onPatchLead(lead.id, { country: next })}
+                          />
+                        </span>
+                      );
+                    case "gender":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block`} style={w}>
+                          <OptionCell
+                            value={lead.gender}
+                            options={GENDER_OPTIONS}
+                            onSelect={(next) => onPatchLead(lead.id, { gender: next })}
+                          />
+                        </span>
+                      );
+                    case "age":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <NumberCell
+                            value={lead.age}
+                            format={(v) => (v == null ? "" : String(v))}
+                            onSave={(next) => onPatchLead(lead.id, { age: next })}
                           />
                         </span>
                       );

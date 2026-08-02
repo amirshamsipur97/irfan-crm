@@ -40,6 +40,7 @@ import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
+import { GENDER_OPTIONS, genderLabel } from "@/lib/person-fields";
 
 export function LeadsBoard({
   profile,
@@ -169,6 +170,8 @@ export function LeadsBoard({
         phone: null,
         country_code: null,
         country: null,
+        gender: null,
+        age: null,
         email: null,
         company: null,
         title: null,
@@ -243,6 +246,7 @@ export function LeadsBoard({
       color: (v) => sourceColor(String(v ?? "")),
     },
     { key: "country", label: "Country", get: (r) => r.country },
+    { key: "gender", label: "Gender", get: (r) => r.gender, format: (v) => genderLabel(String(v ?? "")), color: (v) => GENDER_OPTIONS.find((g) => g.key === v)?.color },
   ];
   const sortedRows = applyQuickFilters([...visibleLeads].sort(byPosition), filterDims, qf.state);
 

@@ -9,6 +9,8 @@ import { shortDate, sourceLabel } from "@/components/crm/leads/board-config";
 import { canEditRow } from "@/lib/permissions";
 import { DemandSection } from "./demand-section";
 import { TrackingSection } from "./tracking-section";
+import { countryFlag } from "@/components/crm/country-cell";
+import { ageLabel, genderLabel } from "@/lib/person-fields";
 import { activityTime } from "@/components/crm/activities/activities-config";
 import type { CrmActivityItem, CrmContact, CrmDeal, CrmPropertyInterest, CrmUser } from "@/lib/types";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
@@ -159,6 +161,17 @@ export function ContactDrawer({
               "—"
             )}
           </DetailRow>
+          <DetailRow label="Country">
+            {contact.country ? (
+              <>
+                <span aria-hidden>{countryFlag(contact.country)}</span> {contact.country}
+              </>
+            ) : (
+              "—"
+            )}
+          </DetailRow>
+          <DetailRow label="Gender">{genderLabel(contact.gender)}</DetailRow>
+          <DetailRow label="Age">{ageLabel(contact.age)}</DetailRow>
           <DetailRow label="Account">{contact.account_name ?? "—"}</DetailRow>
           <DetailRow label="Title">{contact.title ?? "—"}</DetailRow>
           <DetailRow label="Comments">{contact.comments ?? "—"}</DetailRow>

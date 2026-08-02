@@ -5,6 +5,8 @@ import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { canAnimate } from "@/lib/motion";
 import { money } from "@/components/crm/deals/deals-config";
+import { countryFlag } from "@/components/crm/country-cell";
+import { ageLabel, genderLabel } from "@/lib/person-fields";
 import { shortDate } from "./board-config";
 import { activityTime } from "@/components/crm/activities/activities-config";
 import type {
@@ -193,6 +195,17 @@ export function LeadDrawer({
               "—"
             )}
           </DetailRow>
+          <DetailRow label="Country">
+            {lead.country ? (
+              <>
+                <span aria-hidden>{countryFlag(lead.country)}</span> {lead.country}
+              </>
+            ) : (
+              "—"
+            )}
+          </DetailRow>
+          <DetailRow label="Gender">{genderLabel(lead.gender)}</DetailRow>
+          <DetailRow label="Age">{ageLabel(lead.age)}</DetailRow>
           <DetailRow label="Company">{lead.company ?? "—"}</DetailRow>
           <DetailRow label="Title">{lead.title ?? "—"}</DetailRow>
           <DetailRow label="Budget">{lead.budget != null ? money(lead.budget, lead.currency) : "—"}</DetailRow>

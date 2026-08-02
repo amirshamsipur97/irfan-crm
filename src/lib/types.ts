@@ -81,6 +81,9 @@ export interface CrmLead {
   country_code: string | null;
   /** the client's country/nationality — independent of the phone dial code */
   country: string | null;
+  /** who the client is, as captured on the call */
+  gender: string | null;
+  age: number | null;
   email: string | null;
   company: string | null;
   title: string | null;
@@ -189,6 +192,9 @@ export interface CrmContact {
   code: string | null;
   /** the client's country/nationality — independent of the phone dial code */
   country: string | null;
+  /** who the client is, as captured on the call */
+  gender: string | null;
+  age: number | null;
   name: string;
   email: string | null;
   email_label: string | null;

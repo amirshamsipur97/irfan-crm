@@ -183,6 +183,8 @@ const LEAD_PATCHABLE = new Set([
   "phone",
   "country_code",
   "country",
+  "gender",
+  "age",
   "company",
   "title",
   "source",

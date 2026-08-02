@@ -15,6 +15,8 @@ const PATCHABLE = new Set([
   "phone",
   "country_code",
   "country",
+  "gender",
+  "age",
   "title",
   "contact_type",
   "priority",
