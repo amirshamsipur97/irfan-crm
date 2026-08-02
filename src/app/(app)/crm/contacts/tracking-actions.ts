@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
-import type { CrmOfferTracking, OfferTrackingType } from "@/lib/types";
+import type { CrmOfferFloorPlan, CrmOfferTracking, OfferTrackingType } from "@/lib/types";
 
 const ENTRY_TYPES: OfferTrackingType[] = [
   "note",
@@ -111,4 +111,54 @@ export async function trackingFileUrl(storagePath: string) {
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(storagePath, 60 * 5);
   if (error) return { error: error.message };
   return { url: data.signedUrl };
+}
+
+/**
+ * Register a floor plan sent to the client for an offer. The browser has
+ * already put the file in the private bucket (same flow as tracking
+ * attachments), so only the metadata travels through here.
+ */
+export async function registerFloorPlan(input: {
+  dealId: string;
+  name: string;
+  storagePath: string;
+  mimeType: string | null;
+  sizeBytes: number | null;
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "not authenticated" };
+
+  const { data, error } = await supabase
+    .from("crm_offer_floor_plans")
+    .insert({
+      deal_id: input.dealId,
+      file_name: input.name,
+      storage_path: input.storagePath,
+      mime_type: input.mimeType,
+      size_bytes: input.sizeBytes,
+      created_by: user.id,
+    })
+    .select("*")
+    .single<CrmOfferFloorPlan>();
+  if (error) return { error: error.message };
+
+  revalidatePath(BOARD_PATH);
+  return { plan: data };
+}
+
+export async function deleteFloorPlan(planId: string, storagePath: string) {
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("crm_offer_floor_plans")
+    .delete({ count: "exact" })
+    .eq("id", planId);
+  if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
+
+  await supabase.storage.from(BUCKET).remove([storagePath]);
+  revalidatePath(BOARD_PATH);
+  return {};
 }

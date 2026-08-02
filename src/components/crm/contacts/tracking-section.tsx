@@ -261,9 +261,12 @@ function EntryCard({
 export function TrackingSection({
   offers,
   onToast,
+  onChanged,
 }: {
   offers: CrmDeal[];
   onToast?: (message: string, tone?: "success" | "alert") => void;
+  /** fired after an entry is added/removed, so the drawer's feed refreshes */
+  onChanged?: () => void;
 }) {
   const [entries, setEntries] = useState<CrmOfferTracking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -364,6 +367,7 @@ export function TrackingSection({
     resetForm();
     setOpenFor(null);
     onToast?.(`${typeMeta(type).label} logged`);
+    onChanged?.();
   };
 
   const remove = async (entry: CrmOfferTracking) => {
@@ -373,7 +377,9 @@ export function TrackingSection({
     if (result.error) {
       setEntries(prev);
       onToast?.(result.error, "alert");
+      return;
     }
+    onChanged?.();
   };
 
   const toggleReminder = async (entry: CrmOfferTracking) => {

@@ -298,6 +298,18 @@ export interface CrmOfferTracking {
   author?: { full_name: string | null; avatar_url: string | null } | null;
 }
 
+/** A floor-plan file sent to the client for a specific offer. */
+export interface CrmOfferFloorPlan {
+  id: string;
+  deal_id: string;
+  file_name: string;
+  storage_path: string;
+  mime_type: string | null;
+  size_bytes: number | null;
+  created_by: string | null;
+  created_at: string;
+}
+
 /** One direct message between two members — both participants can read it. */
 export interface CrmMessage {
   id: string;

@@ -12,9 +12,19 @@ import { TrackingSection } from "./tracking-section";
 import { countryFlag } from "@/components/crm/country-cell";
 import { ageLabel, genderLabel } from "@/lib/person-fields";
 import { activityTime } from "@/components/crm/activities/activities-config";
-import type { CrmActivityItem, CrmContact, CrmDeal, CrmPropertyInterest, CrmUser } from "@/lib/types";
+import type { CrmContact, CrmDeal, CrmOfferFloorPlan, CrmPropertyInterest, CrmUser } from "@/lib/types";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
-import { getContactRelations } from "@/app/(app)/crm/contacts/drawer-actions";
+import {
+  getContactRelations,
+  type ContactFeedItem,
+} from "@/app/(app)/crm/contacts/drawer-actions";
+import {
+  deleteFloorPlan,
+  registerFloorPlan,
+  trackingFileUrl,
+} from "@/app/(app)/crm/contacts/tracking-actions";
+import { MAX_DOC_BYTES, humanSize } from "./demand-config";
+import { createClient } from "@/lib/supabase/client";
 
 type DrawerDeal = CrmDeal & { stage_name: string | null; stage_color: string | null };
 
@@ -67,18 +77,83 @@ export function ContactDrawer({
   const panelRef = useRef<HTMLDivElement>(null);
   const [deals, setDeals] = useState<DrawerDeal[]>([]);
   const [interests, setInterests] = useState<CrmPropertyInterest[]>([]);
-  const [activities, setActivities] = useState<CrmActivityItem[]>([]);
+  const [activities, setActivities] = useState<ContactFeedItem[]>([]);
+  const [floorPlans, setFloorPlans] = useState<CrmOfferFloorPlan[]>([]);
+  const [planUploading, setPlanUploading] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // silent after the first load, so a doc upload or follow-up refreshes the
+  // activity feed without blanking the whole lower half of the drawer
+  const load = async () => {
+    const data = await getContactRelations(contact.id);
+    setDeals(data.deals as DrawerDeal[]);
+    setInterests(data.interests);
+    setActivities(data.activities);
+    setFloorPlans(data.floorPlans);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    (async () => {
-      const data = await getContactRelations(contact.id);
-      setDeals(data.deals as DrawerDeal[]);
-      setInterests(data.interests);
-      setActivities(data.activities);
-      setLoading(false);
-    })();
+    setLoading(true);
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contact.id]);
+
+  const uploadPlan = async (deal: DrawerDeal, file: File) => {
+    if (file.size > MAX_DOC_BYTES) {
+      onToast?.(`"${file.name}" is larger than 25 MB`, "alert");
+      return;
+    }
+    setPlanUploading(deal.id);
+    // straight to the private bucket, like tracking attachments
+    const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `floorplans/${deal.id}/${crypto.randomUUID()}-${safe}`;
+    const supabase = createClient();
+    const { error: uploadError } = await supabase.storage
+      .from("crm-documents")
+      .upload(path, file, { contentType: file.type || undefined });
+    if (uploadError) {
+      setPlanUploading(null);
+      onToast?.(uploadError.message, "alert");
+      return;
+    }
+    const result = await registerFloorPlan({
+      dealId: deal.id,
+      name: file.name,
+      storagePath: path,
+      mimeType: file.type || null,
+      sizeBytes: file.size,
+    });
+    setPlanUploading(null);
+    if (result.error || !result.plan) {
+      onToast?.(result.error ?? "could not save the floor plan", "alert");
+      return;
+    }
+    setFloorPlans((prev) => [...prev, result.plan as CrmOfferFloorPlan]);
+    onToast?.(`"${file.name}" attached as a floor plan`);
+    load();
+  };
+
+  const openPlan = async (plan: CrmOfferFloorPlan) => {
+    const result = await trackingFileUrl(plan.storage_path);
+    if (result.error || !result.url) {
+      onToast?.(result.error ?? "could not open the floor plan", "alert");
+      return;
+    }
+    window.open(result.url, "_blank", "noopener,noreferrer");
+  };
+
+  const removePlan = async (plan: CrmOfferFloorPlan) => {
+    const prev = floorPlans;
+    setFloorPlans((p) => p.filter((x) => x.id !== plan.id));
+    const result = await deleteFloorPlan(plan.id, plan.storage_path);
+    if (result.error) {
+      setFloorPlans(prev);
+      onToast?.(result.error, "alert");
+      return;
+    }
+    load();
+  };
 
   useGSAP(
     () => {
@@ -210,6 +285,7 @@ export function ContactDrawer({
             contact={contact}
             canEdit={canEditRow(profile, contact)}
             onToast={onToast}
+            onChanged={load}
           />
 
           {loading ? (
@@ -228,23 +304,84 @@ export function ContactDrawer({
               {deals.length === 0 && (
                 <p className="m-0 font-sans text-[13px] text-ink-muted">No offers linked yet.</p>
               )}
-              {deals.map((d) => (
-                <div
-                  key={d.id}
-                  className="mt-[6px] flex items-center justify-between rounded-[6px] border border-line px-[12px] py-[8px]"
-                >
-                  <div className="min-w-0">
-                    <p className="m-0 truncate font-sans text-[14px] leading-[20px] text-ink">{d.name}</p>
-                    <p className="m-0 font-sans text-[12px] leading-[16px] text-ink-muted">
-                      {money(d.deal_value, d.currency)}
-                      {d.expected_close_date ? ` · closes ${shortDate(d.expected_close_date)}` : ""}
-                    </p>
+              {deals.map((d) => {
+                const plans = floorPlans.filter((p) => p.deal_id === d.id);
+                const editable = canEditRow(profile, d);
+                return (
+                  <div
+                    key={d.id}
+                    className="mt-[6px] rounded-[6px] border border-line px-[12px] py-[8px]"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0">
+                        <p className="m-0 truncate font-sans text-[14px] leading-[20px] text-ink">{d.name}</p>
+                        <p className="m-0 font-sans text-[12px] leading-[16px] text-ink-muted">
+                          {money(d.deal_value, d.currency)}
+                          {d.expected_close_date ? ` · closes ${shortDate(d.expected_close_date)}` : ""}
+                        </p>
+                      </div>
+                      {d.stage_name && (
+                        <Pill label={d.stage_name} color={d.stage_color ?? "#676879"} />
+                      )}
+                    </div>
+
+                    {/* floor plans sent to the client for THIS offer */}
+                    <div className="mt-[8px] border-t border-line-soft pt-[6px]">
+                      <div className="flex items-center justify-between">
+                        <span className="font-sans text-[11px] font-medium uppercase tracking-[0.3px] text-ink-muted">
+                          Floor plans sent
+                        </span>
+                        {editable && (
+                          <label className="cursor-pointer rounded-[4px] border border-dashed border-line-strong px-[8px] py-[1px] font-sans text-[11px] text-ink transition-colors hover:bg-[var(--hover-ghost)]">
+                            {planUploading === d.id ? "Uploading…" : "+ Upload"}
+                            <input
+                              type="file"
+                              className="hidden"
+                              disabled={planUploading === d.id}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                e.target.value = "";
+                                if (file) uploadPlan(d, file);
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
+                      {plans.length === 0 ? (
+                        <p className="m-0 pt-[3px] font-sans text-[12px] text-ink-muted">
+                          None yet — attach the plans that were sent to the client.
+                        </p>
+                      ) : (
+                        plans.map((p) => (
+                          <div key={p.id} className="flex items-center gap-[8px] pt-[4px]">
+                            <button
+                              type="button"
+                              onClick={() => openPlan(p)}
+                              className="min-w-0 flex-1 truncate text-left font-sans text-[12.5px] text-[#0073ea] hover:underline"
+                              title={p.file_name}
+                            >
+                              {p.file_name}
+                            </button>
+                            <span className="shrink-0 font-sans text-[11px] text-ink-muted">
+                              {humanSize(p.size_bytes)}
+                            </span>
+                            {editable && (
+                              <button
+                                type="button"
+                                aria-label={`Remove ${p.file_name}`}
+                                onClick={() => removePlan(p)}
+                                className="shrink-0 rounded-[4px] px-[4px] font-sans text-[12px] text-alert transition-colors hover:bg-[#ffe9ec]"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
-                  {d.stage_name && (
-                    <Pill label={d.stage_name} color={d.stage_color ?? "#676879"} />
-                  )}
-                </div>
-              ))}
+                );
+              })}
 
               {/* shortlisted properties */}
               <SectionTitle>Shortlisted properties</SectionTitle>
@@ -288,7 +425,7 @@ export function ContactDrawer({
               ))}
 
               {/* per-offer follow-up trails */}
-              <TrackingSection offers={deals} onToast={onToast} />
+              <TrackingSection offers={deals} onToast={onToast} onChanged={load} />
             </>
           )}
         </div>

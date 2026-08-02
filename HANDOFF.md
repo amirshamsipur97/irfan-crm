@@ -51,6 +51,28 @@ since Offers rows open the same ContactDrawer, the note shows on both the
 Contacts and Offers boards. E2E'd on C-0013: dialog → Save → DB kept the
 newline, drawer section verified on BOTH boards, test note reverted.
 
+**Round 3 the same session — documents tag, floor plans, real activity feed**:
+- **Documents**: the type now rides as a chip BEFORE the file name
+  ("Passport · logo 2.png") in the drawer's Documents list.
+- **Floor plans per offer (migration `crm_offer_floor_plans`)**: each offer
+  card in the contact drawer has a "Floor plans sent" area — upload straight
+  to the private bucket under `floorplans/<deal_id>/`, metadata in the new
+  table (RLS mirrors crm_offer_tracking), open via the same 5-min signed
+  URLs, ✕ deletes row + storage object. Upload/delete visible to the
+  offer's owner/creator or manage tier (canEditRow client-side, RLS server-side).
+- **Latest activity is REAL now**: `getContactRelations` synthesizes the
+  feed from actual events — offer created / moved to deal / downpayment
+  completed / invoice sent, tracking entries (with note preview), document
+  uploads, floor plans — merged with crm_activity_items, sorted desc,
+  top 15 (`ContactFeedItem` type). The drawer exposes `load()` and
+  DemandSection / TrackingSection / floor-plan actions call `onChanged`,
+  so the feed refreshes right after any of them.
+- E2E'd on aman afarsh (C-0014): tag chip renders, floor-plan upload via
+  the React-file-input technique → bucket + row + feed entry, UI ✕ delete
+  → row AND storage object gone. Test data cleaned; build + tsc clean.
+- Shortlisted properties was explained to the user (it needs crm_units
+  rows to be usable; still part of open question 1).
+
 Earlier the same session — one user request, one change set: the row
 drawers moved one step down the funnel, deployed the same day.
 - **Offers board rows now open the CLIENT drawer** — the same ContactDrawer

@@ -45,11 +45,14 @@ export function DemandSection({
   canEdit,
   currency = "OMR",
   onToast,
+  onChanged,
 }: {
   contact: CrmContact;
   canEdit: boolean;
   currency?: string;
   onToast?: (message: string, tone?: "success" | "alert") => void;
+  /** fired after a document is added/removed, so the drawer's feed refreshes */
+  onChanged?: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -133,6 +136,7 @@ export function DemandSection({
     }
     setDocs((prev) => [result.document as CrmContactDocument, ...prev]);
     onToast?.(`"${file.name}" uploaded`);
+    onChanged?.();
   };
 
   const open = async (doc: CrmContactDocument) => {
@@ -151,7 +155,9 @@ export function DemandSection({
     if (result.error) {
       setDocs(prev);
       onToast?.(result.error, "alert");
+      return;
     }
+    onChanged?.();
   };
 
   const typeChip = PROPERTY_TYPES.find((p) => p.key === contact.property_type);
@@ -367,6 +373,12 @@ export function DemandSection({
                 <path d="M9 1.5H4a1 1 0 00-1 1v11a1 1 0 001 1h8a1 1 0 001-1V5.5L9 1.5z" />
                 <path d="M9 1.5v4h4" />
               </svg>
+              {/* the type rides as a tag on the name: "Passport: scan.png" */}
+              {doc.doc_type && (
+                <span className="shrink-0 rounded-[4px] bg-cyan-soft px-[6px] py-[1px] font-sans text-[11px] leading-[16px] text-ink">
+                  {DOC_TYPES.find((d) => d.key === doc.doc_type)?.label ?? doc.doc_type}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => open(doc)}
@@ -375,11 +387,6 @@ export function DemandSection({
               >
                 {doc.name}
               </button>
-              {doc.doc_type && (
-                <span className="shrink-0 font-sans text-[11px] text-ink-muted">
-                  {DOC_TYPES.find((d) => d.key === doc.doc_type)?.label ?? doc.doc_type}
-                </span>
-              )}
               <span className="shrink-0 font-sans text-[11px] text-ink-muted">
                 {humanSize(doc.size_bytes)}
               </span>
