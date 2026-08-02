@@ -14,16 +14,19 @@ Then, before touching anything:
 2. Re-read the roles table: the user changes roles between sessions
    (koroosh became developer, shirdel became CEO, sara + a.shasmipur were
    deactivated — all on 2026-08-02, all discovered mid-test).
-3. Deploy is ALWAYS `npx vercel deploy --prod --yes`. Pushing does nothing;
-   there is no remote.
+3. Deploy is ALWAYS `npx vercel deploy --prod --yes`. Since 2026-08-02 the
+   repo has a remote — https://github.com/amirshamsipur97/irfan-crm
+   (PRIVATE; HANDOFF holds credentials, do NOT make it public without
+   scrubbing history) — but pushing is BACKUP ONLY, it does not deploy.
+   Push after every commit to keep GitHub current.
 4. Test data goes in and comes straight back out. The user works in this
    CRM daily — rows appear between your queries. Match by id, never by
    name, and re-check ownership before deleting anything.
 
 > Read this + the auto-memory `irfan-crm` entry first. This file is the single
 > source of truth for continuing the build in a new session.
-> Updated: **2026-08-02 (end of session)** — committed through `661d5e1`,
-> all deployed; repo is LOCAL-ONLY, no remote.
+> Updated: **2026-08-02 (second session)** — pushed to the private GitHub
+> remote; vercel CLI remains the only deploy path.
 
 ## WHAT HAPPENED LATER ON 2026-08-02 (second session — drawer swap + first-negotiation columns)
 
