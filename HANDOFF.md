@@ -41,6 +41,16 @@ note → DB, both test values reverted to null. ⚠️ synthetic Enter from the
 browser driver doesn't commit TextCell — commit fires on blur; that's a
 test-driver artifact, not an app bug.
 
+**Follow-up the same session**: the note now edits in its OWN DIALOG, not
+the one-line inline input — `NoteDialogCell` in `contact-cells.tsx`
+(centered modal, textarea, Cancel/Save, portalled to <body> because of the
+sticky-group stacking trap), title "First negotiation — <client>". The
+drawer shows the FULL note untruncated in a "First negotiation notes"
+section right under Details (a DetailRow would clip it to one line) — and
+since Offers rows open the same ContactDrawer, the note shows on both the
+Contacts and Offers boards. E2E'd on C-0013: dialog → Save → DB kept the
+newline, drawer section verified on BOTH boards, test note reverted.
+
 Earlier the same session — one user request, one change set: the row
 drawers moved one step down the funnel, deployed the same day.
 - **Offers board rows now open the CLIENT drawer** — the same ContactDrawer

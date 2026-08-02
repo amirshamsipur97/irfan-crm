@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { CELL_BUTTON, CELL_INPUT } from "@/components/crm/cell-style";
 import { Popover } from "@/components/crm/leads/cells";
 
@@ -161,6 +162,94 @@ export function TextCell({
     >
       {value ?? ""}
     </button>
+  );
+}
+
+/**
+ * Note cell that edits in its own dialog — the negotiation note is a
+ * paragraph, not a tag, so a one-line inline input would hide most of it.
+ * Portalled to <body>: rendered inline, the fixed overlay would be painted
+ * over by lower groups' sticky titles (same stacking-context trap the
+ * ConnectPicker fell into).
+ */
+export function NoteDialogCell({
+  value,
+  title,
+  placeholder,
+  onSave,
+}: {
+  value: string | null;
+  title: string;
+  placeholder?: string;
+  onSave: (next: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  const commit = () => {
+    setOpen(false);
+    const next = draft.trim() || null;
+    if (next !== (value ?? null)) onSave(next);
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          setDraft(value ?? "");
+          setOpen(true);
+        }}
+        className={CELL_BUTTON}
+        title={value ?? "Add note"}
+      >
+        {value ?? ""}
+      </button>
+      {open &&
+        createPortal(
+          <div className="fixed inset-0 z-[96] flex items-center justify-center">
+            <button
+              type="button"
+              aria-label="Close note dialog"
+              onClick={() => setOpen(false)}
+              className="absolute inset-0 cursor-default bg-black/30"
+            />
+            <div className="relative w-[520px] rounded-[8px] bg-white p-[24px] shadow-[0px_15px_50px_rgba(0,0,0,0.3)]">
+              <h3 className="m-0 pb-[12px] font-display text-[18px] font-medium leading-[24px] text-ink">
+                {title}
+              </h3>
+              <textarea
+                autoFocus
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setOpen(false);
+                }}
+                rows={8}
+                placeholder={placeholder}
+                className="w-full resize-y rounded-[4px] border border-line-strong p-[10px] font-sans text-[14px] leading-[20px] text-ink outline-none focus:border-teal-deep"
+              />
+              <div className="mt-[14px] flex justify-end gap-[8px]">
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="h-[32px] rounded-[4px] px-[12px] font-sans text-[14px] text-ink transition-colors hover:bg-[var(--hover-ghost)]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={commit}
+                  className="h-[32px] rounded-[4px] bg-teal-deep px-[14px] font-sans text-[14px] text-white transition-opacity hover:opacity-90"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+    </>
   );
 }
 

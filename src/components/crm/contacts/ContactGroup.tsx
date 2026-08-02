@@ -19,7 +19,7 @@ import {
   CONTACT_COLUMNS,
   CONTACT_NAME_COL_W,
 } from "./contacts-config";
-import { OptionCell, TextCell } from "./contact-cells";
+import { NoteDialogCell, OptionCell, TextCell } from "./contact-cells";
 import { BEDROOM_OPTIONS, PROPERTY_TYPES } from "./demand-config";
 import { NumberCell } from "@/components/crm/deals/deal-cells";
 import { EmailCell, PhoneCell } from "@/components/crm/leads/lead-cells";
@@ -332,11 +332,13 @@ export function ContactGroup({
                     case "first_negotiation_note":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
-                          <TextCell
+                          <NoteDialogCell
                             value={contact.first_negotiation_note}
+                            title={`First negotiation — ${contact.name}`}
+                            placeholder="What was discussed in the first negotiation…"
                             onSave={(next) =>
                               onPatchContact(contact.id, {
-                                first_negotiation_note: next || null,
+                                first_negotiation_note: next,
                               })
                             }
                           />
