@@ -25,6 +25,33 @@ Then, before touching anything:
 > Updated: **2026-08-02 (end of session)** — committed through `661d5e1`,
 > all deployed; repo is LOCAL-ONLY, no remote.
 
+## WHAT HAPPENED LATER ON 2026-08-02 (second session — drawer swap)
+
+One user request, one change set: the row drawers moved one step down the
+funnel, deployed the same day.
+- **Offers board rows now open the CLIENT drawer** — the same ContactDrawer
+  the Contacts board uses (details, demand, documents, offers list, per-offer
+  tracking feed). The client is resolved by `contact_id` with a
+  case-insensitive `contact_name` fallback; a row with no linked client shows
+  an alert toast ("Link a client to this offer first…") instead of opening.
+  See `resolveClient` / `openClientDrawer` in `DealsBoard.tsx`.
+- **The transaction drawer (`DealDrawer`: client block, shortlist, inner
+  offers, reservation, viewings, financials) is Deals-board-only now.** The
+  deals page fetches `crm_units` and passes it through (was hardcoded `[]`),
+  so its pickers behave exactly as they did on Offers.
+- `offers/page.tsx` no longer fetches `crm_units`; `DealsBoard` lost its
+  `units` prop.
+- The Contacts board still opens the same contact drawer — the user asked to
+  "move" it to Offers; it was ADDED there and kept on Contacts. Say the word
+  to remove it from Contacts if they meant a literal move.
+- This partially answers open question 1 below: the Phase-2 sections were
+  NOT removed — they simply live only on the Deals drawer now.
+- Verified in the browser through /preview on a dev server (the preview
+  account was re-activated for the test and DEACTIVATED again right after).
+  tsc + build clean. ⚠️ A stale `next dev` from 08-01 was still serving old
+  code on :3070 and Next 16 refuses a second dev server per folder — it was
+  killed first; check for leftovers before starting a server.
+
 ## WHAT HAPPENED ON 2026-08-02 (read this first)
 
 Everything below was built, tested against the real database and deployed the
@@ -66,6 +93,8 @@ without asking again:
   sections are Phase-2 leftovers from the per-unit inventory model you
   dropped (crm_units is empty, so the picker lists nothing). Remove them,
   turn the shortlist into free text, or leave for later?
+  *(Partially answered in the second 08-02 session: they stay, but only on
+  the Deals drawer — see the drawer-swap section above.)*
 - Should the per-agent visibility rule extend to **Contacts / Offers /
   Deals** too? Today only Leads is restricted, so a converted client is
   still visible team-wide.

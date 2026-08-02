@@ -8,7 +8,7 @@ import { Surface } from "@/components/shell/AppChrome";
 import { AiFloaty } from "@/components/shell/AiFloaty";
 import { Icon } from "@/components/ui/Icon";
 import { canAnimate } from "@/lib/motion";
-import type { CrmAccount, CrmContact, CrmDeal, CrmDealGroup, CrmDealStage, CrmUnit, CrmUser } from "@/lib/types";
+import type { CrmAccount, CrmContact, CrmDeal, CrmDealGroup, CrmDealStage, CrmUser } from "@/lib/types";
 import { BoardHeader } from "@/components/crm/leads/BoardHeader";
 import { GROUP_COLORS } from "@/components/crm/leads/board-config";
 import { SuccessToast } from "@/components/ui/SuccessToast";
@@ -26,7 +26,7 @@ import {
 import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import type { PickerOption } from "./connect-picker";
 import { LostReasonDialog } from "./lost-reason-dialog";
-import { DealDrawer } from "./deal-drawer";
+import { ContactDrawer } from "@/components/crm/contacts/contact-drawer";
 import { applyRowEdit } from "@/components/crm/persist";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
@@ -48,7 +48,6 @@ export function DealsBoard({
   users,
   accounts,
   contacts,
-  units = [],
   customColumns = [],
 }: {
   profile: CrmUser;
@@ -58,7 +57,6 @@ export function DealsBoard({
   users: CrmUser[];
   accounts: CrmAccount[];
   contacts: CrmContact[];
-  units?: CrmUnit[];
   customColumns?: CrmCustomColumn[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -83,6 +81,27 @@ export function DealsBoard({
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
   const [lostPrompt, setLostPrompt] = useState<{ dealId: string; stageId: string } | null>(null);
   const [openDealId, setOpenDealId] = useState<string | null>(null);
+  // an offer row opens the CLIENT's file (the contact drawer); the
+  // transaction-side drawer lives on the Deals board
+  const resolveClient = (deal: CrmDeal): CrmContact | undefined =>
+    contacts.find((c) => c.id === deal.contact_id) ??
+    contacts.find(
+      (c) =>
+        !!deal.contact_name &&
+        c.name.trim().toLowerCase() === deal.contact_name.trim().toLowerCase()
+    );
+  const openClientDrawer = (dealId: string) => {
+    const deal = localDeals.find((d) => d.id === dealId);
+    if (!deal) return;
+    if (!resolveClient(deal)) {
+      setToast({
+        message: "Link a client to this offer first — opening it shows the client's file.",
+        tone: "alert",
+      });
+      return;
+    }
+    setOpenDealId(dealId);
+  };
   const rowTools = useRowTools({
     boardKey: "offers",
     rows: localDeals,
@@ -90,7 +109,7 @@ export function DealsBoard({
     groups: localGroups.map((g) => ({ id: g.id, name: g.name })),
     profile,
     onToast: (message, tone) => setToast({ message, tone }),
-    onOpen: setOpenDealId,
+    onOpen: openClientDrawer,
   });
   const [localColumns, setLocalColumns] = useServerState(customColumns);
   useEffect(
@@ -349,7 +368,7 @@ export function DealsBoard({
                 accountOptions={accountOptions}
                 onCreateAccount={(dealId, name) => createAndLink("account", dealId, name)}
                 onCreateContact={(dealId, name) => createAndLink("contact", dealId, name)}
-                onOpenDeal={setOpenDealId}
+                onOpenDeal={openClientDrawer}
                 onMoveToDeal={handleMoveToDeal}
                 customColumns={localColumns}
                 profile={profile}
@@ -412,13 +431,12 @@ export function DealsBoard({
       {openDealId && (() => {
         const openDeal = localDeals.find((d) => d.id === openDealId);
         if (!openDeal) return null;
+        const client = resolveClient(openDeal);
+        if (!client) return null;
         return (
-          <DealDrawer
-            deal={openDeal}
+          <ContactDrawer
+            contact={client}
             profile={profile}
-            stages={stages}
-            users={users}
-            units={units}
             onClose={() => setOpenDealId(null)}
             onToast={(message, tone) => setToast({ message, tone })}
           />
