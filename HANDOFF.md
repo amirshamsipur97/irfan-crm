@@ -163,6 +163,16 @@ Lead captured  →  Move to contact  →  the contact IS the client's Demand
   itself; switch to date_of_birth if that ever matters. E2E'd through the
   UI (Male + 42 → DB) and through a converted test lead (female/29/India
   reached the new contact); every test value reverted afterwards.
+- **Client block in the Offers + Deals drawers (commit `1fa7501`)**: both
+  drawers open with a read-only **Client** section (name + C-code,
+  country w/ flag, gender, age, phone, email). The data rides along in
+  the existing `getDealRelations` round trip — it now selects
+  `contact:contact_id(...)` and returns `client` (`DrawerClient` type
+  exported from `offers/drawer-actions.ts`). No new board columns, by
+  request. ⚠️ The Deals board had NO drawer before; its rows gained the
+  same row-open button and reuse the shared `DealDrawer` (the deals page
+  now also fetches `crm_deal_stages` for the header pill; `units` is
+  passed empty since inventory is not tracked).
 - **Board declutter (commit `22c4fe9`)**: Contacts board dropped the
   built-in Preferred area + Requirements columns (user request — both
   still editable in the contact drawer's demand section; DB columns and
