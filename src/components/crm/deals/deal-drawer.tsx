@@ -12,22 +12,15 @@ import type {
   CrmDeal,
   CrmDealStage,
   CrmOffer,
-  CrmPropertyInterest,
-  CrmReservation,
-  CrmUnit,
   CrmUser,
   CrmViewing,
 } from "@/lib/types";
 import { DealFinancials } from "./deal-financials";
 import { canViewFinance } from "@/lib/permissions";
 import {
-  addDealInterest,
   addDealOffer,
   addDealViewing,
-  cancelDealReservation,
-  createDealReservation,
   getDealRelations,
-  setInterestStatus,
   setOfferStatus,
   type DrawerClient,
 } from "@/app/(app)/crm/offers/drawer-actions";
@@ -42,20 +35,6 @@ const OFFER_COLORS: Record<string, string> = {
   rejected: "#e2445c",
   withdrawn: "#676879",
   expired: "#bb3354",
-};
-
-const RESERVATION_COLORS: Record<string, string> = {
-  pending: "#fdab3d",
-  active: "#784bd1",
-  converted: "#0086c0",
-  expired: "#bb3354",
-  cancelled: "#676879",
-};
-
-const INTEREST_STATUS_LABEL: Record<string, string> = {
-  active: "Active",
-  shortlisted: "Shortlisted",
-  rejected: "Rejected",
 };
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -95,7 +74,6 @@ export function DealDrawer({
   profile,
   stages,
   users,
-  units,
   onClose,
   onToast,
 }: {
@@ -103,34 +81,23 @@ export function DealDrawer({
   profile: CrmUser;
   stages: CrmDealStage[];
   users: CrmUser[];
-  units: CrmUnit[];
   onClose: () => void;
   onToast: (message: string, tone?: "success" | "alert") => void;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const [interests, setInterests] = useState<CrmPropertyInterest[]>([]);
   const [offers, setOffers] = useState<CrmOffer[]>([]);
-  const [reservations, setReservations] = useState<CrmReservation[]>([]);
   const [viewings, setViewings] = useState<CrmViewing[]>([]);
   const [activities, setActivities] = useState<CrmActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [client, setClient] = useState<DrawerClient | null>(null);
-  const [interestPick, setInterestPick] = useState("");
   const [offerAmount, setOfferAmount] = useState("");
-  const [reserveUnit, setReserveUnit] = useState("");
-  const [reserveAmount, setReserveAmount] = useState("");
-  const [cancelReason, setCancelReason] = useState("");
-  const [cancelling, setCancelling] = useState<string | null>(null);
 
   const stage = stages.find((s) => s.id === deal.stage_id);
   const owner = users.find((u) => u.id === deal.owner_id);
-  const activeReservation = reservations.find((r) => r.status === "pending" || r.status === "active");
 
   const reload = async () => {
     const data = await getDealRelations(deal.id);
-    setInterests(data.interests);
     setOffers(data.offers);
-    setReservations(data.reservations);
     setViewings(data.viewings);
     setActivities(data.activities);
     setClient(data.client);
@@ -149,11 +116,6 @@ export function DealDrawer({
     },
     { scope: panelRef }
   );
-
-  const shortlistableUnits = units.filter(
-    (u) => !interests.some((i) => i.unit_id === u.id && i.status !== "rejected")
-  );
-  const reservableUnits = units.filter((u) => u.status === "available" || u.status === "held");
 
   return (
     <div className="fixed inset-0 z-[90]">
@@ -244,76 +206,6 @@ export function DealDrawer({
             <p className="pt-[24px] font-sans text-[14px] text-ink-muted">Loading…</p>
           ) : (
             <>
-              {/* shortlisted properties */}
-              <SectionTitle>Shortlisted properties</SectionTitle>
-              {interests.length === 0 && (
-                <p className="m-0 font-sans text-[13px] text-ink-muted">No properties shortlisted yet.</p>
-              )}
-              {interests.map((i) => (
-                <div
-                  key={i.id}
-                  className="mt-[6px] flex items-center justify-between rounded-[6px] border border-line px-[12px] py-[8px]"
-                >
-                  <div className="min-w-0">
-                    <p className="m-0 truncate font-sans text-[14px] leading-[20px] text-ink">
-                      {i.unit_name ?? "Unit"}
-                    </p>
-                    <p className="m-0 truncate font-sans text-[12px] leading-[16px] text-ink-muted">
-                      {i.development_name ?? ""}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-[6px]">
-                    <Pill
-                      label={INTEREST_STATUS_LABEL[i.status] ?? i.status}
-                      color={i.status === "rejected" ? "#e2445c" : i.status === "shortlisted" ? "#579bfc" : "#00c875"}
-                    />
-                    {i.status !== "rejected" && (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          setInterests((prev) =>
-                            prev.map((x) => (x.id === i.id ? { ...x, status: "rejected" } : x))
-                          );
-                          await setInterestStatus(i.id, "rejected");
-                        }}
-                        className="rounded-[4px] px-[6px] py-[2px] font-sans text-[12px] text-ink-muted transition-colors hover:bg-[var(--hover-ghost)]"
-                      >
-                        Reject
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-              <div className="mt-[8px] flex gap-[6px]">
-                <select
-                  value={interestPick}
-                  onChange={(e) => setInterestPick(e.target.value)}
-                  className="h-[32px] min-w-0 flex-1 rounded-[4px] border border-line-strong px-[8px] font-sans text-[13px] text-ink outline-none focus:border-teal-deep"
-                >
-                  <option value="">Select a unit to shortlist…</option>
-                  {shortlistableUnits.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
-                      {u.development_name ? ` — ${u.development_name}` : ""} ({u.status})
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  disabled={!interestPick}
-                  onClick={async () => {
-                    const result = await addDealInterest(deal.id, interestPick);
-                    if (result.error) onToast(result.error, "alert");
-                    else onToast("Property shortlisted");
-                    setInterestPick("");
-                    reload();
-                  }}
-                  className="h-[32px] shrink-0 rounded-[4px] bg-teal-deep px-[12px] font-sans text-[13px] text-white transition-opacity disabled:opacity-40"
-                >
-                  Add
-                </button>
-              </div>
-
               {/* offers */}
               <SectionTitle>Offers</SectionTitle>
               {offers.length === 0 && (
@@ -374,11 +266,8 @@ export function DealDrawer({
                   type="button"
                   disabled={!offerAmount || Number(offerAmount) <= 0}
                   onClick={async () => {
-                    const result = await addDealOffer(
-                      deal.id,
-                      Number(offerAmount),
-                      activeReservation?.unit_id ?? interests.find((i) => i.status !== "rejected")?.unit_id ?? null
-                    );
+                    // inventory is not tracked per unit, so offers carry no unit link
+                    const result = await addDealOffer(deal.id, Number(offerAmount), null);
                     if (result.error) onToast(result.error, "alert");
                     else onToast("Offer submitted");
                     setOfferAmount("");
@@ -389,103 +278,6 @@ export function DealDrawer({
                   Submit
                 </button>
               </div>
-
-              {/* reservation */}
-              <SectionTitle>Reservation</SectionTitle>
-              {activeReservation ? (
-                <div className="rounded-[6px] border border-line px-[12px] py-[10px]">
-                  <div className="flex items-center justify-between">
-                    <p className="m-0 font-sans text-[14px] leading-[20px] text-ink">
-                      {activeReservation.unit_name ?? "Unit"} · {money(activeReservation.amount, activeReservation.currency)}
-                    </p>
-                    <Pill
-                      label={activeReservation.status}
-                      color={RESERVATION_COLORS[activeReservation.status] ?? "#676879"}
-                    />
-                  </div>
-                  <p className="m-0 mt-[2px] font-sans text-[12px] leading-[16px] text-ink-muted">
-                    reserved {shortDate(activeReservation.reserved_at)}
-                  </p>
-                  {cancelling === activeReservation.id ? (
-                    <div className="mt-[8px] flex gap-[6px]">
-                      <input
-                        autoFocus
-                        value={cancelReason}
-                        onChange={(e) => setCancelReason(e.target.value)}
-                        placeholder="Cancellation reason (required)"
-                        className="h-[30px] min-w-0 flex-1 rounded-[4px] border border-line-strong px-[8px] font-sans text-[13px] text-ink outline-none focus:border-teal-deep"
-                      />
-                      <button
-                        type="button"
-                        disabled={!cancelReason.trim()}
-                        onClick={async () => {
-                          const result = await cancelDealReservation(activeReservation.id, cancelReason);
-                          if (result.error) onToast(result.error, "alert");
-                          else onToast("Reservation cancelled — unit released");
-                          setCancelling(null);
-                          setCancelReason("");
-                          reload();
-                        }}
-                        className="h-[30px] shrink-0 rounded-[4px] bg-alert px-[10px] font-sans text-[12px] text-white transition-opacity disabled:opacity-40"
-                      >
-                        Confirm
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setCancelling(activeReservation.id)}
-                      className="mt-[8px] rounded-[4px] border border-line-strong px-[10px] py-[4px] font-sans text-[12px] text-ink transition-colors hover:bg-[var(--hover-ghost)]"
-                    >
-                      Cancel reservation
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col gap-[6px]">
-                  <select
-                    value={reserveUnit}
-                    onChange={(e) => setReserveUnit(e.target.value)}
-                    className="h-[32px] rounded-[4px] border border-line-strong px-[8px] font-sans text-[13px] text-ink outline-none focus:border-teal-deep"
-                  >
-                    <option value="">Select an available unit…</option>
-                    {reservableUnits.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name}
-                        {u.development_name ? ` — ${u.development_name}` : ""} ({money(u.price, u.currency)})
-                      </option>
-                    ))}
-                  </select>
-                  <div className="flex gap-[6px]">
-                    <input
-                      value={reserveAmount}
-                      onChange={(e) => setReserveAmount(e.target.value.replace(/[^0-9.]/g, ""))}
-                      placeholder="Reservation amount (OMR)"
-                      inputMode="decimal"
-                      className="h-[32px] min-w-0 flex-1 rounded-[4px] border border-line-strong px-[8px] font-sans text-[13px] text-ink outline-none focus:border-teal-deep"
-                    />
-                    <button
-                      type="button"
-                      disabled={!reserveUnit}
-                      onClick={async () => {
-                        const result = await createDealReservation(
-                          deal.id,
-                          reserveUnit,
-                          reserveAmount ? Number(reserveAmount) : null
-                        );
-                        if (result.error) onToast(result.error, "alert");
-                        else onToast("Unit reserved for this deal");
-                        setReserveUnit("");
-                        setReserveAmount("");
-                        reload();
-                      }}
-                      className="h-[32px] shrink-0 rounded-[4px] bg-teal-deep px-[12px] font-sans text-[13px] text-white transition-opacity disabled:opacity-40"
-                    >
-                      Reserve
-                    </button>
-                  </div>
-                </div>
-              )}
 
               {/* viewings */}
               <SectionTitle>Viewings</SectionTitle>

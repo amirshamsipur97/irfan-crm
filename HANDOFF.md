@@ -70,8 +70,20 @@ newline, drawer section verified on BOTH boards, test note reverted.
 - E2E'd on aman afarsh (C-0014): tag chip renders, floor-plan upload via
   the React-file-input technique → bucket + row + feed entry, UI ✕ delete
   → row AND storage object gone. Test data cleaned; build + tsc clean.
-- Shortlisted properties was explained to the user (it needs crm_units
-  rows to be usable; still part of open question 1).
+- **Round 4 — open question 1 ANSWERED: the user said delete it.**
+  Shortlisted properties is GONE from the contact drawer, and Shortlisted
+  properties + Reservation are GONE from the DealDrawer (both were unit
+  pickers over the empty crm_units — zero function). The inner Offers
+  ladder, Viewings, Transaction/financials and Commission all STAY (they
+  work without units). Inner offers now always insert with unit_id null.
+  The units prop chain was removed end to end (deals page no longer
+  fetches crm_units). DB tables (crm_property_interests,
+  crm_reservations, crm_units) and their server actions were left in
+  place — only UI was removed; restore = re-add the sections.
+  Verified in the browser: deals drawer sections = Client / Offers /
+  Viewings / Transaction / Payments / Commission / Latest activity;
+  contact drawer = Details / First negotiation notes / Demand / Documents
+  / Offers / Latest activity / Lead tracking.
 
 Earlier the same session — one user request, one change set: the row
 drawers moved one step down the funnel, deployed the same day.
@@ -135,12 +147,11 @@ entries · 3 direct messages · 6 active members. The user's own account
 
 **Open questions I asked and you have not answered yet** — do not action
 without asking again:
-- The drawer's **Shortlisted properties / Reservation / inner Offers**
-  sections are Phase-2 leftovers from the per-unit inventory model you
-  dropped (crm_units is empty, so the picker lists nothing). Remove them,
-  turn the shortlist into free text, or leave for later?
-  *(Partially answered in the second 08-02 session: they stay, but only on
-  the Deals drawer — see the drawer-swap section above.)*
+- ~~The drawer's **Shortlisted properties / Reservation / inner Offers**
+  sections are Phase-2 leftovers…~~ **ANSWERED in the second 08-02
+  session: the user said delete what has no use.** Shortlisted +
+  Reservation were removed from both drawers; the inner Offers ladder
+  stays (works without units). See "Round 4" above.
 - Should the per-agent visibility rule extend to **Contacts / Offers /
   Deals** too? Today only Leads is restricted, so a converted client is
   still visible team-wide.

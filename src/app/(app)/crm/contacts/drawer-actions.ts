@@ -6,7 +6,6 @@ import type {
   CrmDeal,
   CrmOfferFloorPlan,
   CrmOfferTracking,
-  CrmPropertyInterest,
 } from "@/lib/types";
 
 type JoinedDeal = CrmDeal & { stage: { name: string; color: string } | null };
@@ -38,7 +37,7 @@ export async function getContactRelations(contactId: string) {
     .eq("id", contactId)
     .maybeSingle<{ name: string }>();
 
-  const [{ data: dealsById }, { data: dealsByName }, { data: interests }, { data: activities }, { data: documents }] =
+  const [{ data: dealsById }, { data: dealsByName }, { data: activities }, { data: documents }] =
     await Promise.all([
       supabase
         .from("crm_deals")
@@ -52,11 +51,6 @@ export async function getContactRelations(contactId: string) {
             .ilike("contact_name", contact.name.trim())
             .order("created_at", { ascending: false })
         : Promise.resolve({ data: [] }),
-      supabase
-        .from("crm_property_interests")
-        .select("*, unit:crm_units(name, development_name)")
-        .eq("contact_id", contactId)
-        .order("created_at"),
       contact?.name
         ? supabase
             .from("crm_activity_items")
@@ -134,20 +128,11 @@ export async function getContactRelations(contactId: string) {
     (b.start_at ?? b.created_at).localeCompare(a.start_at ?? a.created_at)
   );
 
-  type JoinedInterest = CrmPropertyInterest & {
-    unit: { name: string; development_name: string | null } | null;
-  };
-
   return {
     deals: deals.map((d) => ({
       ...d,
       stage_name: d.stage?.name ?? null,
       stage_color: d.stage?.color ?? null,
-    })),
-    interests: ((interests ?? []) as unknown as JoinedInterest[]).map((i) => ({
-      ...i,
-      unit_name: i.unit?.name ?? null,
-      development_name: i.unit?.development_name ?? null,
     })),
     activities: feed.slice(0, 15),
     floorPlans: floorPlans ?? [],

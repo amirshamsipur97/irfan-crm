@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
 import { recordBoardVisit } from "@/lib/visits";
 import { AcceptedDealsBoard } from "@/components/crm/deals/AcceptedDealsBoard";
-import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmDealStage, CrmUnit, CrmUser } from "@/lib/types";
+import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmDealStage, CrmUser } from "@/lib/types";
 
 /**
  * Deals — offers the client ACCEPTED (Move to deal on the Offers board).
@@ -12,7 +12,7 @@ import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmDealStage, CrmUnit, Cr
 export default async function DealsBoardPage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient(), recordBoardVisit("deals")]);
 
-  const [{ data: deals }, { data: contacts }, { data: users }, { data: payments }, { data: stages }, { data: units }] =
+  const [{ data: deals }, { data: contacts }, { data: users }, { data: payments }, { data: stages }] =
     await Promise.all([
       supabase
         .from("crm_deals")
@@ -34,8 +34,6 @@ export default async function DealsBoardPage() {
         .returns<CrmDealDownpayment[]>(),
       // the shared deal drawer needs the stage list for its header pill
       supabase.from("crm_deal_stages").select("*").order("position").returns<CrmDealStage[]>(),
-      // the deal drawer's shortlist/reservation pickers list units
-      supabase.from("crm_units").select("*").order("name").returns<CrmUnit[]>(),
     ]);
 
   return (
@@ -46,7 +44,6 @@ export default async function DealsBoardPage() {
       users={users ?? []}
       payments={payments ?? []}
       stages={stages ?? []}
-      units={units ?? []}
     />
   );
 }

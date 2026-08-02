@@ -26,7 +26,7 @@ import {
   bedroomLabel,
   propertyTypeLabel,
 } from "@/components/crm/contacts/demand-config";
-import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmDealStage, CrmUnit, CrmUser } from "@/lib/types";
+import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmDealStage, CrmUser } from "@/lib/types";
 import { countryFlag } from "@/components/crm/country-cell";
 
 const ROW_H = 36;
@@ -200,7 +200,6 @@ export function AcceptedDealsBoard({
   users,
   payments,
   stages = [],
-  units = [],
 }: {
   profile: CrmUser;
   deals: CrmDeal[];
@@ -208,7 +207,6 @@ export function AcceptedDealsBoard({
   users: CrmUser[];
   payments: CrmDealDownpayment[];
   stages?: CrmDealStage[];
-  units?: CrmUnit[];
 }) {
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -727,7 +725,6 @@ export function AcceptedDealsBoard({
             profile={profile}
             stages={stages}
             users={users}
-            units={units}
             onClose={() => setOpenDealId(null)}
             onToast={(message, tone) => setToast({ message, tone })}
           />

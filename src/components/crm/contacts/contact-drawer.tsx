@@ -12,7 +12,7 @@ import { TrackingSection } from "./tracking-section";
 import { countryFlag } from "@/components/crm/country-cell";
 import { ageLabel, genderLabel } from "@/lib/person-fields";
 import { activityTime } from "@/components/crm/activities/activities-config";
-import type { CrmContact, CrmDeal, CrmOfferFloorPlan, CrmPropertyInterest, CrmUser } from "@/lib/types";
+import type { CrmContact, CrmDeal, CrmOfferFloorPlan, CrmUser } from "@/lib/types";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
 import {
   getContactRelations,
@@ -76,7 +76,6 @@ export function ContactDrawer({
   const [composerOpen, setComposerOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const [deals, setDeals] = useState<DrawerDeal[]>([]);
-  const [interests, setInterests] = useState<CrmPropertyInterest[]>([]);
   const [activities, setActivities] = useState<ContactFeedItem[]>([]);
   const [floorPlans, setFloorPlans] = useState<CrmOfferFloorPlan[]>([]);
   const [planUploading, setPlanUploading] = useState<string | null>(null);
@@ -87,7 +86,6 @@ export function ContactDrawer({
   const load = async () => {
     const data = await getContactRelations(contact.id);
     setDeals(data.deals as DrawerDeal[]);
-    setInterests(data.interests);
     setActivities(data.activities);
     setFloorPlans(data.floorPlans);
     setLoading(false);
@@ -382,31 +380,6 @@ export function ContactDrawer({
                   </div>
                 );
               })}
-
-              {/* shortlisted properties */}
-              <SectionTitle>Shortlisted properties</SectionTitle>
-              {interests.length === 0 && (
-                <p className="m-0 font-sans text-[13px] text-ink-muted">No properties shortlisted yet.</p>
-              )}
-              {interests.map((i) => (
-                <div
-                  key={i.id}
-                  className="mt-[6px] flex items-center justify-between rounded-[6px] border border-line px-[12px] py-[8px]"
-                >
-                  <div className="min-w-0">
-                    <p className="m-0 truncate font-sans text-[14px] leading-[20px] text-ink">
-                      {i.unit_name ?? "Unit"}
-                    </p>
-                    <p className="m-0 truncate font-sans text-[12px] leading-[16px] text-ink-muted">
-                      {i.development_name ?? ""}
-                    </p>
-                  </div>
-                  <Pill
-                    label={i.status}
-                    color={i.status === "rejected" ? "#e2445c" : i.status === "shortlisted" ? "#579bfc" : "#00c875"}
-                  />
-                </div>
-              ))}
 
               {/* activity timeline */}
               <SectionTitle>Latest activity</SectionTitle>
