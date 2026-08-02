@@ -209,9 +209,16 @@ reminder_done, file_name/storage_path/mime_type/size_bytes). RLS follows
 the parent offer — read if you can see the offer, write if you could edit
 it. Files go straight from the browser into the private `crm-documents`
 bucket under `tracking/<deal_id>/…` and open via 5-minute signed URLs.
-UI: `components/crm/contacts/tracking-section.tsx` — node-and-line
-timeline, oldest first; node is amber while a reminder is pending, teal
-otherwise; the reminder chip toggles done (strike-through) in place.
+UI: `components/crm/contacts/tracking-section.tsx` — a Monday-style
+activity feed (migration `crm_offer_tracking_entry_types` added
+`entry_type` call|meeting|viewing|email|document|note + `duration_min`):
+each entry is a colored icon node on one vertical line with the kind and
+timestamp above the card, the author's avatar/name (joined via
+`author:created_by(full_name, avatar_url)`), a duration chip for timed
+kinds, notes over 150 chars collapsed behind Show more, plus the reminder
+and attachment chips. Every trail starts at an "Offer created" node, and
+a **+ button on each offer header** opens the composer (type chips →
+date / duration / reminder → note → file).
 ⚠️ PANE-TESTING NOTE: the drawer has TWO `input[type=file]` —
 `[0]` is the Documents uploader, `[1]` is tracking. Driving `[0]` by
 mistake really uploads contact documents (4 stray rows had to be deleted).
