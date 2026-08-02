@@ -100,7 +100,12 @@ export async function signUp(_prev: AuthState, formData: FormData) {
 export async function signInWithGoogle() {
   const supabase = await createClient();
   const h = await headers();
-  const origin = h.get("origin") ?? `http://${h.get("host") ?? "localhost:3070"}`;
+  // canonical site URL first, exactly like signUp — a request-derived origin
+  // is how confirmation links ended up pointing at localhost
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    h.get("origin") ??
+    `http://${h.get("host") ?? "localhost:3070"}`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
