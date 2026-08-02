@@ -267,9 +267,13 @@ export interface CrmAccount {
 }
 
 /** One follow-up entry on an offer's tracking trail (date + note + reminder + file). */
+export type OfferTrackingType = "note" | "call" | "meeting" | "email" | "viewing" | "document";
+
 export interface CrmOfferTracking {
   id: string;
   deal_id: string;
+  entry_type: OfferTrackingType;
+  duration_min: number | null;
   entry_date: string;
   note: string;
   remind_at: string | null;
@@ -281,6 +285,8 @@ export interface CrmOfferTracking {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  /** joined author, for the avatar + name on the timeline card */
+  author?: { full_name: string | null; avatar_url: string | null } | null;
 }
 
 /** One direct message between two members — both participants can read it. */

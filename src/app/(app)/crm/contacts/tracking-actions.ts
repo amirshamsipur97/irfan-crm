@@ -3,7 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
-import type { CrmOfferTracking } from "@/lib/types";
+import type { CrmOfferTracking, OfferTrackingType } from "@/lib/types";
+
+const ENTRY_TYPES: OfferTrackingType[] = [
+  "note",
+  "call",
+  "meeting",
+  "email",
+  "viewing",
+  "document",
+];
 
 const BOARD_PATH = "/crm/contacts";
 const BUCKET = "crm-documents";
@@ -13,8 +22,9 @@ export async function listTracking(dealIds: string[]) {
   if (dealIds.length === 0) return [];
   const supabase = await createClient();
   const { data } = await supabase
+    // the author rides along so the card can show who logged it
     .from("crm_offer_tracking")
-    .select("*")
+    .select("*, author:created_by(full_name, avatar_url)")
     .in("deal_id", dealIds)
     .order("entry_date", { ascending: true })
     .order("created_at", { ascending: true })
@@ -28,12 +38,15 @@ export async function listTracking(dealIds: string[]) {
  */
 export async function addTrackingEntry(input: {
   dealId: string;
+  entryType: OfferTrackingType;
+  durationMin: number | null;
   entryDate: string;
   note: string;
   remindAt: string | null;
   file: { name: string; storagePath: string; mimeType: string | null; sizeBytes: number | null } | null;
 }) {
   if (!input.note.trim()) return { error: "Write something for this follow-up." };
+  if (!ENTRY_TYPES.includes(input.entryType)) return { error: "unknown entry type" };
 
   const supabase = await createClient();
   const {
@@ -45,6 +58,8 @@ export async function addTrackingEntry(input: {
     .from("crm_offer_tracking")
     .insert({
       deal_id: input.dealId,
+      entry_type: input.entryType,
+      duration_min: input.durationMin,
       entry_date: input.entryDate,
       note: input.note.trim(),
       remind_at: input.remindAt,
@@ -54,7 +69,7 @@ export async function addTrackingEntry(input: {
       size_bytes: input.file?.sizeBytes ?? null,
       created_by: user.id,
     })
-    .select("*")
+    .select("*, author:created_by(full_name, avatar_url)")
     .single<CrmOfferTracking>();
   if (error) return { error: error.message };
 
