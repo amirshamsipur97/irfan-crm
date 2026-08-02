@@ -20,7 +20,7 @@ const ROLE_OPTIONS: { value: CrmRole; hint: string }[] = [
   { value: "ceo", hint: "Full business access — operations, finance, team" },
   { value: "media", hint: "Edits all work boards — no financial data" },
   { value: "manager", hint: "Sales management — edits all work boards" },
-  { value: "agent", hint: "Works own leads and deals — team read-only" },
+  { value: "agent", hint: "Sees and works only their OWN leads" },
   { value: "finance", hint: "Transactions, payments and commissions" },
 ];
 
