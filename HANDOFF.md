@@ -190,6 +190,17 @@ Lead captured  →  Move to contact  →  the contact IS the client's Demand
   is shared with other agencies, so an offer is pinned to the developer and the
   kind of unit. The Units/Developments boards still exist but are empty.
 
+**FIRST REAL AGENT SIGNUP TESTED END TO END (2026-08-02)** —
+`test.agent@irfaninvest.com` ("Test Agent", role agent) signed up through
+the live form, was approved via `crm_approve_member`, signed in with the
+temporary password, was forced through the first-login dialog and landed
+on the dashboard. **The account is ACTIVE and its password is
+`AgentReal-2026#pass`** — delete it or hand it over before rollout.
+⚠️ The old "confirmation link opens localhost" bug does NOT affect this
+flow: approval confirms the address server-side, so nobody clicks a
+confirmation link at all. It still matters for Google sign-in and
+password-recovery links, which is why item 3 below is still open.
+
 **Blocked on the user, not on code:**
 1. ~~`SUPABASE_SERVICE_ROLE_KEY`~~ — NO LONGER NEEDED (2026-08-01 late):
    approval now runs through the `crm_approve_member` security-definer RPC.
@@ -198,9 +209,15 @@ Lead captured  →  Move to contact  →  the contact IS the client's Demand
    shows the temporary password on screen, but no email goes out. Supabase's
    built-in sender is rate-limited and already returned
    "email rate limit exceeded" during testing, so this is a real launch item.
-3. Supabase → Auth → URL Configuration: add
-   `https://crm.irfaninvest.com/**` to Redirect URLs (Google sign-in and
-   recovery links only work on irfan-crm.vercel.app until then).
+3. 🚨 Supabase → Authentication → URL Configuration (dashboard-only, no
+   API): set **Site URL = `https://crm.irfaninvest.com`** and add
+   `https://crm.irfaninvest.com/**` to Redirect URLs. This is the ONLY
+   remaining cause of the "link opens localhost" symptom — GoTrue falls
+   back to its stored Site URL (still the default localhost) whenever a
+   link's redirect is not allow-listed. Code side is done: signUp AND
+   signInWithGoogle (commit after `7cbe4ce`) both prefer
+   NEXT_PUBLIC_SITE_URL, which is already
+   `https://crm.irfaninvest.com` on Vercel production.
 
 **Small things the user was asked about and never answered** — do not action
 without asking again: three leftover custom columns on Leads (a Dropdown from
