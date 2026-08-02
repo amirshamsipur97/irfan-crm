@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
 import { recordBoardVisit } from "@/lib/visits";
 import { AcceptedDealsBoard } from "@/components/crm/deals/AcceptedDealsBoard";
-import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmUser } from "@/lib/types";
+import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmDealStage, CrmUser } from "@/lib/types";
 
 /**
  * Deals — offers the client ACCEPTED (Move to deal on the Offers board).
@@ -12,7 +12,7 @@ import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmUser } from "@/lib/typ
 export default async function DealsBoardPage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient(), recordBoardVisit("deals")]);
 
-  const [{ data: deals }, { data: contacts }, { data: users }, { data: payments }] =
+  const [{ data: deals }, { data: contacts }, { data: users }, { data: payments }, { data: stages }] =
     await Promise.all([
       supabase
         .from("crm_deals")
@@ -32,6 +32,8 @@ export default async function DealsBoardPage() {
         .select("*")
         .order("part_no")
         .returns<CrmDealDownpayment[]>(),
+      // the shared deal drawer needs the stage list for its header pill
+      supabase.from("crm_deal_stages").select("*").order("position").returns<CrmDealStage[]>(),
     ]);
 
   return (
@@ -41,6 +43,7 @@ export default async function DealsBoardPage() {
       contacts={contacts ?? []}
       users={users ?? []}
       payments={payments ?? []}
+      stages={stages ?? []}
     />
   );
 }

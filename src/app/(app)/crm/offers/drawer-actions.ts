@@ -13,6 +13,18 @@ import type {
 
 const BOARD_PATH = "/crm/offers";
 
+/** The person an offer is for — shown in the drawer, never edited there. */
+export interface DrawerClient {
+  code: string | null;
+  name: string;
+  country: string | null;
+  gender: string | null;
+  age: number | null;
+  email: string | null;
+  phone: string | null;
+  country_code: string | null;
+}
+
 /** Everything the deal drawer shows, in one round trip. */
 export async function getDealRelations(dealId: string) {
   const supabase = await createClient();
@@ -36,7 +48,16 @@ export async function getDealRelations(dealId: string) {
         .eq("deal_id", dealId)
         .order("scheduled_start", { ascending: true, nullsFirst: false })
         .returns<CrmViewing[]>(),
-      supabase.from("crm_deals").select("name").eq("id", dealId).maybeSingle<{ name: string }>(),
+      supabase
+        // the client rides along so the drawer can show who this offer is for
+        .from("crm_deals")
+        .select("name, contact_name, contact:contact_id(code, name, country, gender, age, email, phone, country_code)")
+        .eq("id", dealId)
+        .maybeSingle<{
+          name: string;
+          contact_name: string | null;
+          contact: DrawerClient | null;
+        }>(),
     ]);
 
   const { data: activities } = deal
@@ -67,6 +88,7 @@ export async function getDealRelations(dealId: string) {
     })),
     viewings: viewings ?? [],
     activities: activities ?? [],
+    client: (deal?.contact ?? null) as DrawerClient | null,
   };
 }
 

@@ -9,6 +9,8 @@ import { canAnimate } from "@/lib/motion";
 import { Surface } from "@/components/shell/AppChrome";
 import { AiFloaty } from "@/components/shell/AiFloaty";
 import { BoardHeader } from "@/components/crm/leads/BoardHeader";
+import { Icon } from "@/components/ui/Icon";
+import { DealDrawer } from "./deal-drawer";
 import { InlineEdit, OwnerCell, Popover } from "@/components/crm/leads/cells";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { applyRowEdit } from "@/components/crm/persist";
@@ -24,7 +26,7 @@ import {
   bedroomLabel,
   propertyTypeLabel,
 } from "@/components/crm/contacts/demand-config";
-import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmUser } from "@/lib/types";
+import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmDealStage, CrmUser } from "@/lib/types";
 import { countryFlag } from "@/components/crm/country-cell";
 
 const ROW_H = 36;
@@ -197,12 +199,14 @@ export function AcceptedDealsBoard({
   contacts,
   users,
   payments,
+  stages = [],
 }: {
   profile: CrmUser;
   deals: CrmDeal[];
   contacts: CrmContact[];
   users: CrmUser[];
   payments: CrmDealDownpayment[];
+  stages?: CrmDealStage[];
 }) {
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -211,6 +215,7 @@ export function AcceptedDealsBoard({
   const [search, setSearch] = useState("");
   const [personFilter, setPersonFilter] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+  const [openDealId, setOpenDealId] = useState<string | null>(null);
 
   useGSAP(
     () => {
@@ -367,12 +372,20 @@ export function AcceptedDealsBoard({
                       style={{ width: DEAL_NAME_COL_W }}
                     >
                       <span className="w-[6px] shrink-0" style={{ backgroundColor: STRIPE }} />
-                      <span className="flex min-w-0 flex-1 items-center border-b border-r border-line px-[10px] transition-colors group-hover/row:bg-canvas">
+                      <span className="flex min-w-0 flex-1 items-center justify-between border-b border-r border-line px-[10px] transition-colors group-hover/row:bg-canvas">
                         <InlineEdit
                           value={deal.name}
                           onSave={(name) => patchDeal(deal.id, { name })}
                           className="min-w-0 flex-1 font-sans text-[14px] leading-[20px] text-ink"
                         />
+                        <button
+                          type="button"
+                          aria-label={`Open ${deal.name}`}
+                          onClick={() => setOpenDealId(deal.id)}
+                          className="flex size-[24px] shrink-0 items-center justify-center rounded-[4px] opacity-0 transition-opacity hover:bg-[var(--hover-ghost)] group-hover/row:opacity-100"
+                        >
+                          <Icon name="rowOpen" size={16} />
+                        </button>
                       </span>
                     </div>
 
@@ -703,6 +716,21 @@ export function AcceptedDealsBoard({
           onClose={() => setToast(null)}
         />
       )}
+      {openDealId && (() => {
+        const openDeal = localDeals.find((d) => d.id === openDealId);
+        if (!openDeal) return null;
+        return (
+          <DealDrawer
+            deal={openDeal}
+            profile={profile}
+            stages={stages}
+            users={users}
+            units={[]}
+            onClose={() => setOpenDealId(null)}
+            onToast={(message, tone) => setToast({ message, tone })}
+          />
+        );
+      })()}
       <AiFloaty />
     </Surface>
   );

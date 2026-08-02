@@ -29,7 +29,10 @@ import {
   getDealRelations,
   setInterestStatus,
   setOfferStatus,
+  type DrawerClient,
 } from "@/app/(app)/crm/offers/drawer-actions";
+import { countryFlag } from "@/components/crm/country-cell";
+import { ageLabel, genderLabel } from "@/lib/person-fields";
 
 const OFFER_COLORS: Record<string, string> = {
   draft: "#c4c4c4",
@@ -60,6 +63,19 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
     <h4 className="m-0 pb-[8px] pt-[20px] font-display text-[14px] font-semibold leading-[20px] text-ink">
       {children}
     </h4>
+  );
+}
+
+function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline gap-[8px] py-[3px]">
+      <span className="w-[120px] shrink-0 font-sans text-[12px] leading-[18px] text-ink-muted">
+        {label}
+      </span>
+      <span className="min-w-0 flex-1 truncate font-sans text-[13px] leading-[19px] text-ink">
+        {children}
+      </span>
+    </div>
   );
 }
 
@@ -98,6 +114,7 @@ export function DealDrawer({
   const [viewings, setViewings] = useState<CrmViewing[]>([]);
   const [activities, setActivities] = useState<CrmActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [client, setClient] = useState<DrawerClient | null>(null);
   const [interestPick, setInterestPick] = useState("");
   const [offerAmount, setOfferAmount] = useState("");
   const [reserveUnit, setReserveUnit] = useState("");
@@ -116,6 +133,7 @@ export function DealDrawer({
     setReservations(data.reservations);
     setViewings(data.viewings);
     setActivities(data.activities);
+    setClient(data.client);
     setLoading(false);
   };
 
@@ -176,6 +194,52 @@ export function DealDrawer({
         </div>
 
         <div className="flex-1 px-[24px] pb-[32px]">
+          {/* who this offer is for — read-only, edited on the Contacts board */}
+          {client && (
+            <>
+              <SectionTitle>Client</SectionTitle>
+              <DetailRow label="Name">
+                {client.name}
+                {client.code && (
+                  <span className="pl-[6px] font-sans text-[11px] text-ink-muted">{client.code}</span>
+                )}
+              </DetailRow>
+              <DetailRow label="Country">
+                {client.country ? (
+                  <>
+                    <span aria-hidden>{countryFlag(client.country)}</span> {client.country}
+                  </>
+                ) : (
+                  "—"
+                )}
+              </DetailRow>
+              <DetailRow label="Gender">{genderLabel(client.gender)}</DetailRow>
+              <DetailRow label="Age">{ageLabel(client.age)}</DetailRow>
+              <DetailRow label="Phone">
+                {client.phone ? (
+                  <a
+                    href={`tel:${client.country_code ?? ""}${client.phone}`}
+                    className="text-[#0073ea] hover:underline"
+                  >
+                    {client.country_code ? `${client.country_code} ` : ""}
+                    {client.phone}
+                  </a>
+                ) : (
+                  "—"
+                )}
+              </DetailRow>
+              <DetailRow label="Email">
+                {client.email ? (
+                  <a href={`mailto:${client.email}`} className="truncate text-[#0073ea] hover:underline">
+                    {client.email}
+                  </a>
+                ) : (
+                  "—"
+                )}
+              </DetailRow>
+            </>
+          )}
+
           {loading ? (
             <p className="pt-[24px] font-sans text-[14px] text-ink-muted">Loading…</p>
           ) : (
