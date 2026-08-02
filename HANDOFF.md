@@ -209,15 +209,16 @@ password-recovery links, which is why item 3 below is still open.
    shows the temporary password on screen, but no email goes out. Supabase's
    built-in sender is rate-limited and already returned
    "email rate limit exceeded" during testing, so this is a real launch item.
-3. 🚨 Supabase → Authentication → URL Configuration (dashboard-only, no
-   API): set **Site URL = `https://crm.irfaninvest.com`** and add
-   `https://crm.irfaninvest.com/**` to Redirect URLs. This is the ONLY
-   remaining cause of the "link opens localhost" symptom — GoTrue falls
-   back to its stored Site URL (still the default localhost) whenever a
-   link's redirect is not allow-listed. Code side is done: signUp AND
-   signInWithGoogle (commit after `7cbe4ce`) both prefer
-   NEXT_PUBLIC_SITE_URL, which is already
-   `https://crm.irfaninvest.com` on Vercel production.
+3. ~~Supabase Auth URL Configuration~~ **DONE by the user 2026-08-02** —
+   verified empirically, not by screenshot: probing
+   `/auth/v1/verify?token=bogus&type=recovery` shows the stored Site URL
+   is now `https://crm.irfaninvest.com` (it used to be the localhost
+   default — that was the whole "link opens localhost" bug), and
+   redirect probes resolve as: `crm.irfaninvest.com/auth/callback` ✅,
+   `irfan-crm.vercel.app/auth/callback` ✅, `localhost:3070` ✗ (falls
+   back to prod — harmless, local dev signs in via /preview which uses
+   no redirect), unknown domains ✗ (correctly refused). Re-run that probe
+   with the anon key if auth links ever look wrong again.
 
 **Small things the user was asked about and never answered** — do not action
 without asking again: three leftover custom columns on Leads (a Dropdown from
