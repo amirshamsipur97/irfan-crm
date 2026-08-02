@@ -88,6 +88,23 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
+**Round 6 (2026-08-03) — stray groups purged + groups are deletable**:
+- DATA: all empty leftover groups deleted from the 3 funnel boards —
+  offers "Closed Won" + 2×"New Group", contacts "Inactive Contacts" +
+  2×"New Group" (the one holding contact C-0006 "amir" had that row moved
+  to Active Contacts first), leads "junk lead" + "New Group"; their
+  crm_group_prefs rows cleaned. Each board now has exactly ONE group
+  (New Leads / Active Contacts / Active Deals). This also closes the old
+  "two empty groups on Leads" leftover question.
+- FEATURE: group headers on Leads/Contacts/Offers show a hover trash
+  button (admin tier only — matches the crm_is_admin DELETE RLS) that
+  opens the new shared `components/ui/ConfirmDialog.tsx`. Rules enforced
+  client- AND server-side (new actions deleteGroup /
+  deleteContactGroup / deleteDealGroup): only EMPTY groups may go, and
+  never the last one; non-empty → alert toast with the row count.
+- E2E on Offers: add group → trash → confirm → deleted (toast), trash on
+  Active Deals (8 offers) → refused with toast, no dialog. Build clean.
+
 **Round 5 (2026-08-03) — quick filters match each board's real columns**:
 - Contacts: Type/Priority/Title dims (columns removed ages ago) replaced
   with Owner / Property type / Size (demand lists w/ colors) / Country /

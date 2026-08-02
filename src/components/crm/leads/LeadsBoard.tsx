@@ -25,6 +25,7 @@ import {
   addLead,
   logLeadActivity,
   moveLeadToContacts,
+  deleteGroup,
   renameGroup,
   renameLead,
   updateLead,
@@ -36,7 +37,8 @@ import type { LogPayload } from "@/components/crm/deals/activity-log";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { findDuplicateContact } from "@/app/(app)/crm/contacts/actions";
 import { applyRowEdit, persist } from "@/components/crm/persist";
-import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { canEditRow, isFullAccess, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
@@ -88,6 +90,7 @@ export function LeadsBoard({
   );
 
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+  const [deleteGroupPrompt, setDeleteGroupPrompt] = useState<(typeof groups)[number] | null>(null);
 
   const [emailLead, setEmailLead] = useState<CrmLead | null>(null);
   const rowTools = useRowTools({
@@ -215,6 +218,24 @@ export function LeadsBoard({
     );
   };
 
+  // only an EMPTY group may go, and never the last one — the checks repeat
+  // server-side, this just gives an instant, friendly answer
+  const requestDeleteGroup = (group: (typeof localGroups)[number]) => {
+    const count = localLeads.filter((l) => l.group_id === group.id).length;
+    if (count) {
+      setToast({
+        message: `"${group.name}" still holds ${count} lead${count === 1 ? "" : "s"} — move or delete them first.`,
+        tone: "alert",
+      });
+      return;
+    }
+    if (localGroups.length <= 1) {
+      setToast({ message: "At least one group must remain.", tone: "alert" });
+      return;
+    }
+    setDeleteGroupPrompt(group);
+  };
+
   const handleAddGroup = async () => {
     const color = GROUP_COLORS[localGroups.length % GROUP_COLORS.length];
     const result = await addGroup("New Group", color);
@@ -311,6 +332,7 @@ export function LeadsBoard({
               group={group}
               isNew={group.id === newGroupId}
               tools={rowTools}
+              onDeleteGroup={isFullAccess(profile.role) ? () => requestDeleteGroup(group) : undefined}
               onEmailLead={setEmailLead}
               leads={sortedRows.filter((l) => l.group_id === group.id)}
               doneContactIds={doneContactIds}
@@ -405,6 +427,26 @@ export function LeadsBoard({
           tone={toast.tone}
           onUndo={toast.undo}
           onClose={() => setToast(null)}
+        />
+      )}
+      {deleteGroupPrompt && (
+        <ConfirmDialog
+          title={`Delete “${deleteGroupPrompt.name}”?`}
+          message="The empty group will be removed from this board. This can't be undone."
+          onCancel={() => setDeleteGroupPrompt(null)}
+          onConfirm={async () => {
+            const g = deleteGroupPrompt;
+            setDeleteGroupPrompt(null);
+            const prev = localGroups;
+            setLocalGroups((gs) => gs.filter((x) => x.id !== g.id));
+            const result = await deleteGroup(g.id);
+            if (result.error) {
+              setLocalGroups(prev);
+              setToast({ message: result.error, tone: "alert" });
+            } else {
+              setToast({ message: `Group “${g.name}” deleted` });
+            }
+          }}
         />
       )}
       {openLeadId && (() => {

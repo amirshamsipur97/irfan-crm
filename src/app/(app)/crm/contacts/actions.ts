@@ -112,6 +112,29 @@ export async function renameContactGroup(groupId: string, name: string) {
   return {};
 }
 
+/** Delete an EMPTY group (admin tier by RLS) — rows must move out first. */
+export async function deleteContactGroup(groupId: string) {
+  const supabase = await createClient();
+  const { count: rows } = await supabase
+    .from("crm_contacts")
+    .select("id", { count: "exact", head: true })
+    .eq("group_id", groupId);
+  if (rows)
+    return { error: `This group still holds ${rows} contact${rows === 1 ? "" : "s"} — move or delete them first.` };
+  const { count: total } = await supabase
+    .from("crm_contact_groups")
+    .select("id", { count: "exact", head: true });
+  if ((total ?? 0) <= 1) return { error: "At least one group must remain." };
+  const { error, count } = await supabase
+    .from("crm_contact_groups")
+    .delete({ count: "exact" })
+    .eq("id", groupId);
+  if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
+  revalidatePath(BOARD_PATH);
+  return {};
+}
+
 /** Log a meeting / call / note / email from a contacts row's Activities timeline. */
 export async function logContactActivity(
   rowId: string,

@@ -18,6 +18,7 @@ import { PipelineView } from "./PipelineView";
 import {
   addDeal,
   addDealGroup,
+  deleteDealGroup,
   quickCreateAccount,
   quickCreateContact,
   renameDealGroup,
@@ -28,7 +29,8 @@ import type { PickerOption } from "./connect-picker";
 import { LostReasonDialog } from "./lost-reason-dialog";
 import { ContactDrawer } from "@/components/crm/contacts/contact-drawer";
 import { applyRowEdit } from "@/components/crm/persist";
-import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { canEditRow, isFullAccess, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
 import {
   addCustomColumn,
@@ -86,6 +88,25 @@ export function DealsBoard({
   );
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
   const [lostPrompt, setLostPrompt] = useState<{ dealId: string; stageId: string } | null>(null);
+  const [deleteGroupPrompt, setDeleteGroupPrompt] = useState<(typeof groups)[number] | null>(null);
+
+  // only an EMPTY group may go, and never the last one — the checks repeat
+  // server-side, this just gives an instant, friendly answer
+  const requestDeleteGroup = (group: (typeof groups)[number]) => {
+    const count = localDeals.filter((d) => d.group_id === group.id).length;
+    if (count) {
+      setToast({
+        message: `"${group.name}" still holds ${count} offer${count === 1 ? "" : "s"} — move or delete them first.`,
+        tone: "alert",
+      });
+      return;
+    }
+    if (localGroups.length <= 1) {
+      setToast({ message: "At least one group must remain.", tone: "alert" });
+      return;
+    }
+    setDeleteGroupPrompt(group);
+  };
   const [openDealId, setOpenDealId] = useState<string | null>(null);
   // an offer row opens the CLIENT's file (the contact drawer); the
   // transaction-side drawer lives on the Deals board
@@ -373,6 +394,7 @@ export function DealsBoard({
                 group={group}
                 isNew={group.id === newGroupId}
                 tools={rowTools}
+                onDeleteGroup={isFullAccess(profile.role) ? () => requestDeleteGroup(group) : undefined}
                 contacts={contacts}
               deals={sortedRows.filter((d) => d.group_id === group.id)}
                 stages={stages}
@@ -455,6 +477,26 @@ export function DealsBoard({
           />
         );
       })()}
+      {deleteGroupPrompt && (
+        <ConfirmDialog
+          title={`Delete “${deleteGroupPrompt.name}”?`}
+          message="The empty group will be removed from this board. This can't be undone."
+          onCancel={() => setDeleteGroupPrompt(null)}
+          onConfirm={async () => {
+            const g = deleteGroupPrompt;
+            setDeleteGroupPrompt(null);
+            const prev = localGroups;
+            setLocalGroups((gs) => gs.filter((x) => x.id !== g.id));
+            const result = await deleteDealGroup(g.id);
+            if (result.error) {
+              setLocalGroups(prev);
+              setToast({ message: result.error, tone: "alert" });
+            } else {
+              setToast({ message: `Group “${g.name}” deleted` });
+            }
+          }}
+        />
+      )}
       {lostPrompt && (
         <LostReasonDialog
           dealName={localDeals.find((d) => d.id === lostPrompt.dealId)?.name ?? "deal"}

@@ -16,13 +16,15 @@ import { ContactDrawer } from "./contact-drawer";
 import {
   addContact,
   addContactGroup,
+  deleteContactGroup,
   renameContactGroup,
   updateContact,
 } from "@/app/(app)/crm/contacts/actions";
 import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { applyRowEdit } from "@/components/crm/persist";
-import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { canEditRow, isFullAccess, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { findDuplicateContact } from "@/app/(app)/crm/contacts/actions";
 import { quickCreateAccount } from "@/app/(app)/crm/offers/actions";
 import type { PickerOption } from "@/components/crm/deals/connect-picker";
@@ -112,6 +114,25 @@ export function ContactsBoard({
   );
 
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+  const [deleteGroupPrompt, setDeleteGroupPrompt] = useState<(typeof groups)[number] | null>(null);
+
+  // only an EMPTY group may go, and never the last one — the checks repeat
+  // server-side, this just gives an instant, friendly answer
+  const requestDeleteGroup = (group: (typeof groups)[number]) => {
+    const count = localContacts.filter((c) => c.group_id === group.id).length;
+    if (count) {
+      setToast({
+        message: `"${group.name}" still holds ${count} contact${count === 1 ? "" : "s"} — move or delete them first.`,
+        tone: "alert",
+      });
+      return;
+    }
+    if (localGroups.length <= 1) {
+      setToast({ message: "At least one group must remain.", tone: "alert" });
+      return;
+    }
+    setDeleteGroupPrompt(group);
+  };
 
   const [emailContact, setEmailContact] = useState<CrmContact | null>(null);
   const rowTools = useRowTools({
@@ -265,6 +286,7 @@ export function ContactsBoard({
               group={group}
               isNew={group.id === newGroupId}
               tools={rowTools}
+              onDeleteGroup={isFullAccess(profile.role) ? () => requestDeleteGroup(group) : undefined}
               onEmailContact={setEmailContact}
               contacts={sortedRows.filter(
                 (c) =>
@@ -321,6 +343,26 @@ export function ContactsBoard({
           tone={toast.tone}
           onUndo={toast.undo}
           onClose={() => setToast(null)}
+        />
+      )}
+      {deleteGroupPrompt && (
+        <ConfirmDialog
+          title={`Delete “${deleteGroupPrompt.name}”?`}
+          message="The empty group will be removed from this board. This can't be undone."
+          onCancel={() => setDeleteGroupPrompt(null)}
+          onConfirm={async () => {
+            const g = deleteGroupPrompt;
+            setDeleteGroupPrompt(null);
+            const prev = localGroups;
+            setLocalGroups((gs) => gs.filter((x) => x.id !== g.id));
+            const result = await deleteContactGroup(g.id);
+            if (result.error) {
+              setLocalGroups(prev);
+              setToast({ message: result.error, tone: "alert" });
+            } else {
+              setToast({ message: `Group “${g.name}” deleted` });
+            }
+          }}
         />
       )}
       {openContactId && (() => {
