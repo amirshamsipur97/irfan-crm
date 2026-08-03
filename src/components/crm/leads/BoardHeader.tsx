@@ -240,7 +240,7 @@ export function BoardHeader({
                   : "hover:bg-[var(--hover-ghost)]"
               }`}
             >
-              <Icon name="bhFilter" size={16} className="w-[32px]" />
+              <Icon name="bhFilter" size={14} className="w-[32px]" />
               <span className="font-sans text-[14px] leading-[21px] text-ink">
                 Filter
                 {activeFilterCount > 0 ? ` / ${activeFilterCount}` : ""}

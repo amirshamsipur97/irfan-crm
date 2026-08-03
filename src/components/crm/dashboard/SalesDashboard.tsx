@@ -157,7 +157,7 @@ export function SalesDashboard({
               People
             </button>
             <button type="button" className="flex h-[36px] items-center gap-[8px] rounded-[4px] px-[10px] font-sans text-[14px] text-ink transition-colors hover:bg-[var(--hover-ghost)]">
-              <Icon name="bhFilter" size={20} className="w-[24px]" />
+              <Icon name="bhFilter" size={14} className="w-[24px]" />
               Filter
             </button>
           </div>

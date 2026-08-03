@@ -88,6 +88,15 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
+**Round 10 (2026-08-03) — toolbar icon corrections**: the Figma asset
+server exported the search magnifier VERTICALLY MIRRORED (handle pointed
+up) — `bh_search_thin.svg` now carries `transform="matrix(1 0 0 -1 0 h)"`
+on the path to restore the classic Q orientation (circle top-left, handle
+bottom-right; verified by opening the file directly). The filter funnel
+was oversized next to 14px text — Icon size 16→14 in BoardHeader and
+20→14 in SalesDashboard. ⚠️ lesson: check Figma-exported vectors for
+mirroring; the parent frame's flip transform is NOT carried in the asset.
+
 **Round 9 (2026-08-03) — convert-merge bug + live invoice + badge/delete icons**
 (migration `crm_convert_name_guard_and_invoice_reset`):
 - 🐛 THE BABAK BUG: lead "babak cherazi" had the same phone as contact
