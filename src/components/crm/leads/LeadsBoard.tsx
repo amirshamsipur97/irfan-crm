@@ -151,9 +151,12 @@ export function LeadsBoard({
       setToast({ message: result.error, tone: "alert" });
       return;
     }
+    // a merge must never be silent — say exactly whose card absorbed the lead
     setToast({
       message: result.matched
-        ? `${lead?.name ?? "Lead"} linked to an existing contact (duplicate avoided)`
+        ? `${lead?.name ?? "Lead"} matched existing contact ${result.contactName ?? "?"}${
+            result.contactCode ? ` (${result.contactCode})` : ""
+          } — that card was updated instead of creating a duplicate`
         : `${lead?.name ?? "Lead"} moved to Contacts`,
     });
   };

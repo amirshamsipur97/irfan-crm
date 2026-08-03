@@ -640,7 +640,10 @@ export function AcceptedDealsBoard({
                               className={`${cellBorder} flex items-center justify-center bg-white px-[6px] font-sans text-[13px] leading-[20px]`}
                               style={w}
                             >
-                              {deal.invoice_sent_at ? (
+                              {/* the whole cell follows LIVE completeness: drop a
+                                  payment below target and the invoice state clears
+                                  (the DB trigger resets invoice_sent_at too) */}
+                              {complete && deal.invoice_sent_at ? (
                                 <span
                                   className="max-w-full truncate rounded-[10px] bg-[#00c875] px-[8px] py-[2px] text-white"
                                   title={`Sent ${shortDate(deal.invoice_sent_at)}`}

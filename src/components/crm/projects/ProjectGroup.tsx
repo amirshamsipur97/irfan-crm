@@ -32,6 +32,7 @@ import {
 } from "./projects-config";
 import { TimelineRangeCell } from "./project-cells";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
+import { DeleteIcon } from "@/components/ui/DeleteIcon";
 
 const ROW_H = 36;
 
@@ -148,9 +149,7 @@ export function ProjectGroup({
             onClick={onDeleteGroup}
             className="ml-[4px] flex size-[24px] items-center justify-center rounded-[4px] text-ink-muted opacity-0 transition-all hover:bg-[#ffe9ec] hover:text-alert group-hover:opacity-100"
           >
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden>
-              <path d="M2.5 4h11M6.5 4V2.8a.8.8 0 01.8-.8h1.4a.8.8 0 01.8.8V4M5 4l.6 9a1 1 0 001 .9h2.8a1 1 0 001-.9L11 4M6.8 6.8v4.4M9.2 6.8v4.4" />
-            </svg>
+            <DeleteIcon size={15} />
           </button>
         )}
       </div>

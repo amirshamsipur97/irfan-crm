@@ -88,6 +88,36 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
+**Round 9 (2026-08-03) — convert-merge bug + live invoice + badge/delete icons**
+(migration `crm_convert_name_guard_and_invoice_reset`):
+- 🐛 THE BABAK BUG: lead "babak cherazi" had the same phone as contact
+  mehdi mehrjooyi (C-0011), and `crm_convert_lead` merged on phone-OR-email
+  silently — babak never appeared on Contacts and the gap-fill wrote his
+  country/gender/age onto mehdi's card. FIXES: (1) a phone match now merges
+  ONLY when the contact name matches too (email match still merges);
+  (2) the RPC returns contact_name/contact_code and the Leads toast says
+  exactly which card absorbed a merged lead; (3) new-contact owner falls
+  back lead.owner → lead.created_by → converter. DATA repaired: mehdi's
+  card cleaned, babak re-converted → NEW contact C-0017 (E2E through the
+  UI). ⚠️ real duplicate-phone leads now create a second contact — the
+  duplicate-warning toast on edits still flags them.
+- 📄 INVOICE FOLLOWS THE MONEY, live: the Deals Invoice cell (chip AND
+  button) is now gated on live paid>=target, and BOTH triggers
+  (crm_recompute_downpayment_completed + crm_deals_recheck_completed)
+  clear invoice_sent_at whenever completeness is lost. E2E'd on a
+  throwaway deal: add part → button appears instantly; delete part →
+  cell back to "—"; SQL-verified both stamps clear. (This also explains
+  mehdi's deal showing "—" now — the user had reduced its payments.)
+- 🏅 DealDoneBadge redesigned: light-green pill + rosette-seal check
+  (was a solid green chip).
+- 🗑 Group delete buttons now use the EXACT Figma delete glyph (node
+  1003:28222, ✕-in-circle) via shared `components/ui/DeleteIcon.tsx`
+  (currentColor fill so the red hover tint works) across all 9 boards.
+- Debug sweep: Supabase advisors re-run — nothing new from the CRM; the
+  standing ERRORs are the whitewill-site tables (leads/ai_conversations/
+  analytics_*) with RLS off, already tracked as that project's launch
+  blocker, plus Auth leaked-password protection off (dashboard toggle).
+
 **Round 8 (2026-08-03) — toolbar slimmed to Search + Filter, thin Figma icons**:
 - BoardHeader (shared by all boards): Person owner-filter button, the inert
   Group by button and the "…" menu are GONE (user request — the

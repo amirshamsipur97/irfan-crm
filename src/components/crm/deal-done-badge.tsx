@@ -12,13 +12,19 @@ export function DealDoneBadge({
   return (
     <span
       title={title}
-      className="ml-[6px] flex shrink-0 items-center gap-[4px] rounded-[10px] bg-[#00c875] px-[7px] py-[1px] font-sans text-[10.5px] font-medium leading-[15px] text-white"
+      className="ml-[6px] flex shrink-0 items-center gap-[4px] rounded-full border border-[#a9e8cd] bg-[#e6f7ef] py-px pl-[3px] pr-[8px] font-sans text-[10.5px] font-semibold leading-[15px] text-[#00784a]"
     >
-      <svg width="9" height="9" viewBox="0 0 14 14" fill="none" aria-hidden>
+      {/* rosette seal + check — a "certified" mark rather than a plain tick */}
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden>
         <path
-          d="M2.6 7.4l3 3L11.4 4"
+          d="M8 0l1.8 1.4 2.2-.3 1 2 2.1.8-.3 2.2L16 8l-1.2 1.9.3 2.2-2.1.8-1 2-2.2-.3L8 16l-1.8-1.4-2.2.3-1-2-2.1-.8.3-2.2L0 8l1.2-1.9-.3-2.2 2.1-.8 1-2 2.2.3L8 0z"
+          fill="#00c875"
+        />
+        <path
+          d="M5.2 8.2l2 2 3.6-4.2"
           stroke="#fff"
-          strokeWidth="2.4"
+          strokeWidth="1.6"
+          fill="none"
           strokeLinecap="round"
           strokeLinejoin="round"
         />

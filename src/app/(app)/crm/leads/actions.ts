@@ -243,10 +243,21 @@ export async function moveLeadToContacts(leadId: string) {
   const { data, error } = await supabase.rpc("crm_convert_lead", { p_lead_id: leadId });
   if (error) return { error: error.message };
 
-  const result = (data ?? {}) as { error?: string; matched?: boolean; contact_id?: string };
+  const result = (data ?? {}) as {
+    error?: string;
+    matched?: boolean;
+    contact_id?: string;
+    contact_name?: string;
+    contact_code?: string;
+  };
   if (result.error) return { error: result.error };
 
   revalidatePath(BOARD_PATH);
   revalidatePath("/crm/contacts");
-  return { matched: result.matched ?? false, contactId: result.contact_id };
+  return {
+    matched: result.matched ?? false,
+    contactId: result.contact_id,
+    contactName: result.contact_name ?? null,
+    contactCode: result.contact_code ?? null,
+  };
 }
