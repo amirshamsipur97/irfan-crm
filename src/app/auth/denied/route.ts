@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-
-const NOT_APPROVED =
-  "Your account isn't approved for the CRM. Use your company email or ask your admin for an invite.";
+import { claimMessage } from "../claim-message";
 
 /**
- * A signed-in session without CRM membership lands here. First try to claim
- * membership (the user may have been invited/approved after signing in);
- * otherwise sign the session out with a clear message.
+ * A signed-in session without a USABLE CRM membership lands here. It may
+ * still be claimable (invited or approved after signing in) — but a row that
+ * exists and is merely inactive must NOT count as success: getProfile sends
+ * every inactive session here, so answering "ok" bounced the browser back to
+ * "/" and looped (the ERR_TOO_MANY_REDIRECTS seen after clicking the
+ * confirm-email link on a not-yet-approved account). crm_claim_membership
+ * now reports pending/inactive separately.
  */
 export async function GET(request: Request) {
   const { origin } = new URL(request.url);
@@ -21,12 +23,9 @@ export async function GET(request: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const email = user?.email ? ` (${user.email})` : "";
 
   await supabase.auth.signOut();
-  const msg =
-    claim === "limit"
-      ? "The CRM agent limit is reached — contact your admin."
-      : `${NOT_APPROVED}${email}`;
-  return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(msg)}`);
+  return NextResponse.redirect(
+    `${origin}/login?error=${encodeURIComponent(claimMessage(claim, user?.email))}`
+  );
 }

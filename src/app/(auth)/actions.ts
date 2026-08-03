@@ -89,7 +89,7 @@ export async function signUp(_prev: AuthState, formData: FormData) {
   if (data.user) {
     return {
       notice:
-        "Your request has been sent. Once an administrator approves it you will receive an email with a temporary password to sign in with.",
+        "Your request has been sent. Ignore the “Confirm your email” message — approval confirms your address for you. Once an administrator approves the request you'll receive a temporary password to sign in with here.",
     };
   }
 

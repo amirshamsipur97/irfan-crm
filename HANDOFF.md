@@ -88,6 +88,38 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
+**Round 13 (2026-08-03) — 🐛 SIGNUP REDIRECT LOOP FIXED**
+(migration `crm_claim_membership_reports_state`):
+- SYMPTOM: after a company-email signup, clicking the "Confirm your email"
+  link landed on `/auth/denied#error=…otp_expired` with
+  ERR_TOO_MANY_REDIRECTS.
+- CAUSE: `crm_claim_membership()` answered `'ok'` for ANY existing
+  crm_users row — including a signup still waiting for approval. So
+  /auth/denied redirected to `/`, getProfile saw `is_active = false` and
+  redirected back to /auth/denied… forever. (RLS also hides crm_users from
+  inactive users, so the route could NOT just re-read the row itself —
+  hence fixing it inside the security-definer function.)
+- FIX: the RPC now returns `ok | pending | inactive | denied | limit`;
+  /auth/denied and /auth/callback only pass `ok` through, otherwise they
+  sign out and show a real message (shared `src/app/auth/claim-message.ts`).
+  LoginCard reads the GoTrue error from the URL FRAGMENT client-side
+  (`useHashAuthError`) so an expired link explains itself instead of
+  showing a blank form. Signup notice now says to IGNORE the confirm email.
+- E2E in SQL under real impersonation: pending → `pending`, approved-then-
+  deactivated → `inactive`, active → `ok`.
+- ⚠️ THE CONFIRM EMAIL IS NOT PART OF THE FLOW: `crm_approve_member`
+  confirms the address server-side. Correct order = sign up → **admin
+  approves on /crm/team** → temp password → sign in. Nobody should click
+  the confirmation link (it only ever creates an unusable session; the
+  Supabase dashboard toggle "Confirm email" could be turned off entirely).
+- ⚠️ MEMBER LIST CHANGED while the user tested the new delete button:
+  preview@irfancrm.local, koroosh, amirshamsipur1997@kioskoman.com,
+  sara.farzin, a.shasmipur and test.agent are GONE. `/preview` auto-login
+  no longer works until that account is recreated. a.shamsipour@ was
+  re-signed-up and now sits as an INACTIVE AGENT awaiting approval —
+  the live admins are amiralishamsipur@gmail.com (developer) and
+  shirdel.realestate.broker@ (ceo).
+
 **Round 12 (2026-08-03) — DELETE a member (migration `crm_delete_member_rpc`)**:
 /crm/team gained a delete column (developer/ceo only, self excluded) —
 Figma ✕ icon → ConfirmDialog → `crm_delete_member(p_user_id)` RPC

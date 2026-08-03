@@ -1,9 +1,37 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { signIn, signInWithGoogle, type AuthState } from "@/app/(auth)/actions";
 import { GoogleGlyph } from "./AuthShell";
+
+/**
+ * GoTrue reports failed email links in the URL FRAGMENT (#error=…), which the
+ * server never sees — an expired confirm link would otherwise land on a blank
+ * login form with no explanation.
+ */
+function useHashAuthError(): string | null {
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const hash = window.location.hash.replace(/^#/, "");
+    if (!hash) return;
+    const params = new URLSearchParams(hash);
+    const code = params.get("error_code");
+    const desc = params.get("error_description")?.replace(/\+/g, " ");
+    if (!code && !desc) return;
+
+    setMessage(
+      code === "otp_expired"
+        ? "That email link has expired or was already used. You don't need it: once an administrator approves your request you'll get a temporary password to sign in with here."
+        : desc ?? "The email link could not be used."
+    );
+    // drop the fragment so a refresh doesn't repeat the message
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  }, []);
+
+  return message;
+}
 
 const inputCls =
   "h-[40px] w-full rounded-[8px] border border-line-strong bg-white px-[12px] font-sans text-[14px] text-ink outline-none placeholder:text-ink-muted focus:border-teal-deep";
@@ -11,7 +39,8 @@ const labelCls = "block pb-[6px] font-sans text-[12px] font-semibold leading-[16
 
 export function LoginCard({ oauthError }: { oauthError: string | null }) {
   const [state, formAction, pending] = useActionState<AuthState, FormData>(signIn, null);
-  const error = state?.error ?? oauthError;
+  const hashError = useHashAuthError();
+  const error = state?.error ?? oauthError ?? hashError;
 
   return (
     <div className="w-full max-w-[400px] rounded-[16px] bg-white px-[36px] py-[40px] shadow-[0px_10px_30px_rgba(0,0,0,0.08)]">
