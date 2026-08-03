@@ -91,18 +91,36 @@ export function TeamView({
   const pending = localMembers.filter((m) => !m.approved_at);
   const approved = localMembers.filter((m) => m.approved_at);
 
-  const [issued, setIssued] = useState<Record<string, string>>({});
+  /**
+   * Temporary passwords issued this session. They CANNOT live only inside the
+   * approval queue: approving stamps approved_at, which drops the row out of
+   * `pending`, unmounting the row and the password with it — the member was
+   * approved and the one-time password vanished before anyone could read it.
+   * They are shown in their own panel until dismissed.
+   */
+  const [issued, setIssued] = useState<
+    Record<string, { password: string; name: string; email: string }>
+  >({});
   const [approving, setApproving] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
 
   const approve = async (userId: string, role: CrmRole) => {
     setApproving(userId);
+    const member = localMembers.find((m) => m.id === userId);
     const result = await approveMember(userId, role);
     setApproving(null);
     if (result.error || !result.tempPassword) {
       setToast({ message: result.error ?? "approval failed", tone: "alert" });
       return;
     }
-    setIssued((prev) => ({ ...prev, [userId]: result.tempPassword as string }));
+    setIssued((prev) => ({
+      ...prev,
+      [userId]: {
+        password: result.tempPassword as string,
+        name: member?.full_name || member?.email || "New member",
+        email: member?.email ?? "",
+      },
+    }));
     setLocalMembers((ms) =>
       ms.map((m) =>
         m.id === userId
@@ -112,10 +130,20 @@ export function TeamView({
     );
     setToast({
       message: result.emailed
-        ? "Approved — the temporary password was emailed"
-        : `Approved, but the email did not go out (${result.emailError ?? "no mail server"}). Copy the password below and send it yourself.`,
+        ? "Approved — the temporary password was emailed, and it's shown at the top of this page too"
+        : `Approved. No email went out (${result.emailError ?? "no mail server configured"}) — copy the temporary password shown at the top of this page and send it to them yourself.`,
       tone: result.emailed ? "success" : "alert",
     });
+  };
+
+  const copyPassword = async (userId: string, password: string) => {
+    try {
+      await navigator.clipboard.writeText(password);
+      setCopied(userId);
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      setToast({ message: "Could not copy — select the password and copy it manually.", tone: "alert" });
+    }
   };
 
   const sendInvite = async () => {
@@ -152,6 +180,60 @@ export function TeamView({
           Members, roles and invites — visible to Developer and CEO only. Role changes are also
           enforced by the database.
         </p>
+
+        {/* temporary passwords issued in this session — kept out of the
+            approval queue on purpose, since approving removes that row */}
+        {Object.keys(issued).length > 0 && (
+          <div className="mb-[24px] rounded-[8px] border border-teal-deep bg-[#eaf6f8]">
+            <div className="border-b border-[#bcdde4] px-[16px] py-[10px]">
+              <h2 className="m-0 font-display text-[15px] font-medium leading-[22px] text-ink">
+                Temporary passwords ({Object.keys(issued).length})
+              </h2>
+              <p className="m-0 pt-[2px] font-sans text-[12px] leading-[17px] text-ink-muted">
+                Shown once — send each one to its owner. They are asked to choose their own
+                password the first time they sign in. Closing or refreshing this page clears them.
+              </p>
+            </div>
+            {Object.entries(issued).map(([userId, entry]) => (
+              <div
+                key={userId}
+                className="flex flex-wrap items-center gap-[10px] border-b border-[#bcdde4] px-[16px] py-[11px] last:border-b-0"
+              >
+                <span className="min-w-0">
+                  <span className="block font-sans text-[13.5px] font-medium text-ink">
+                    {entry.name}
+                  </span>
+                  <span className="block font-sans text-[12px] text-ink-muted">{entry.email}</span>
+                </span>
+                <code className="ml-auto select-all rounded-[4px] border border-line-strong bg-white px-[10px] py-[5px] font-sans text-[14px] tracking-[0.6px] text-ink">
+                  {entry.password}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => copyPassword(userId, entry.password)}
+                  className="h-[30px] rounded-[4px] bg-teal-deep px-[12px] font-sans text-[13px] text-white transition-opacity hover:opacity-90"
+                >
+                  {copied === userId ? "Copied ✓" : "Copy"}
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Dismiss password for ${entry.name}`}
+                  title="Dismiss"
+                  onClick={() =>
+                    setIssued((prev) => {
+                      const next = { ...prev };
+                      delete next[userId];
+                      return next;
+                    })
+                  }
+                  className="flex size-[28px] items-center justify-center rounded-[4px] text-ink-muted transition-colors hover:bg-white hover:text-ink"
+                >
+                  <DeleteIcon size={15} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* approval queue */}
         {pending.length > 0 && (
@@ -216,8 +298,8 @@ export function TeamView({
                 {issued[m.id] && (
                   <p className="m-0 mt-[10px] rounded-[6px] bg-white px-[12px] py-[9px] font-sans text-[12.5px] leading-[18px] text-ink">
                     Temporary password:{" "}
-                    <code className="rounded-[4px] border border-line-strong bg-canvas px-[7px] py-[2px] text-[13px] tracking-[0.4px]">
-                      {issued[m.id]}
+                    <code className="select-all rounded-[4px] border border-line-strong bg-canvas px-[7px] py-[2px] text-[13px] tracking-[0.4px]">
+                      {issued[m.id].password}
                     </code>
                     <span className="pl-[8px] text-ink-muted">
                       shown once — it is replaced at first sign-in

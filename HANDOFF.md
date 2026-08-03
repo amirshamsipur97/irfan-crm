@@ -88,6 +88,21 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
+**Round 15 (2026-08-03) — 🐛 the temporary password was never visible**:
+approving DID issue the password, but it was rendered inside the pending
+row — and approving stamps approved_at, which drops that row out of
+`pending`, unmounting the password with it. With no SMTP configured the
+password was simply lost. FIX: `issued` now holds {password, name, email}
+and renders in its own **"Temporary passwords (n)"** panel at the top of
+/crm/team, with a Copy button, select-all text and a per-row dismiss;
+the toast points at it. E2E through the UI: approve → panel shows
+`C!ix3SaP!*k7jJ` → real password-grant login with that exact string
+SUCCEEDED → test rows deleted. ⚠️ the panel is session state: refreshing
+the page clears it (the copy is gone for good), which the panel says.
+Also recreated `preview@irfancrm.local` (developer) for /preview local
+auto-login after the user's delete-button testing removed it — left
+DEACTIVATED per the standing rule.
+
 **Round 14 (2026-08-03) — 🐛 "email rate limit exceeded" on signup KILLED**
 (migrations `crm_request_access_without_email`,
 `crm_request_access_empty_token_columns`):
