@@ -88,6 +88,38 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
+**Round 14 (2026-08-03) — 🐛 "email rate limit exceeded" on signup KILLED**
+(migrations `crm_request_access_without_email`,
+`crm_request_access_empty_token_columns`):
+- CAUSE: `supabase.auth.signUp` fires GoTrue's confirmation email, and the
+  built-in sender allows only a handful per hour — repeated signup tests
+  died on it. That mail was never part of this product's flow (approval
+  confirms the address server-side), so the signup path no longer sends any.
+- NEW RPC `crm_request_access(email, full_name, phone, title,
+  requested_role)` — security definer, granted to anon (signup runs before
+  a session), gated by the SAME `crm_can_register` rules. It inserts the
+  auth.users row directly (random unusable password, `email_confirmed_at`
+  pre-set) + the matching auth.identities row; the existing
+  crm_handle_new_auth_user trigger still files the crm_users row INACTIVE,
+  so admin approval on /crm/team is unchanged. Privileged `requested_role`
+  values fall back to 'agent'. `signUp` in `(auth)/actions.ts` now calls
+  this instead of supabase.auth.signUp (generateTempPassword import dropped
+  there; /crm/team still uses it).
+- ⚠️ GOTCHA WORTH REMEMBERING: hand-inserted auth.users rows MUST set
+  confirmation_token / recovery_token / email_change /
+  email_change_token_new / email_change_token_current / phone_change /
+  phone_change_token / reauthentication_token to '' — GoTrue scans them
+  into Go strings and a NULL makes every sign-in fail with
+  "Database error querying schema" (hit exactly this, then fixed + healed).
+- E2E: anon RPC over the wire → pending row; duplicate/outside-domain/bad
+  email all refused; approve via crm_approve_member → **real password-grant
+  login against the auth REST API succeeded**; all zz.* test rows deleted.
+- 🔧 Also repaired: the CEO account shirdel.realestate.broker@ had
+  `email_confirmed_at` NULL despite being approved and active — GoTrue
+  would have refused every password sign-in. Confirmed it (same thing
+  approval does). Live members are now ONLY amiralishamsipur@gmail.com
+  (developer) and shirdel (ceo).
+
 **Round 13 (2026-08-03) — 🐛 SIGNUP REDIRECT LOOP FIXED**
 (migration `crm_claim_membership_reports_state`):
 - SYMPTOM: after a company-email signup, clicking the "Confirm your email"
