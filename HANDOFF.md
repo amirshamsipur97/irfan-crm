@@ -88,6 +88,13 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
+**Round 11 (2026-08-03) — one ToolbarIcon slot for Search + Filter**: the
+user wanted the two icons truly uniform (per Figma toolbar component
+883:28380) — new `ToolbarIcon` helper in BoardHeader renders BOTH glyphs
+through the same 32×20 slot with a 15px cap, so they can never drift
+apart in size again. Search button restructured to the same slot+text
+layout as Filter.
+
 **Round 10 (2026-08-03) — toolbar icon corrections**: the Figma asset
 server exported the search magnifier VERTICALLY MIRRORED (handle pointed
 up) — `bh_search_thin.svg` now carries `transform="matrix(1 0 0 -1 0 h)"`

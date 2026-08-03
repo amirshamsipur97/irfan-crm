@@ -14,6 +14,21 @@ import {
 
 export type ItemHeight = "single" | "double" | "triple";
 
+/**
+ * The one icon slot every toolbar chip uses — a 32×20 box with the glyph
+ * capped at 15px, taken straight from the Figma toolbar component
+ * (883:28380). Search and Filter render through this so they can never
+ * drift apart in size again.
+ */
+function ToolbarIcon({ src }: { src: string }) {
+  return (
+    <span className="flex h-[20px] w-[32px] shrink-0 items-center justify-center">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt="" width={16} height={15} className="max-h-[15px]" />
+    </span>
+  );
+}
+
 function GhostAction({
   icon,
   children,
@@ -220,13 +235,10 @@ export function BoardHeader({
               <button
                 type="button"
                 onClick={onSearch ? () => setSearchOpen(true) : undefined}
-                className="flex h-[32px] items-center gap-0 rounded-[4px] border border-transparent p-px transition-colors hover:bg-[var(--hover-ghost)]"
+                className="flex h-[32px] items-center rounded-[4px] transition-colors hover:bg-[var(--hover-ghost)]"
               >
-                <span className="pl-[10px]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={ICONS.bhSearch} alt="" width={15} height={15} />
-                </span>
-                <span className="px-[5px] pr-[9px] font-sans text-[14px] text-ink">Search</span>
+                <ToolbarIcon src={ICONS.bhSearch} />
+                <span className="pr-[12px] font-sans text-[14px] leading-[21px] text-ink">Search</span>
               </button>
             )}
           </span>
@@ -240,7 +252,7 @@ export function BoardHeader({
                   : "hover:bg-[var(--hover-ghost)]"
               }`}
             >
-              <Icon name="bhFilter" size={14} className="w-[32px]" />
+              <ToolbarIcon src={ICONS.bhFilter} />
               <span className="font-sans text-[14px] leading-[21px] text-ink">
                 Filter
                 {activeFilterCount > 0 ? ` / ${activeFilterCount}` : ""}
