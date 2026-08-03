@@ -23,7 +23,7 @@ import {
 import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { applyRowEdit } from "@/components/crm/persist";
-import { canEditRow, isFullAccess, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { findDuplicateContact } from "@/app/(app)/crm/contacts/actions";
 import { quickCreateAccount } from "@/app/(app)/crm/offers/actions";
@@ -286,7 +286,7 @@ export function ContactsBoard({
               group={group}
               isNew={group.id === newGroupId}
               tools={rowTools}
-              onDeleteGroup={isFullAccess(profile.role) ? () => requestDeleteGroup(group) : undefined}
+              onDeleteGroup={() => requestDeleteGroup(group)}
               onEmailContact={setEmailContact}
               contacts={sortedRows.filter(
                 (c) =>

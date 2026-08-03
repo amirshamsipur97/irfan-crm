@@ -29,7 +29,7 @@ import type { PickerOption } from "./connect-picker";
 import { LostReasonDialog } from "./lost-reason-dialog";
 import { ContactDrawer } from "@/components/crm/contacts/contact-drawer";
 import { applyRowEdit } from "@/components/crm/persist";
-import { canEditRow, isFullAccess, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
 import {
@@ -394,7 +394,7 @@ export function DealsBoard({
                 group={group}
                 isNew={group.id === newGroupId}
                 tools={rowTools}
-                onDeleteGroup={isFullAccess(profile.role) ? () => requestDeleteGroup(group) : undefined}
+                onDeleteGroup={() => requestDeleteGroup(group)}
                 contacts={contacts}
               deals={sortedRows.filter((d) => d.group_id === group.id)}
                 stages={stages}

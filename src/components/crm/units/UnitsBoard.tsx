@@ -16,7 +16,7 @@ import { AiFloaty } from "@/components/shell/AiFloaty";
 import { Icon } from "@/components/ui/Icon";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { applyRowEdit } from "@/components/crm/persist";
-import { canEditRow, isFullAccess, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { canAnimate } from "@/lib/motion";
 import type { CrmDevelopment, CrmUnit, CrmUnitGroup, CrmUser } from "@/lib/types";
@@ -234,7 +234,7 @@ export function UnitsBoard({
           {localGroups.map((group) => (
             <UnitGroup
               key={group.id}
-              onDeleteGroup={isFullAccess(profile.role) ? () => requestDeleteGroup(group) : undefined}
+              onDeleteGroup={() => requestDeleteGroup(group)}
               group={group}
               isNew={group.id === newGroupId}
               tools={rowTools}

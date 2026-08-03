@@ -2,7 +2,7 @@
 
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
 import { useServerState } from "@/lib/use-server-state";
-import { canEditRow, isFullAccess, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { applyRowEdit } from "@/components/crm/persist";
 import {
@@ -223,7 +223,7 @@ export function ProjectsBoard({
           {localGroups.map((group) => (
             <ProjectGroup
               key={group.id}
-              onDeleteGroup={isFullAccess(profile.role) ? () => requestDeleteGroup(group) : undefined}
+              onDeleteGroup={() => requestDeleteGroup(group)}
               group={group}
               isNew={group.id === newGroupId}
               tools={rowTools}

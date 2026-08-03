@@ -29,7 +29,7 @@ import {
 import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { applyRowEdit } from "@/components/crm/persist";
-import { canEditRow, isFullAccess, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
@@ -228,7 +228,7 @@ export function AccountsBoard({
           {localGroups.map((group) => (
             <AccountGroup
               key={group.id}
-              onDeleteGroup={isFullAccess(profile.role) ? () => requestDeleteGroup(group) : undefined}
+              onDeleteGroup={() => requestDeleteGroup(group)}
               group={group}
               isNew={group.id === newGroupId}
               tools={rowTools}

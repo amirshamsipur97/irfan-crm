@@ -88,6 +88,19 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
+**Round 16 (2026-08-03) — group delete opened to EVERY member**
+(migration `crm_group_delete_all_members`): agents couldn't see the trash
+button (UI gated on `isFullAccess`, RLS on `crm_is_admin()`), so the user
+asked for it at all levels. DELETE policies on all 9 `crm_*_groups` tables
+are now `crm_is_member()`, and the boards pass `onDeleteGroup`
+unconditionally (the `isFullAccess` import went with it). The real
+protection was never the role gate — it is "empty groups only" + "never
+the last one", checked in the UI and again in the delete* server actions.
+Verified by impersonation: active AGENT deletes an empty group ✓,
+DEACTIVATED account is refused ✓. ⚠️ TEST TRAP: counting the row from
+inside the impersonated session lies — the SELECT policy hides it either
+way, so always re-check from a privileged session.
+
 ## 🧹 DATA RESET FOR COMPANY LAUNCH — 2026-08-03
 
 The user asked to zero the practice data so the team can start clean, and

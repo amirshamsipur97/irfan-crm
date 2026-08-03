@@ -37,7 +37,7 @@ import type { LogPayload } from "@/components/crm/deals/activity-log";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { findDuplicateContact } from "@/app/(app)/crm/contacts/actions";
 import { applyRowEdit, persist } from "@/components/crm/persist";
-import { canEditRow, isFullAccess, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
@@ -335,7 +335,7 @@ export function LeadsBoard({
               group={group}
               isNew={group.id === newGroupId}
               tools={rowTools}
-              onDeleteGroup={isFullAccess(profile.role) ? () => requestDeleteGroup(group) : undefined}
+              onDeleteGroup={() => requestDeleteGroup(group)}
               onEmailLead={setEmailLead}
               leads={sortedRows.filter((l) => l.group_id === group.id)}
               doneContactIds={doneContactIds}
