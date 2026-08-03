@@ -11,9 +11,13 @@ import {
   approveMember,
   createInvite,
   deleteInvite,
+  deleteMember,
   setMemberActive,
   updateMemberRole,
 } from "@/app/(app)/crm/team/actions";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { DeleteIcon } from "@/components/ui/DeleteIcon";
+import { isFullAccess } from "@/lib/permissions";
 
 const ROLE_OPTIONS: { value: CrmRole; hint: string }[] = [
   { value: "developer", hint: "Full system control — settings, roles, deletes" },
@@ -63,6 +67,24 @@ export function TeamView({
     } else {
       setToast({ message: isActive ? "Member re-activated" : "Member deactivated" });
     }
+  };
+
+  const [deletePrompt, setDeletePrompt] = useState<CrmUser | null>(null);
+  const canDelete = isFullAccess(profile.role);
+
+  /** removing the member frees their email for a fresh signup */
+  const removeMember = async (member: CrmUser) => {
+    const prev = localMembers;
+    setLocalMembers((ms) => ms.filter((m) => m.id !== member.id));
+    const result = await deleteMember(member.id);
+    if (result.error) {
+      setLocalMembers(prev);
+      setToast({ message: result.error, tone: "alert" });
+      return;
+    }
+    setToast({
+      message: `${member.full_name || member.email} deleted — ${member.email} can sign up again`,
+    });
   };
 
   /** pending = signed up through the form, never approved by an admin */
@@ -212,7 +234,7 @@ export function TeamView({
           <table className="w-full min-w-[720px] border-collapse font-sans text-[13.5px]">
             <thead>
               <tr>
-                {["Member", "Email", "Role", "Access", "Status"].map((h) => (
+                {["Member", "Email", "Role", "Access", "Status", ...(canDelete ? [""] : [])].map((h) => (
                   <th
                     key={h}
                     className="border-b border-line bg-canvas px-[14px] py-[10px] text-left text-[12px] font-bold text-ink-muted"
@@ -270,6 +292,21 @@ export function TeamView({
                         {m.is_active ? "Active" : "Deactivated"}
                       </button>
                     </td>
+                    {canDelete && (
+                      <td className="px-[10px] py-[9px]">
+                        {!isSelf && (
+                          <button
+                            type="button"
+                            aria-label={`Delete ${m.full_name || m.email}`}
+                            title="Delete member — frees the email for a new signup"
+                            onClick={() => setDeletePrompt(m)}
+                            className="flex size-[28px] items-center justify-center rounded-[4px] text-ink-muted transition-colors hover:bg-[#ffe9ec] hover:text-alert"
+                          >
+                            <DeleteIcon size={16} />
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 );
               })}
@@ -350,6 +387,19 @@ export function TeamView({
       </div>
       {toast && (
         <SuccessToast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} />
+      )}
+      {deletePrompt && (
+        <ConfirmDialog
+          title={`Delete ${deletePrompt.full_name || deletePrompt.email}?`}
+          message={`Their login is removed and ${deletePrompt.email} becomes free to sign up again. Leads, contacts and deals they own stay on the boards without an owner. This can't be undone.`}
+          confirmLabel="Delete member"
+          onCancel={() => setDeletePrompt(null)}
+          onConfirm={() => {
+            const m = deletePrompt;
+            setDeletePrompt(null);
+            removeMember(m);
+          }}
+        />
       )}
     </Surface>
   );

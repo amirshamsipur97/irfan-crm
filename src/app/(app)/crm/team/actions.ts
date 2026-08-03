@@ -82,6 +82,25 @@ export async function setMemberActive(userId: string, isActive: boolean) {
   return {};
 }
 
+/**
+ * Remove a member for good — the crm_users row AND the auth account, so the
+ * same address can sign up again (this is how @irfaninvest.com logins get
+ * re-tested). Admin-gated and self-delete-guarded inside the RPC; their work
+ * rows survive with the owner/creator nulled.
+ */
+export async function deleteMember(userId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("crm_delete_member", { p_user_id: userId });
+  if (error) return { error: error.message };
+
+  const result = (data ?? {}) as { error?: string; deleted?: boolean; email?: string };
+  if (result.error) return { error: result.error };
+
+  revalidatePath(PAGE);
+  revalidatePath("/admin");
+  return { deleted: true, email: result.email };
+}
+
 export async function createInvite(email: string, fullName: string, role: CrmRole) {
   if (!ROLES.includes(role)) return { error: "invalid role" };
   const clean = email.trim().toLowerCase();

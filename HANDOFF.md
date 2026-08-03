@@ -88,6 +88,24 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
+**Round 12 (2026-08-03) — DELETE a member (migration `crm_delete_member_rpc`)**:
+/crm/team gained a delete column (developer/ceo only, self excluded) —
+Figma ✕ icon → ConfirmDialog → `crm_delete_member(p_user_id)` RPC
+(security definer, `crm_is_admin()`-gated, self-delete refused). It nulls
+the two created_by columns that have no ON DELETE rule
+(crm_deal_downpayments, crm_offer_tracking), deletes the crm_users row,
+then **deletes the auth.users row** — that last step is the point: it
+frees the address so an @irfaninvest.com email can sign up again for
+login testing. Every other FK is CASCADE (prefs/visits/messages/
+notifications) or SET NULL (all work rows keep existing, ownerless).
+E2E: throwaway `zz.deltest@irfaninvest.com` created with a real auth row,
+deleted from the UI → both tables 0. Guards verified under real
+impersonation: agent → "developer or CEO only", admin deleting self →
+"you cannot delete your own account". ⚠️ SQL-impersonation gotcha: the
+MCP runs each statement in its own transaction, so `set_config(...,true)`
++ `set local role` MUST be wrapped in an explicit begin/…/rollback or
+auth.uid() comes back NULL and every guard test looks like it passed.
+
 **Round 11 (2026-08-03) — one ToolbarIcon slot for Search + Filter**: the
 user wanted the two icons truly uniform (per Figma toolbar component
 883:28380) — new `ToolbarIcon` helper in BoardHeader renders BOTH glyphs
