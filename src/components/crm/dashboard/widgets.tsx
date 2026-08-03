@@ -155,7 +155,16 @@ export function MonthlyTargetWidget({ actual, target }: { actual: number; target
   return (
     <div className="flex flex-1 flex-col justify-between">
       <div className="pt-[32px]">
-        <div className="h-[64px] w-full rounded-[4px] bg-gradient-to-r from-[#579bfc] via-[#7a6ff0] to-[#a25ddc]" />
+        {/* the gradient used to be painted full-width no matter what, so a
+            month with nothing sold still looked like the target was hit */}
+        <div className="h-[64px] w-full overflow-hidden rounded-[4px] bg-[#eceef2]">
+          <div
+            className="h-full rounded-[4px] bg-gradient-to-r from-[#579bfc] via-[#7a6ff0] to-[#a25ddc] transition-[width]"
+            style={{
+              width: `${target > 0 ? Math.min(100, Math.max(actual > 0 ? 1.5 : 0, (actual / target) * 100)) : 0}%`,
+            }}
+          />
+        </div>
         <div className="flex justify-between pt-[8px]">
           {ticks.map((t) => (
             <span key={t} className="font-sans text-[12px] leading-[16px] text-ink-muted">

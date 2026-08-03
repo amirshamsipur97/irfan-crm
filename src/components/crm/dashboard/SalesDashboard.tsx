@@ -40,7 +40,12 @@ export interface DashboardData {
   annual: { actual: number; target: number };
   monthly: { actual: number; target: number };
   avgDealValue: number;
+  /** true once a deal has been accepted — before that the tile averages offers */
+  avgIsAccepted: boolean;
   activeForecast: number;
+  /** downpayment cash actually recorded */
+  collected: number;
+  collectedThisYear: number;
   statusDistribution: { label: string; color: string; count: number }[];
   revenueByMonth: { label: string; value: number }[];
   funnel: { label: string; count: number; color: string }[];
@@ -209,37 +214,43 @@ export function SalesDashboard({
             </>
           )}
 
-          <Widget title="Annual Target" className="col-span-5 min-h-[320px]">
+          <Widget title="Annual Target (accepted deals)" className="col-span-5 min-h-[320px]">
             <GaugeWidget actual={data.annual.actual} target={data.annual.target} />
           </Widget>
-          <Widget title="Monthly Target" className="col-span-4 min-h-[320px]">
+          <Widget title="Monthly Target (accepted deals)" className="col-span-4 min-h-[320px]">
             <MonthlyTargetWidget actual={data.monthly.actual} target={data.monthly.target} />
           </Widget>
           <div className="col-span-3 flex flex-col gap-[16px]">
-            <Widget title="Average Deal Value" className="flex-1">
+            <Widget
+              title={data.avgIsAccepted ? "Average accepted deal" : "Average offer price"}
+              className="flex-1"
+            >
               <StatWidget value={data.avgDealValue} currency={currency} />
             </Widget>
-            <Widget title="Active deals - Forecast" className="flex-1">
+            <Widget title="Open offers on the table" className="flex-1">
               <StatWidget value={data.activeForecast} currency={currency} />
+            </Widget>
+            <Widget title="Downpayments collected" className="flex-1">
+              <StatWidget value={data.collected} currency={currency} />
             </Widget>
           </div>
 
-          <Widget title="Deal status distribution" className="col-span-6 min-h-[320px]">
+          <Widget title="Offers by stage" className="col-span-6 min-h-[320px]">
             {data.statusDistribution.length > 0 ? (
               <PieWidget segments={data.statusDistribution} />
             ) : (
               <p className="py-[48px] text-center font-sans text-[14px] text-ink-muted">No deals yet</p>
             )}
           </Widget>
-          <Widget title="Actual Revenue by Month (Deals won)" className="col-span-6 min-h-[320px]">
+          <Widget title="Accepted deal value by month" className="col-span-6 min-h-[320px]">
             {data.revenueByMonth.length > 0 ? (
-              <BarsWidget bars={data.revenueByMonth} yLabel="Deal Value" currency={currency} />
+              <BarsWidget bars={data.revenueByMonth} yLabel="Accepted value" currency={currency} />
             ) : (
-              <p className="py-[48px] text-center font-sans text-[14px] text-ink-muted">No won deals yet</p>
+              <p className="py-[48px] text-center font-sans text-[14px] text-ink-muted">No deals accepted yet</p>
             )}
           </Widget>
 
-          <Widget title="Pipeline conversion" className="col-span-12 min-h-[320px]">
+          <Widget title="Sales funnel — leads to signed" className="col-span-12 min-h-[320px]">
             <FunnelWidget steps={data.funnel} conversionToWon={data.conversionToWon} />
           </Widget>
 
@@ -247,14 +258,14 @@ export function SalesDashboard({
             <ActivityTrackerWidget events={data.activityEvents} />
           </Widget>
 
-          <Widget title="Forecasted Revenue by month" className="col-span-6 min-h-[320px]">
+          <Widget title="Open offers by expected close month" className="col-span-6 min-h-[320px]">
             {data.forecastByMonth.length > 0 ? (
-              <BarsWidget bars={data.forecastByMonth} goal={data.forecastGoal} yLabel="Forecast Value" currency={currency} />
+              <BarsWidget bars={data.forecastByMonth} goal={data.forecastGoal} yLabel="Offer value" currency={currency} />
             ) : (
-              <p className="py-[48px] text-center font-sans text-[14px] text-ink-muted">No active deals yet</p>
+              <p className="py-[48px] text-center font-sans text-[14px] text-ink-muted">No open offers with a close date yet</p>
             )}
           </Widget>
-          <Widget title="Forecasted Revenue by Stage" className="col-span-6 min-h-[320px]">
+          <Widget title="Open offers by stage" className="col-span-6 min-h-[320px]">
             {data.forecastByStage.length > 0 ? (
               <BarsWidget
                 bars={data.forecastByStage.map((s) => ({ label: s.label, value: s.value, color: s.color === "#579bfc" ? "#579bfc" : "#66ccff" }))}

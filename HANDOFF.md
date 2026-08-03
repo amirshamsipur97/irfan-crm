@@ -88,6 +88,31 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
+**Round 17 (2026-08-03) — Sales Dashboard now reads the REAL model**
+(no migration, display only — the CRM is live with 7 agents, so nothing
+was mutated): every money widget keyed off `is_won` STAGES, which this
+team never uses, so Annual/Monthly actual, revenue-by-month and
+conversion sat at 0 forever while the forecast used `close_probability`
+(never filled) and was also always 0. `dashboard/page.tsx` now computes:
+- won = `accepted_at` (Move to deal), NOT a Won stage; annual/monthly
+  actual and "value by month" bucket by accepted_at.
+- "Open offers on the table" = full value of offers not accepted and not
+  lost (replaces the always-zero weighted forecast); by-month and
+  by-stage forecast charts likewise use full price.
+- Average tile = accepted deals once any exist, else average offer price;
+  the title switches with it.
+- NEW "Downpayments collected" tile from crm_deal_downpayments.
+- Funnel rebuilt PERSON-BY-PERSON: Leads → Contacts → Got an offer →
+  Accepted → Downpayment done. Counting offer ROWS made it widen to
+  "200%" (one client can hold several offers).
+- Users are fetched WITHOUT the is_active filter so a lead owned by
+  someone who left keeps their name instead of showing "Unassigned".
+- 🐛 MonthlyTargetWidget painted its gradient bar full-width regardless
+  of the number — a month with nothing sold looked like target hit. It
+  now fills to actual/target.
+Verified widget-by-widget against SQL: open offers 215,550 ✓, average
+offer 107,775 ✓, funnel 8/1/1/0/0 ✓, collected 0 ✓.
+
 **Round 16 (2026-08-03) — group delete opened to EVERY member**
 (migration `crm_group_delete_all_members`): agents couldn't see the trash
 button (UI gated on `isFullAccess`, RLS on `crm_is_admin()`), so the user
