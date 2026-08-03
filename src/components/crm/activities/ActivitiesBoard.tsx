@@ -20,7 +20,7 @@ import { AiFloaty } from "@/components/shell/AiFloaty";
 import { Icon } from "@/components/ui/Icon";
 import { canAnimate } from "@/lib/motion";
 import type { CrmActivityGroup, CrmActivityItem, CrmUser } from "@/lib/types";
-import { BoardHeader, type ItemHeight } from "@/components/crm/leads/BoardHeader";
+import { BoardHeader } from "@/components/crm/leads/BoardHeader";
 import { GROUP_COLORS } from "@/components/crm/leads/board-config";
 import { ActivityGroup } from "./ActivityGroup";
 import { ROW_HEIGHTS } from "./activities-config";
@@ -54,7 +54,6 @@ export function ActivitiesBoard({
   const [personFilter, setPersonFilter] = useState<string | null>(null);
   const [localGroups, setLocalGroups] = useServerState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
-  const [itemHeight, setItemHeight] = useState<ItemHeight>("single");
 
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert" } | null>(null);
   const [deleteGroupPrompt, setDeleteGroupPrompt] = useState<(typeof groups)[number] | null>(null);
@@ -210,8 +209,6 @@ export function ActivitiesBoard({
             personFilter={personFilter}
             onPersonFilter={setPersonFilter}
             showImport={false}
-            itemHeight={itemHeight}
-            onItemHeight={setItemHeight}
             onNew={() => {
               const first = localGroups[0];
               if (first) handleAddActivity(first.id, "New Activity");
@@ -238,7 +235,7 @@ export function ActivitiesBoard({
                   (!personFilter || a.owner_id === personFilter)
               )}
               users={users}
-              rowH={ROW_HEIGHTS[itemHeight]}
+              rowH={ROW_HEIGHTS.single}
               onToggleCollapse={(collapsed) => {
                 setGroupCollapsed("activities", group.id, collapsed);
               }}

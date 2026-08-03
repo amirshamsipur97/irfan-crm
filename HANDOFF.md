@@ -88,6 +88,26 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
+**Round 8 (2026-08-03) — toolbar slimmed to Search + Filter, thin Figma icons**:
+- BoardHeader (shared by all boards): Person owner-filter button, the inert
+  Group by button and the "…" menu are GONE (user request — the
+  quick-filters panel covers Owner). The person props (users /
+  personFilter / onPersonFilter) stay in the TYPE, accepted but IGNORED,
+  so no board needed touching; itemHeight/onItemHeight props were removed
+  for real and ActivitiesBoard pinned to ROW_HEIGHTS.single (the item
+  height submenu lived in the deleted "…" menu). MoreMenu/HeightGlyph/
+  MORE_MENU_ITEMS deleted; `export type ItemHeight` KEPT
+  (activities-config imports it).
+- Icons: EXACT thin Monday glyphs pulled from Figma (user link node
+  1003-28220 for the funnel; search magnifier from the board toolbar node
+  883:28381) → committed as `public/figma/bh_search_thin.svg` +
+  `bh_filter_thin.svg` (preserveAspectRatio fixed to xMidYMid meet — the
+  known warp trap). ICONS.bhSearch/bhFilter remapped; search img now
+  15×15 (was stretched 15×20), filter Icon size 16 in the 32px slot per
+  the design's insets. SalesDashboard's funnel picks up the thin icon
+  automatically. Old lb_imgVariant6/64.svg files left in place (other
+  names may reference the family).
+
 **Round 6 (2026-08-03) — stray groups purged + groups are deletable**:
 - DATA: all empty leftover groups deleted from the 3 funnel boards —
   offers "Closed Won" + 2×"New Group", contacts "Inactive Contacts" +
