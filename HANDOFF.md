@@ -88,6 +88,43 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
+## 🧹 DATA RESET FOR COMPANY LAUNCH — 2026-08-03
+
+The user asked to zero the practice data so the team can start clean, and
+picked scope **"all work records"** (asked explicitly before deleting).
+
+**BACKUP FIRST — `backups/crm-data-backup-2026-08-03.json`** (78 KB, in the
+repo): every deleted row as JSON — 9 leads, 14 contacts, 8 offers/deals, 5
+downpayment parts, 7 tracking entries, 6 viewings, 5 activity items, 4
+inner offers, 2 documents, 2 transactions, 1 project, 1 DM, 3
+notifications, plus the 24 accounts. Restore from it if anything was
+needed after all.
+
+**DELETED** (all zero now): crm_leads, crm_contacts, crm_deals,
+crm_deal_downpayments, crm_offer_tracking, crm_offer_floor_plans,
+crm_contact_documents, crm_offers, crm_property_interests,
+crm_reservations, crm_viewings, crm_activities, crm_activity_items,
+crm_lead_stage_history, crm_tasks, crm_projects, crm_units,
+crm_developments, crm_transactions, crm_payments, crm_deal_commissions,
+crm_commission_splits, crm_commission_agreements, crm_payment_schedules,
+crm_emails, crm_notifications, crm_messages, crm_audit_log — and all 8
+files in the `crm-documents` bucket.
+
+**KEPT ON PURPOSE**: the 24 developer accounts (crm_accounts), the 9 deal
+stages, 2 payment plans, the one group per board, workspace settings and
+all crm_users.
+
+⚠️ Storage rows CANNOT be deleted with SQL (`storage.protect_delete()`
+raises 42501) — use the Storage API with an admin session; the pattern
+used here was: temporarily re-activate preview@irfancrm.local → password
+grant → `DELETE /storage/v1/object/crm-documents` with a `prefixes` array
+→ deactivate again.
+
+⚠️ MEMBERS AS OF THIS RESET: amiralishamsipur@gmail.com (developer),
+shirdel (ceo), **a.shamsipour@irfaninvest.com — approved as AGENT, not
+developer** (the approval dropdown defaults to Agent), preview (dev-only,
+deactivated), babak.chehrazi@irfaninvest.com (pending approval).
+
 **Round 15 (2026-08-03) — 🐛 the temporary password was never visible**:
 approving DID issue the password, but it was rendered inside the pending
 row — and approving stamps approved_at, which drops that row out of
