@@ -66,8 +66,31 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `37cdcd3`,
+> Updated: **2026-08-04** — committed and pushed through `6f3d9de`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-04 — Round 7: long-text cells anchor to the START of the text (commit `6f3d9de`, DEPLOYED)
+
+User report (with screenshots): Leads "Text" and Contacts "Negotiation
+notes" showed the MIDDLE of long notes. CAUSE: the shared cell shape is
+a centered flex button — an overflowing sentence clips at BOTH ends.
+- cell-style.ts gained `CELL_BUTTON_TEXT` / `CELL_INPUT_TEXT`, DERIVED
+  from the base constants via .replace so the two shapes cannot drift:
+  justify-start + text-left, and consumers wrap the value in
+  `<span class="min-w-0 truncate">` for a real ellipsis (text-overflow
+  does not work on a flex container's anonymous text item).
+- Switched: `TextCell` + `NoteDialogCell` (contact-cells.tsx — covers
+  Contacts Comments/Negotiation notes, Offers Details, Projects/
+  Developments/Viewings/Accounts notes, custom text columns) and
+  `InlineEdit`/`CenterEditCell` gained `align="start"` (leads notes
+  column only — first/last name and Developments stay centered).
+- Verified in the pane on REAL data: leads Text cells compute
+  justify-content flex-start and read "called directly/emailed…" from
+  the start (was "…alled directly…"); the exact contact note from the
+  user's screenshot now starts at "he demanded a 2 bhk…". 776 short
+  centered cells untouched. tsc/build clean, eslint 37.
+- ⚠️ first `vercel deploy` attempt ended "Error: Not authorized" AFTER
+  the build — transient; the immediate re-run deployed and aliased fine.
 
 ## SESSION 2026-08-04 — Round 6: client un-clearable on Offers + Deals row menu (commit `37cdcd3`, DEPLOYED)
 
