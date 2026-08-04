@@ -66,7 +66,7 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `fceb818`,
+> Updated: **2026-08-04** — committed and pushed through `c780b32`,
 > all deployed, working tree clean.
 
 ## SESSION 2026-08-04 — Round 4: row Delete opened to every member, own rows only (commit `fceb818` + migrations `crm_row_delete_owner_or_admin` / `crm_row_delete_requires_active_member`, DEPLOYED)
@@ -167,7 +167,7 @@ picked person's data must land on the offer correctly, for every role.
   drive React with `__reactProps$` onChange/onClick (raw clicks still
   dead); restore the files before commit. Used here end-to-end.
 
-## SESSION 2026-08-04 — Austria dial code (commit `4b54830`, DEPLOYED)
+## SESSION 2026-08-04 — Austria dial code (commit `4b54830`, DEPLOYED; Chile +56 added the same way later that day, commit `c780b32`)
 
 User-reported bug: the phone country-code picker had no Austria (+43) —
 in every panel, since the ONE shared `COUNTRIES` list in
