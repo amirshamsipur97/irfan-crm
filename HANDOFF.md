@@ -66,8 +66,29 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `364dd6a`,
+> Updated: **2026-08-04** — committed and pushed through `b2e1c0d`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-05 — auth footer: CRM lockup replaces Power-by-NexProp (commit `b2e1c0d`, DEPLOYED)
+
+User request: swap the NexProp footer logo on the auth pages for the
+product's own (TopBar) logo, and drop the "Power By" line.
+`AuthShell.tsx` now renders `<Icon name="logo" size={34} />` + a
+font-display 22px/300 "CRM" wordmark, gap 10px — the TopBar lockup
+(25px mark + 16px text, ~8px optical gap) scaled by 1.36 so the
+proportions carry over. Position is byte-identical to the old block:
+absolute, centered via left-1/2 + -translate-x-1/2, bottom-[36px]; the
+fixed w-[194px] went (the lockup is 92px wide and centers on its own).
+- Verified in the pane on /login: mark 34×34, wordmark 22px/300, gap
+  10px, centered offset 0, bottom gap 36, mark and text optically
+  centered on one line (screenshot). /signup: no "Power by"/nexprop in
+  the DOM, lockup centered in main and 36px off its bottom (the pane
+  was in zero-viewport state, so relative measurements were used).
+- Prod HTML confirms: no "nexprop", no "Power by", imgVariant6.svg
+  preloaded on /login.
+- `public/figma/auth_nexprop_logo.svg` was LEFT IN PLACE (unused). The
+  standing rule from 07-18 is that this is the real Figma export and
+  must never be regenerated — keep the file if it is ever wanted back.
 
 ## SESSION 2026-08-05 — Leads "Text" edits in a dialog (commit `364dd6a`, DEPLOYED)
 
