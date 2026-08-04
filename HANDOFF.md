@@ -66,8 +66,36 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `778c58f`,
+> Updated: **2026-08-04** — committed and pushed through `37cdcd3`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-04 — Round 6: client un-clearable on Offers + Deals row menu (commit `37cdcd3`, DEPLOYED)
+
+User request: (a) remove the Client chip's ✕ on the Offers board so the
+name cannot be deleted; (b) the Deals board rows lacked delete/move/etc —
+give them the same tools. SHIPPED:
+- `ConnectPicker.onClear` is now OPTIONAL — no onClear, no ✕. The Offers
+  Client picker stops passing it: the client can be SWITCHED to another
+  person but never cleared (the offer is named after them). The
+  Developer column and the Contacts board's account picker keep their ✕.
+- `AcceptedDealsBoard` gained the shared ⋮⋮ row menu via useRowTools
+  (boardKey "deals", already in BOARD_TABLES): Open (deal drawer),
+  Duplicate, Move to (deals page now fetches crm_deal_groups — moving
+  re-files the row's group on the OFFERS board, the row itself stays
+  here), Delete (owner-scoped per Round 4). Drag-drop targets were NOT
+  added — the board is a flat filtered list, silent group changes by
+  drag would confuse; the menu covers everything asked.
+- 🐛 fixed in passing: duplicateRow copied `downpayment_completed_at` +
+  `invoice_sent_at` — a duplicated deal showed "Complete ✓ / invoice"
+  with ZERO payment parts (parts don't copy). Both are in DUP_EXCLUDE
+  now. (accepted_at still copies on purpose: a duplicated deal stays a
+  deal.)
+- E2E in the pane (loading-rename + __reactProps$ recipe): Offers board
+  DOM shows NO "Remove contacts" button (only "Remove developer"); on
+  Deals a throwaway ZZTEST deal showed the handle → menu (all 4 items
+  enabled, screenshot taken) → Delete removed it from the DB. Test row
+  cleaned; the team's REAL first accepted deal (gerard, owner babak)
+  appeared mid-test and was left untouched. tsc/build clean, eslint 37.
 
 ## SESSION 2026-08-04 — Round 5: Owner pinned for agents + full-name hover (commit `778c58f`, migration `crm_owner_reassign_manage_only`, DEPLOYED)
 
