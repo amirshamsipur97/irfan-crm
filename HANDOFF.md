@@ -66,8 +66,45 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `4b54830`,
+> Updated: **2026-08-04** — committed and pushed through `cc92e3a`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-04 — Round 2: Offers add-row live client recall (commit `cc92e3a`, DEPLOYED)
+
+User request: the "+ Add offer" box must recall Contacts LIVE while
+typing (there is deliberately no Move-to-offer on Contacts) and the
+picked person's data must land on the offer correctly, for every role.
+- NEW `AddRowClientPicker` in `connect-picker.tsx`: always-visible input
+  that searches contact options as you type (name OR sub line, so C-code
+  and developer match too), portalled dropdown (sticky-group stacking
+  trap), ArrowUp/Down + Enter + Escape, mouse-enter highlight. Free text
+  matching nobody falls back to the old unlinked add via an explicit
+  "Add offer …" row (sub line says it will not be linked).
+- `addDeal(groupId, name, contactId?)` in offers/actions.ts: with a
+  contactId it re-reads the contact server-side and inserts the offer
+  PRE-LINKED — contact_id (the resolve trigger keeps an explicit id),
+  contact_name, name "Offer — <client>", offer_property_type/bedrooms
+  prefilled from the demand, owner_id = creator (same recipe as
+  createOfferForContact). Unlinked path byte-identical to before.
+- DealsBoard optimistic row now carries the pick (contact_id + prefills)
+  so the mirrored Client wants / budget / country columns light up before
+  the round trip; success toast "Offer created for <name> — client
+  details linked." The old exact-match patch still covers typed names.
+- Roles: options come from the page's server fetch of crm_contacts
+  (team-read RLS) — dev/CEO and agents all recall every client, and
+  E2E-by-impersonation proved an AGENT can insert an offer linked to
+  ANOTHER agent's contact (begin/rollback, no residue).
+- E2E through the real UI (pane): typed "gerard" → dropdown showed
+  "gerard · C-0019 · Adante/Adrak" → pick → row in DB with exact
+  contact_id, sky_villa/2bhk prefilled, owner = creator; mirrored cells
+  rendered on the board. Test offer deleted (offers back to 2).
+- ⚠️ eslint baseline 36 → **37**: the new picker anchors exactly like
+  ConnectPicker (setPos in useLayoutEffect) — same React-Compiler
+  false-positive family; do not "fix".
+- 🔧 PANE E2E RECIPE THAT WORKS (refines the morning lesson): rename the
+  3 loading.tsx files → the board hydrates even in the hidden pane; then
+  drive React with `__reactProps$` onChange/onClick (raw clicks still
+  dead); restore the files before commit. Used here end-to-end.
 
 ## SESSION 2026-08-04 — Austria dial code (commit `4b54830`, DEPLOYED)
 
