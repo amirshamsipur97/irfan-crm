@@ -36,6 +36,7 @@ export const COUNTRIES: Country[] = [
   { code: "+32", name: "Belgium", flag: "🇧🇪" },
   { code: "+55", name: "Brazil", flag: "🇧🇷" },
   { code: "+1", name: "Canada", flag: "🇨🇦" },
+  { code: "+56", name: "Chile", flag: "🇨🇱" },
   { code: "+86", name: "China", flag: "🇨🇳" },
   { code: "+45", name: "Denmark", flag: "🇩🇰" },
   { code: "+251", name: "Ethiopia", flag: "🇪🇹" },
