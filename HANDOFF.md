@@ -66,10 +66,31 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `b2e1c0d`,
+> Updated: **2026-08-04** — committed and pushed through `492c05c`,
 > all deployed, working tree clean.
 
-## SESSION 2026-08-05 — auth footer: CRM lockup replaces Power-by-NexProp (commit `b2e1c0d`, DEPLOYED)
+## SESSION 2026-08-05 — Monday's mark removed, NexProp is the in-app logo (commit `492c05c`, DEPLOYED)
+
+⚠️ TWO-STEP: commit `b2e1c0d` MISREAD the request (it swapped the auth
+footer to the teal lockup). `492c05c` reverted that — AuthShell is
+byte-identical to `91fc24b`, "Power by NexProp" intact — and did the
+real thing: **the TopBar's teal glyph was MONDAY'S OWN LOGO** (it came
+in with the Figma clone) and had to go.
+- TopBar renders `auth_nexprop_logo.svg` at 134×22 (native 194:31.82
+  ratio), 10px before the "CRM" wordmark, optically centered in the
+  48px bar, left offset 20px. Same file the auth footer uses.
+- `ICONS.logo` DELETED from figma-icons.ts and
+  `public/figma/imgVariant6.svg` deleted from the repo, so the mark
+  cannot be reintroduced by name. Nothing else referenced either (the
+  ws_tab_/lb_ imgVariant6X files are unrelated).
+- Verified in the pane: logo 134×22, aspect matches, gap 10, centered
+  in bar, no img[src*=imgVariant6] anywhere (screenshot). Prod: /login
+  still has "Power by" + the nexprop asset, and
+  /figma/imgVariant6.svg now 404s.
+- FYI the favicon is still Next.js's default triangle — unrelated, and
+  NOT Monday's mark (checked by rendering the .ico).
+
+## (superseded) auth footer CRM lockup — commit `b2e1c0d`, REVERTED by `492c05c`
 
 User request: swap the NexProp footer logo on the auth pages for the
 product's own (TopBar) logo, and drop the "Power By" line.
