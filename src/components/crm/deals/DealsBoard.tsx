@@ -293,30 +293,33 @@ export function DealsBoard({
   const sortedRows = applyQuickFilters([...visibleDeals].sort(byPosition), filterDims, qf.state);
 
 
-  const handleAddDeal = async (groupId: string, name: string) => {
+  const handleAddDeal = async (groupId: string, name: string, pick?: PickerOption) => {
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const firstStage = stages[0];
+    // a picked client fills the row optimistically — the mirrored demand
+    // columns light up before the server round trip lands
+    const picked = pick?.id ? contacts.find((c) => c.id === pick.id) : undefined;
     setLocalDeals((prev) => [
       ...prev,
       {
         id: tempId,
-        name: name.trim() || "New Offer",
+        name: pick ? `Offer — ${pick.name}` : name.trim() || "New Offer",
         group_id: groupId,
         stage_id: firstStage?.id ?? "",
-        owner_id: null,
+        owner_id: pick ? profile.id : null,
         deal_value: null,
         close_probability: null,
         expected_close_date: null,
         is_done: false,
-        contact_name: null,
+        contact_name: pick?.name ?? null,
         account_name: null,
-        contact_id: null,
+        contact_id: pick?.id ?? null,
         account_id: null,
         currency: "OMR",
         lost_reason: null,
         next_step: null,
-        offer_property_type: null,
-        offer_bedrooms: null,
+        offer_property_type: picked?.property_type ?? null,
+        offer_bedrooms: picked?.bedrooms ?? null,
         offer_details: null,
         accepted_at: null,
         downpayment_percent: null,
@@ -334,7 +337,7 @@ export function DealsBoard({
     ]);
     // swap the placeholder for the row the database actually stored, so its
     // real id is in place before anyone can click a cell on it
-    const created = await addDeal(groupId, name);
+    const created = await addDeal(groupId, name, pick?.id);
     if (created.error || !created.row) {
       setLocalDeals((prev) => prev.filter((r) => r.id !== tempId));
       setToast({ message: created.error ?? "could not add the row", tone: "alert" });
@@ -343,6 +346,10 @@ export function DealsBoard({
     setLocalDeals((prev) =>
       prev.map((r) => (r.id === tempId ? ({ ...r, ...(created.row as object) } as typeof r) : r))
     );
+    if (pick) {
+      setToast({ message: `Offer created for ${pick.name} — client details linked.` });
+      return;
+    }
     // typing an existing client's name in "+ Add offer" links them right away
     const match = contacts.find(
       (c) => c.name.trim().toLowerCase() === name.trim().toLowerCase()
@@ -421,7 +428,7 @@ export function DealsBoard({
                   renameDealGroup(group.id, name);
                 }}
                 onPatchDeal={patchDeal}
-                onAddDeal={(name) => handleAddDeal(group.id, name)}
+                onAddDeal={(name, pick) => handleAddDeal(group.id, name, pick)}
               />
             ))}
 

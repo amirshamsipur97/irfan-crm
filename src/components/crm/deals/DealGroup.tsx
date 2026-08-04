@@ -35,7 +35,7 @@ import {
   bedroomLabel,
   propertyTypeLabel,
 } from "@/components/crm/contacts/demand-config";
-import { ConnectPicker, type PickerOption } from "./connect-picker";
+import { AddRowClientPicker, ConnectPicker, type PickerOption } from "./connect-picker";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 import { DealDoneBadge } from "@/components/crm/deal-done-badge";
 import { countryFlag } from "@/components/crm/country-cell";
@@ -160,7 +160,8 @@ export function DealGroup({
   onAddColumn: (type: CustomColumnType) => void;
   onRenameColumn: (columnId: string, label: string) => void;
   onDeleteColumn: (columnId: string) => void;
-  onAddDeal: (name: string) => void;
+  /** pick carries the chosen Contacts row — the offer is created linked to it */
+  onAddDeal: (name: string, pick?: PickerOption) => void;
   contactOptions: PickerOption[];
   accountOptions: PickerOption[];
   onCreateAccount: (dealId: string, name: string) => void;
@@ -169,7 +170,6 @@ export function DealGroup({
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [addDraft, setAddDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
 
@@ -616,17 +616,13 @@ export function DealGroup({
                 <Checkbox label="disabled" disabled />
               </span>
               <span className="flex flex-1 items-center border-b border-line px-[10px]">
-                <input
-                  value={addDraft}
-                  onChange={(e) => setAddDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && addDraft.trim()) {
-                      onAddDeal(addDraft);
-                      setAddDraft("");
-                    }
-                  }}
+                {/* live client recall: picking a Contacts row creates the
+                    offer already linked to that exact person */}
+                <AddRowClientPicker
+                  options={contactOptions}
                   placeholder="+ Add offer — type the client's name"
-                  className="h-[24px] w-full min-w-[200px] rounded-[4px] bg-transparent px-[4px] font-sans text-[14px] text-ink outline-none placeholder:text-ink-muted focus:border focus:border-teal-deep focus:bg-white"
+                  onPick={(option) => onAddDeal(option.name, option)}
+                  onPlain={(name) => onAddDeal(name)}
                 />
               </span>
             </div>

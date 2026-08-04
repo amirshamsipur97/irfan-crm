@@ -86,7 +86,7 @@ export async function logDealActivity(
   return {};
 }
 
-export async function addDeal(groupId: string, name: string) {
+export async function addDeal(groupId: string, name: string, contactId?: string) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -101,13 +101,41 @@ export async function addDeal(groupId: string, name: string) {
     .single<{ id: string }>();
   if (!stage) return { error: "no deal stages configured" };
 
+  // picked from the add-row's live client search — the id pins the exact
+  // person, and the offer starts from what that client asked for
+  type PickedContact = {
+    id: string;
+    name: string;
+    property_type: string | null;
+    bedrooms: string | null;
+  };
+  let contact: PickedContact | null = null;
+  if (contactId) {
+    const { data } = await supabase
+      .from("crm_contacts")
+      .select("id, name, property_type, bedrooms")
+      .eq("id", contactId)
+      .maybeSingle<PickedContact>();
+    if (!data) return { error: "that client no longer exists on Contacts" };
+    contact = data;
+  }
+
   const { data, error } = await supabase
     .from("crm_deals")
     .insert({
-      name: name.trim() || "New Offer",
+      name: contact ? `Offer — ${contact.name}` : name.trim() || "New Offer",
       group_id: groupId,
       stage_id: stage.id,
       created_by: user.id,
+      ...(contact
+        ? {
+            contact_id: contact.id,
+            contact_name: contact.name,
+            offer_property_type: contact.property_type,
+            offer_bedrooms: contact.bedrooms,
+            owner_id: user.id,
+          }
+        : {}),
     })
     .select("*")
     .single<Record<string, unknown>>();

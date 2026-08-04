@@ -202,3 +202,185 @@ export function ConnectPicker({
     </div>
   );
 }
+
+/**
+ * The "+ Add offer" row's live client search: an always-visible input that
+ * recalls Contacts as you type (by name or C-code), so a new offer starts
+ * linked to the exact person — their demand mirrors into the row instantly.
+ * Free text that matches nobody falls back to the plain unlinked add.
+ */
+export function AddRowClientPicker({
+  options,
+  placeholder,
+  onPick,
+  onPlain,
+}: {
+  options: PickerOption[];
+  placeholder: string;
+  /** an existing contact was chosen — create the offer linked to them */
+  onPick: (option: PickerOption) => void;
+  /** free text matching no contact — the old unlinked add */
+  onPlain: (name: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+
+  const q = query.trim().toLowerCase();
+  const filtered = options.filter(
+    (o) => !q || o.name.toLowerCase().includes(q) || (o.sub ?? "").toLowerCase().includes(q)
+  );
+  const activeIdx = Math.min(active, Math.max(filtered.length - 1, 0));
+
+  // re-anchor when the list length changes — filtering resizes the panel
+  useLayoutEffect(() => {
+    if (!open) {
+      setPos(null);
+      return;
+    }
+    const el = panelRef.current;
+    const anchor = rootRef.current?.getBoundingClientRect();
+    if (el && anchor) setPos(anchorFixedPos(anchor, el.offsetWidth, el.offsetHeight, "left"));
+  }, [open, filtered.length]);
+
+  useEffect(() => {
+    if (!open) return;
+    // portalled to <body>, so "inside" means the input OR the panel
+    const handler = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (!rootRef.current?.contains(t) && !panelRef.current?.contains(t)) setOpen(false);
+    };
+    const scrollClose = (e: Event) => {
+      if (!panelRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("scroll", scrollClose, true);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("scroll", scrollClose, true);
+    };
+  }, [open]);
+
+  const finish = () => {
+    setQuery("");
+    setActive(0);
+    setOpen(false);
+    inputRef.current?.focus();
+  };
+  const pick = (o: PickerOption) => {
+    onPick(o);
+    finish();
+  };
+  const plain = () => {
+    const name = query.trim();
+    if (!name) return;
+    onPlain(name);
+    finish();
+  };
+
+  return (
+    <div ref={rootRef} className="w-full">
+      <input
+        ref={inputRef}
+        value={query}
+        onFocus={() => setOpen(true)}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setActive(0);
+          setOpen(true);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            setOpen(false);
+            return;
+          }
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setOpen(true);
+            setActive((v) => Math.min(v + 1, filtered.length - 1));
+            return;
+          }
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setActive((v) => Math.max(v - 1, 0));
+            return;
+          }
+          if (e.key === "Enter") {
+            if (open && filtered.length > 0) pick(filtered[activeIdx]);
+            else if (query.trim()) plain();
+          }
+        }}
+        placeholder={placeholder}
+        className="h-[24px] w-full min-w-[200px] rounded-[4px] bg-transparent px-[4px] font-sans text-[14px] text-ink outline-none placeholder:text-ink-muted focus:border focus:border-teal-deep focus:bg-white"
+      />
+
+      {open &&
+        createPortal(
+          <div
+            ref={panelRef}
+            className="fixed z-[70] w-[300px] rounded-[8px] border border-line bg-white p-[6px] shadow-[0px_6px_20px_rgba(0,0,0,0.2)]"
+            style={pos ? { left: pos.left, top: pos.top } : { left: -9999, top: -9999 }}
+          >
+            <div className="thin-scroll max-h-[240px] overflow-y-auto">
+              {filtered.map((o, i) => (
+                <button
+                  key={`${o.name}|${o.sub ?? ""}|${i}`}
+                  type="button"
+                  onClick={() => pick(o)}
+                  onMouseEnter={() => setActive(i)}
+                  className={`flex w-full items-center gap-[10px] rounded-[6px] px-[10px] py-[8px] text-left transition-colors ${
+                    i === activeIdx ? "bg-[var(--hover-ghost)]" : ""
+                  }`}
+                >
+                  <span className="flex size-[24px] shrink-0 items-center justify-center rounded-full border border-line-strong">
+                    <PersonGlyph />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate font-sans text-[14px] leading-[20px] text-ink">
+                      {o.name}
+                    </span>
+                    {o.sub && (
+                      <span className="block truncate font-sans text-[12px] leading-[16px] text-ink-muted">
+                        {o.sub}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              ))}
+
+              {filtered.length === 0 && query.trim() && (
+                <button
+                  type="button"
+                  onClick={plain}
+                  className="flex w-full items-center gap-[10px] rounded-[6px] px-[10px] py-[8px] text-left transition-colors hover:bg-[var(--hover-ghost)]"
+                >
+                  <span className="flex size-[24px] shrink-0 items-center justify-center rounded-full bg-teal-deep font-sans text-[16px] leading-none text-white">
+                    +
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate font-sans text-[14px] leading-[20px] text-ink">
+                      Add offer &ldquo;{query.trim()}&rdquo;
+                    </span>
+                    <span className="block truncate font-sans text-[12px] leading-[16px] text-ink-muted">
+                      no matching client — it will not be linked
+                    </span>
+                  </span>
+                </button>
+              )}
+
+              {filtered.length === 0 && !query.trim() && (
+                <p className="m-0 px-[10px] py-[8px] font-sans text-[13px] text-ink-muted">
+                  No clients yet — convert a lead or add one on Contacts.
+                </p>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
+    </div>
+  );
+}
