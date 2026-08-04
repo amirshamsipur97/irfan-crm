@@ -380,7 +380,9 @@ export function LeadGroup({
                     case "notes":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          {/* long text — anchor to its start, not its middle */}
                           <CenterEditCell
+                            align="start"
                             value={lead.notes}
                             onSave={(next) => onPatchLead(lead.id, { notes: next })}
                           />

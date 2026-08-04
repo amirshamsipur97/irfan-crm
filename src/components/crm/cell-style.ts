@@ -23,3 +23,13 @@ export const CELL_INPUT =
  * hover hint, but keep their own inner layout.
  */
 export const CELL_HOVER = "transition-colors hover:bg-[var(--hover-ghost)]";
+
+/**
+ * Long-text variant (notes, comments, details): a paragraph can never fit
+ * the cell, so anchor to the START of the text — the centered box clips
+ * BOTH ends and shows the middle of the sentence. Derived from the base
+ * constants so the two shapes can never drift apart.
+ */
+export const CELL_BUTTON_TEXT =
+  CELL_BUTTON.replace("justify-center", "justify-start") + " text-left";
+export const CELL_INPUT_TEXT = CELL_INPUT.replace("text-center", "text-left");

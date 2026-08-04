@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { CELL_BUTTON, CELL_INPUT } from "@/components/crm/cell-style";
+import { CELL_BUTTON, CELL_BUTTON_TEXT, CELL_INPUT, CELL_INPUT_TEXT } from "@/components/crm/cell-style";
 import { Avatar } from "@/components/ui/Avatar";
 import { Icon } from "@/components/ui/Icon";
 import type { CrmStage, CrmUser } from "@/lib/types";
@@ -51,6 +51,7 @@ export function InlineEdit({
   placeholder = "",
   style,
   fill = false,
+  align = "center",
 }: {
   value: string;
   onSave: (next: string) => void;
@@ -65,6 +66,9 @@ export function InlineEdit({
    * default because the group title uses this inline, next to other controls.
    */
   fill?: boolean;
+  /** "start" for long-text columns — a centered overflow shows the MIDDLE
+   *  of the text; start-aligned shows its beginning. Only affects fill. */
+  align?: "center" | "start";
 }) {
   const [editing, setEditing] = useState(autoEdit);
   const [draft, setDraft] = useState(value);
@@ -90,7 +94,9 @@ export function InlineEdit({
         }}
         className={`${
           fill
-            ? CELL_INPUT
+            ? align === "start"
+              ? CELL_INPUT_TEXT
+              : CELL_INPUT
             : "rounded-[4px] border border-teal-deep bg-white px-[4px] outline-none"
         } ${className}`}
         style={style}
@@ -106,13 +112,19 @@ export function InlineEdit({
       }}
       className={`${
         fill
-          ? CELL_BUTTON
+          ? align === "start"
+            ? CELL_BUTTON_TEXT
+            : CELL_BUTTON
           : "truncate rounded-[4px] border border-transparent px-[5px] text-left transition-colors hover:border-line-strong"
       } ${className}`}
       style={style}
       title={value}
     >
-      {value || placeholder}
+      {fill && align === "start" ? (
+        <span className="min-w-0 truncate">{value || placeholder}</span>
+      ) : (
+        value || placeholder
+      )}
     </button>
   );
 }

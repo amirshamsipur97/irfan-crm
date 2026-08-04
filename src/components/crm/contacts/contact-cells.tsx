@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { CELL_BUTTON, CELL_INPUT } from "@/components/crm/cell-style";
+import { CELL_BUTTON, CELL_BUTTON_TEXT, CELL_INPUT, CELL_INPUT_TEXT } from "@/components/crm/cell-style";
 import { Popover } from "@/components/crm/leads/cells";
 
 /** Full-bleed colored option cell (Type / Priority), gray when empty. */
@@ -146,7 +146,7 @@ export function TextCell({
           if (e.key === "Enter") commit();
           if (e.key === "Escape") setEditing(false);
         }}
-        className={CELL_INPUT}
+        className={CELL_INPUT_TEXT}
       />
     );
   }
@@ -157,10 +157,10 @@ export function TextCell({
         setDraft(value ?? "");
         setEditing(true);
       }}
-      className={CELL_BUTTON}
+      className={CELL_BUTTON_TEXT}
       title={value ?? "Add comment"}
     >
-      {value ?? ""}
+      <span className="min-w-0 truncate">{value ?? ""}</span>
     </button>
   );
 }
@@ -200,10 +200,10 @@ export function NoteDialogCell({
           setDraft(value ?? "");
           setOpen(true);
         }}
-        className={CELL_BUTTON}
+        className={CELL_BUTTON_TEXT}
         title={value ?? "Add note"}
       >
-        {value ?? ""}
+        <span className="min-w-0 truncate">{value ?? ""}</span>
       </button>
       {open &&
         createPortal(

@@ -228,22 +228,26 @@ export function PhoneCell({
   );
 }
 
-/** Centered inline-editable text cell (Company / Title). */
+/** Centered inline-editable text cell (Company / Title). Pass
+ *  align="start" for long-text columns so the START of the text shows. */
 export function CenterEditCell({
   value,
   onSave,
+  align = "center",
 }: {
   value: string | null;
   onSave: (next: string | null) => void;
+  align?: "center" | "start";
 }) {
   return (
     <span className="flex size-full items-center justify-center">
       <InlineEdit
         fill
+        align={align}
         value={value ?? ""}
         onSave={(next) => onSave(next.trim() || null)}
         placeholder=""
-        className="text-center font-sans text-[14px] leading-[20px] text-ink"
+        className="font-sans text-[14px] leading-[20px] text-ink"
       />
     </span>
   );
