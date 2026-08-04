@@ -69,6 +69,20 @@ animations. Treat 36 as the baseline — only investigate if it grows.
 > Updated: **2026-08-04** — committed and pushed through `d0f874c`,
 > all deployed, working tree clean.
 
+## SESSION 2026-08-05 — manual gmail exception member (no code, DB only)
+
+The user asked to hand-register kh.hamidiii@gmail.com (outside the
+allowed domains) and approve it like everyone else. Done via the
+EXISTING exception mechanism, nothing bypassed:
+crm_invites row (role agent, invited_by amirali) → crm_can_register
+preflight 'ok' → crm_request_access() filed the auth row + pending
+crm_users (invite consumed, used_at stamped) → crm_approve_member()
+under admin impersonation (temp password, role agent) → REAL
+password-grant login against the auth REST API succeeded.
+Account state: ACTIVE agent "Kh Hamidi", must_change_password=true (the
+first-login dialog will force a new password). Team = 9 active members.
+The temp password was handed to the user in chat, not stored here.
+
 ## SESSION 2026-08-04 — Round 9: group titles pinned through the WHOLE horizontal scroll (commit `d0f874c`, DEPLOYED)
 
 User report (screenshot): scrolling right to the table's end dragged the
