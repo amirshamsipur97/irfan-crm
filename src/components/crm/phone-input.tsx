@@ -30,6 +30,7 @@ export const COUNTRIES: Country[] = [
   { code: "+93", name: "Afghanistan", flag: "🇦🇫" },
   { code: "+213", name: "Algeria", flag: "🇩🇿" },
   { code: "+61", name: "Australia", flag: "🇦🇺" },
+  { code: "+43", name: "Austria", flag: "🇦🇹" },
   { code: "+994", name: "Azerbaijan", flag: "🇦🇿" },
   { code: "+880", name: "Bangladesh", flag: "🇧🇩" },
   { code: "+32", name: "Belgium", flag: "🇧🇪" },
