@@ -195,7 +195,7 @@ export function LeadGroup({
           {/* column headers */}
           <div className="flex h-[36px] w-fit items-stretch">
             <div
-              className="sticky left-0 z-10 flex items-stretch bg-white"
+              className="gutter-cover sticky left-0 z-10 flex items-stretch bg-white"
               style={{ width: NAME_COL_W }}
             >
               <span
@@ -244,7 +244,7 @@ export function LeadGroup({
               <div key={lead.id} className="group/row relative flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, lead.id)}>
                 {tools && <RowTools row={lead} tools={tools} />}
                 <div
-                  className="sticky left-0 z-10 flex items-stretch bg-white"
+                  className="gutter-cover sticky left-0 z-10 flex items-stretch bg-white"
                   style={{ width: NAME_COL_W }}
                 >
                   <span className="w-[6px] shrink-0" style={{ backgroundColor: group.color }} />
@@ -514,7 +514,7 @@ export function LeadGroup({
 
           {/* add lead row */}
           <div className="flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, null)}>
-            <div className="sticky left-0 z-10 flex items-stretch bg-white" style={{ width: NAME_COL_W }}>
+            <div className="gutter-cover sticky left-0 z-10 flex items-stretch bg-white" style={{ width: NAME_COL_W }}>
               <span
                 className="w-[6px] shrink-0 rounded-bl-[6px] opacity-50"
                 style={{ backgroundColor: group.color }}

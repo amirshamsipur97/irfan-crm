@@ -64,3 +64,18 @@ body {
   background: #c3c6d4;
   border-radius: 3px;
 }
+
+/* Boards keep a 40px lane left of the pinned column for the row handle.
+   The lane is transparent, so cells scrolling past the pinned block kept
+   showing through it — this paints the lane from every pinned block, and
+   rows vanish cleanly at its edge. The blocks sit at z-10 while the row
+   handle is z-20, so the handle stays visible and clickable above it. */
+.gutter-cover::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -40px;
+  width: 40px;
+  background: #fff;
+}

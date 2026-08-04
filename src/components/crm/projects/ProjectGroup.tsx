@@ -159,7 +159,7 @@ export function ProjectGroup({
           {/* column headers */}
           <div className="flex h-[36px] w-fit items-stretch">
             <div
-              className="sticky left-0 z-10 flex items-stretch bg-white"
+              className="gutter-cover sticky left-0 z-10 flex items-stretch bg-white"
               style={{ width: PROJECT_NAME_COL_W }}
             >
               <span
@@ -220,7 +220,7 @@ export function ProjectGroup({
             >
               {tools && <RowTools row={project} tools={tools} />}
               <div
-                className="sticky left-0 z-10 flex items-stretch bg-white"
+                className="gutter-cover sticky left-0 z-10 flex items-stretch bg-white"
                 style={{ width: PROJECT_NAME_COL_W }}
               >
                 <span className="w-[6px] shrink-0" style={{ backgroundColor: group.color }} />
@@ -357,7 +357,7 @@ export function ProjectGroup({
           {/* add project row */}
           <div className="flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, null)}>
             <div
-              className="sticky left-0 z-10 flex items-stretch bg-white"
+              className="gutter-cover sticky left-0 z-10 flex items-stretch bg-white"
               style={{ width: PROJECT_NAME_COL_W }}
             >
               <span
@@ -391,7 +391,7 @@ export function ProjectGroup({
           {/* summary row */}
           <div className="flex w-fit items-stretch" style={{ height: ROW_H }}>
             <span
-              className="sticky left-0 z-10 block bg-white"
+              className="gutter-cover sticky left-0 z-10 block bg-white"
               style={{ width: PROJECT_NAME_COL_W }}
             />
             {PROJECT_COLUMNS.map((col) => (

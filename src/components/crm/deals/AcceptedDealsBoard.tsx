@@ -379,7 +379,7 @@ export function AcceptedDealsBoard({
               {/* column headers */}
               <div className="flex h-[36px] w-fit items-stretch">
                 <div
-                  className="sticky left-0 z-10 flex items-stretch bg-white"
+                  className="gutter-cover sticky left-0 z-10 flex items-stretch bg-white"
                   style={{ width: DEAL_NAME_COL_W }}
                 >
                   <span className="w-[6px] shrink-0 rounded-tl-[6px]" style={{ backgroundColor: STRIPE }} />
@@ -417,7 +417,7 @@ export function AcceptedDealsBoard({
                   <div key={deal.id} className="group/row relative flex w-fit items-stretch" style={{ height: ROW_H }}>
                     <RowTools row={deal} tools={rowTools} />
                     <div
-                      className="sticky left-0 z-10 flex items-stretch bg-white"
+                      className="gutter-cover sticky left-0 z-10 flex items-stretch bg-white"
                       style={{ width: DEAL_NAME_COL_W }}
                     >
                       <span className="w-[6px] shrink-0" style={{ backgroundColor: STRIPE }} />
@@ -720,7 +720,7 @@ export function AcceptedDealsBoard({
 
               {/* summary row */}
               <div className="flex w-fit items-stretch" style={{ height: ROW_H }}>
-                <span className="sticky left-0 z-10 block bg-white" style={{ width: DEAL_NAME_COL_W }} />
+                <span className="gutter-cover sticky left-0 z-10 block bg-white" style={{ width: DEAL_NAME_COL_W }} />
                 {COLS.map((col) => {
                   const totals = (() => {
                     if (col.key === "price")
