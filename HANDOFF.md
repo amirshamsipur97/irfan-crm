@@ -66,8 +66,29 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-03 (end of session)** — committed and pushed through
-> `7802a6f`, all deployed, working tree clean.
+> Updated: **2026-08-04** — committed and pushed through `4b54830`,
+> all deployed, working tree clean.
+
+## SESSION 2026-08-04 — Austria dial code (commit `4b54830`, DEPLOYED)
+
+User-reported bug: the phone country-code picker had no Austria (+43) —
+in every panel, since the ONE shared `COUNTRIES` list in
+`src/components/crm/phone-input.tsx` feeds the board phone cells, the
+country cells and the signup form alike. Added
+`{ code: "+43", name: "Austria", flag: "🇦🇹" }` in the alphabetical tail
+between Australia and Azerbaijan. tsc + build clean; verified in the
+served HTML (local AND https://crm.irfaninvest.com/signup — the signup
+`<select>` renders the same list server-side, so `curl | grep Austria`
+is a real end-to-end check that needs no browser).
+
+⚠️ PANE LESSON (explains the 08-03 "dead synthetic clicks" note): with
+the Browser pane HIDDEN, the board never hydrates — only the TopBar's 3
+buttons carry `__reactProps$`; clicks/scrolls only produce hover states
+and `read_page` returns an empty tree. It is not an app bug: the hidden
+tab gets no idle time, so React's hydration never runs. Verify via
+server-rendered HTML (curl) or make the pane visible before driving UI.
+Live team data was untouched this session (12 leads · 4 contacts · 2
+offers at the time of work); preview account re-deactivated after use.
 
 ## WHAT HAPPENED LATER ON 2026-08-02 (second session — drawer swap + first-negotiation columns)
 
