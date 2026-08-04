@@ -25,29 +25,25 @@ export function TopBar({ profile }: { profile: CrmUser }) {
   }, [menuOpen]);
 
   return (
-    <header className="relative flex h-[48px] shrink-0 items-center justify-between bg-canvas pl-[4px] pr-[24px]">
-      {/* left: product logo + contact sales */}
-      <div className="flex items-center">
-        <Link
-          href="/"
-          className="ml-[10px] flex h-[42px] items-center gap-[10px] rounded-[4px] px-[6px]"
-        >
-          {/* NexProp wordmark at its native 194:31.82 ratio — the teal mark
-              that used to sit here was Monday's own logo */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/figma/auth_nexprop_logo.svg"
-            alt="NexProp"
-            width={134}
-            height={22}
-            className="block shrink-0 select-none"
-            draggable={false}
-          />
-          <span className="font-display text-[16px] font-light leading-[24px] text-ink">
-            CRM
-          </span>
-        </Link>
-      </div>
+    <header className="relative flex h-[48px] shrink-0 items-center justify-end bg-canvas pl-[4px] pr-[24px]">
+      {/* brand, alone in the true centre of the bar — absolute so the tools
+          cluster's width can never pull it off centre. NexProp wordmark at
+          its native 194:31.82 ratio (the teal mark that used to sit on the
+          left was Monday's own logo). */}
+      <Link
+        href="/"
+        className="absolute left-1/2 flex h-[42px] -translate-x-1/2 items-center rounded-[4px] px-[6px]"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/figma/auth_nexprop_logo.svg"
+          alt="NexProp"
+          width={134}
+          height={22}
+          className="block shrink-0 select-none"
+          draggable={false}
+        />
+      </Link>
 
       {/* right: tools cluster */}
       <div className="flex items-center">
