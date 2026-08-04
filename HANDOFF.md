@@ -1,32 +1,73 @@
 # Irfan CRM — Session Handoff
 
-## HOW TO START THE NEXT SESSION
+## 🚀 HOW TO START THE NEXT SESSION
 
-Open a new session in `Claude code/irfan-crm` and say:
+**Say exactly this to load the project:**
 
-> پروژه CRM irfaninvest — مسیر: Claude code/irfan-crm
-> اول HANDOFF.md را باز کن و «HOW TO START» و «WHAT HAPPENED ON 2026-08-02»
-> و «START HERE» را کامل بخوان، بعد بگو از کجا ادامه می‌دهیم.
+> **CRM-LOAD** — پروژه CRM irfaninvest، مسیر `Claude code/irfan-crm`.
+> فایل HANDOFF.md را باز کن و بخش «HOW TO START THE NEXT SESSION» و
+> «LIVE SYSTEM STATE» و «START HERE — product shape» را کامل بخوان،
+> بعد بگو از کجا ادامه می‌دهیم.
 
-Then, before touching anything:
-1. `git log --oneline -5` — the tree must be clean and end at `661d5e1`
-   (or later if someone kept working).
-2. Re-read the roles table: the user changes roles between sessions
-   (koroosh became developer, shirdel became CEO, sara + a.shasmipur were
-   deactivated — all on 2026-08-02, all discovered mid-test).
-3. Deploy is ALWAYS `npx vercel deploy --prod --yes`. Since 2026-08-02 the
-   repo has a remote — https://github.com/amirshamsipur97/irfan-crm
-   (PRIVATE; HANDOFF holds credentials, do NOT make it public without
-   scrubbing history) — but pushing is BACKUP ONLY, it does not deploy.
-   Push after every commit to keep GitHub current.
-4. Test data goes in and comes straight back out. The user works in this
-   CRM daily — rows appear between your queries. Match by id, never by
-   name, and re-check ownership before deleting anything.
+(The keyword is **CRM-LOAD**. Everything needed to resume is in this file;
+read the three sections above before touching anything.)
 
-> Read this + the auto-memory `irfan-crm` entry first. This file is the single
-> source of truth for continuing the build in a new session.
-> Updated: **2026-08-02 (second session)** — pushed to the private GitHub
-> remote; vercel CLI remains the only deploy path.
+### 🔴 The system is LIVE — read this before your first command
+
+As of **2026-08-03** the CRM is in daily production use by **8 members
+(7 agents + the CEO)** who are entering real client data right now.
+
+1. **Never wipe, reseed or "clean up" data.** Rows appear between your
+   queries — the team is typing while you work. Match by **id, never by
+   name**. Before deleting anything, re-read it and check ownership.
+   The 2026-08-03 reset was an explicit one-off, taken with a backup
+   (`backups/crm-data-backup-2026-08-03.json`).
+2. **Ask before anything destructive or permission-widening.** Two
+   examples from 08-03 that were confirmed first: zeroing the boards, and
+   opening group-delete to every role.
+3. `git log --oneline -5` — the tree must be clean and end at **`7802a6f`**
+   (or later). `git status` must be empty.
+4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
+   GitHub does NOT deploy. Push after every commit anyway (backup):
+   https://github.com/amirshamsipur97/irfan-crm — **PRIVATE, and it must
+   stay private**: this file and the git history contain plaintext
+   passwords.
+5. **Verify in the browser before saying it works.** `preview_start` with
+   launch name `irfan-crm` (port 3070), then `/preview` auto-login. That
+   account (`preview@irfancrm.local`, developer) is kept **DEACTIVATED** —
+   re-activate it via SQL with the privilege-guard trigger disabled, and
+   set it back to inactive when you are done. Every session this rule was
+   followed; keep it.
+6. **Roles change between sessions.** Re-read `crm_users` at the start
+   instead of trusting any roster written here.
+
+### Health baseline (measured at close of 2026-08-03)
+
+`npx tsc --noEmit` → clean. `npx next build` → clean.
+`npx eslint src` → **36 errors, all pre-existing and all false alarms for
+this codebase** (identical count before and after this session's work):
+the React-Compiler rules complain about `useGSAP`/`contextSafe` touching
+refs and about `Date.now()` inside async server components. HANDOFF has
+warned since 07-26 that "fixing" the GSAP ones breaks the collapse
+animations. Treat 36 as the baseline — only investigate if it grows.
+
+### Standing conventions (violating these has caused real bugs)
+
+- Every write action must count affected rows (`src/lib/mutate.ts`) —
+  RLS refuses by matching 0 rows, not by erroring.
+- Boards await + roll back through `applyRowEdit` / `persist`.
+- New cells import `CELL_BUTTON` / `CELL_INPUT` from `cell-style.ts`.
+- ONE list per concept (PROPERTY_TYPES, COUNTRIES, LEAD_SOURCES…).
+- Mirror, don't copy, when one board shows another board's data.
+- Hand-inserted `auth.users` rows must set the 8 token columns to `''`
+  or every sign-in dies with "Database error querying schema".
+- SQL impersonation only works inside an explicit
+  `begin; … set local role authenticated; … rollback;` block — and never
+  trust a row count read from inside that session (RLS hides rows both
+  ways; re-check from a privileged session).
+
+> Updated: **2026-08-03 (end of session)** — committed and pushed through
+> `7802a6f`, all deployed, working tree clean.
 
 ## WHAT HAPPENED LATER ON 2026-08-02 (second session — drawer swap + first-negotiation columns)
 
@@ -87,6 +128,50 @@ newline, drawer section verified on BOTH boards, test note reverted.
   Viewings / Transaction / Payments / Commission / Latest activity;
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
+
+## 📊 LIVE SYSTEM STATE — end of 2026-08-03
+
+**https://crm.irfaninvest.com** · code at `7802a6f` · everything deployed.
+
+**Team (8 active).** amiralishamsipur@gmail.com = **developer** (the
+user's own Google login, the account to work from) · shirdel.realestate
+.broker@ = **ceo** · six agents: a.shamsipour@, aylar.homayoun@,
+babak.chehrazi@, m.mehrjooy@, sara.farzin@, sara.zangeneh@ ·
+preview@irfancrm.local = developer, **deactivated** (dev auto-login only).
+No pending approvals. ⚠️ **a.shamsipour@ is an AGENT** — the user's own
+work address was approved with the dropdown's default role, so it cannot
+reach /crm/team or /admin. Offer to switch it to developer.
+
+**Real data being entered (do not touch).** 8 leads · 1 contact · 2 open
+offers (95,550 + 120,000 OMR) · 0 accepted deals · 0 downpayments ·
+24 developer accounts on the Accounts board · 9 deal stages · 2 payment
+plans · one group per board.
+
+**What still blocks a fully-finished rollout**
+1. **Email is dark.** No `RESEND_API_KEY` + verified irfaninvest.com, no
+   Zoho SMTP. Consequences: approving a member shows the temporary
+   password on screen only (the panel clears on refresh), and every
+   "Send email" button returns 503. This is the single biggest remaining
+   launch item and it needs the user, not code.
+2. **`/preview` is dev-only** — fine, but remember it is deactivated.
+3. Supabase advisors still flag the whitewill-site tables
+   (`leads`, `ai_conversations`, `analytics_*`) for RLS — that is the
+   OTHER project's launch blocker, not this CRM's.
+4. Auth "leaked password protection" is off (Supabase dashboard toggle).
+
+**Open product questions the user has never answered**
+- Extend the per-agent visibility rule (today only Leads) to Contacts /
+  Offers / Deals? A converted client is still visible team-wide.
+- Store age as a date of birth instead of a snapshot number?
+
+**Natural next steps if the user has no new request**
+- Wire email (once keys exist) and re-test approval + Send email.
+- Per-agent visibility decision above.
+- The dashboard's "Add widget", "Export", "People", "Filter", "1 connected
+  board" chrome is still decorative — either build or remove.
+- Activity tracker shows "No activities" because nothing logs
+  crm_activity_items in the new flow; the per-offer tracking feed is
+  where real activity now lives. Consider feeding the tracker from it.
 
 **Round 17 (2026-08-03) — Sales Dashboard now reads the REAL model**
 (no migration, display only — the CRM is live with 7 agents, so nothing
