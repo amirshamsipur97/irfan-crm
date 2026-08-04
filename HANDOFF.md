@@ -66,8 +66,21 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `492c05c`,
+> Updated: **2026-08-04** — committed and pushed through `4101ba6`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-05 — NexProp centred and alone in the top bar (commit `4101ba6`, DEPLOYED)
+
+Follow-up to the logo swap: the user wanted the wordmark in the MIDDLE
+of the bar, by itself. The brand Link is now `absolute left-1/2
+-translate-x-1/2` inside the (already relative) header — true centre,
+immune to the tools cluster's width — the header switched from
+justify-between to justify-end, and the leftover "CRM" wordmark next to
+the logo was removed. Measured in the pane: 134x22, offset from bar
+centre 0px, vertically centred, 330px clear of the tools cluster.
+WARNING: the centring is absolute, so on a very narrow viewport the
+logo could reach the tools cluster — irrelevant for this desktop-only
+CRM, but that is the trade-off if a mobile layout is ever added.
 
 ## SESSION 2026-08-05 — Monday's mark removed, NexProp is the in-app logo (commit `492c05c`, DEPLOYED)
 
