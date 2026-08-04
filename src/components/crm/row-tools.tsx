@@ -9,7 +9,7 @@
 
 import { useRef, useState } from "react";
 import { Popover } from "@/components/crm/leads/cells";
-import { canEditRow, isFullAccess, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { isTempId, STILL_SAVING_MESSAGE } from "@/components/crm/persist";
 import type { CrmUser } from "@/lib/types";
 import { deleteRow, duplicateRow, moveRow } from "@/app/(app)/crm/row-actions";
@@ -32,7 +32,6 @@ export interface RowToolsConfig {
   groups: { id: string; name: string }[];
   canEdit: (rowId: string) => boolean;
   /** deleting a board row is admin-tier in RLS, regardless of who owns it */
-  canDelete: boolean;
   onOpen?: (rowId: string) => void;
   onDuplicate: (rowId: string) => void;
   onMove: (rowId: string, groupId: string) => void;
@@ -92,7 +91,6 @@ export function useRowTools<T extends BoardRowLike>(opts: {
   return {
     groups,
     onOpen,
-    canDelete: isFullAccess(profile.role),
     canEdit: (rowId) => {
       const row = rows.find((r) => r.id === rowId);
       return row ? canEditRow(profile, row) : false;
@@ -363,14 +361,12 @@ export function RowTools({
           )}
         </div>
         <div className="my-[5px] border-t border-line-soft" />
+        {/* every role may delete, but only rows they could edit — the same
+            owner-or-creator rule the RLS DELETE policies enforce */}
         <button
           type="button"
-          disabled={!editable || !tools.canDelete}
-          title={
-            !tools.canDelete
-              ? "Only a Developer or CEO can delete board items"
-              : undefined
-          }
+          disabled={!editable}
+          title={!editable ? "Only the item's owner can delete it" : undefined}
           className={`${ITEM_CLS} text-alert`}
           onClick={() => {
             setOpen(false);
