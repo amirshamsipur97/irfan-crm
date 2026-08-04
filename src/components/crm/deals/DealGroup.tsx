@@ -348,6 +348,8 @@ export function DealGroup({
                     {/* the row IS the client — picked from Contacts, and the
                         offer's stored name follows the pick automatically */}
                     <span className="block min-w-0 flex-1">
+                      {/* no onClear on purpose: an offer must keep its client —
+                          the link can be switched to another person, not removed */}
                       <ConnectPicker
                         value={deal.contact_name}
                         options={contactOptions}
@@ -362,7 +364,6 @@ export function DealGroup({
                             ...(id ? { contact_id: id } : {}),
                           })
                         }
-                        onClear={() => onPatchDeal(deal.id, { contact_name: null })}
                         onCreate={(name) => onCreateContact(deal.id, name)}
                       />
                     </span>

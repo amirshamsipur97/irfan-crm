@@ -32,7 +32,8 @@ export function ConnectPicker({
   kind: "account" | "contact";
   /** id is set when the option carries one — patch the FK with it, not the name */
   onPick: (name: string, id?: string) => void;
-  onClear: () => void;
+  /** omit to hide the chip's ✕ — the link can be switched but never removed */
+  onClear?: () => void;
   onCreate: (name: string) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -88,18 +89,20 @@ export function ConnectPicker({
           <span className="group/chip flex h-[24px] max-w-full items-center gap-[4px] truncate rounded-[4px] bg-cyan-tint px-[8px] font-sans text-[14px] leading-[20px] text-ink">
             {glyph}
             <span className="truncate">{value}</span>
-            <span
-              role="button"
-              aria-label={`Remove ${entityLabel.toLowerCase()}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onClear();
-                setOpen(false);
-              }}
-              className="pl-[2px] font-sans text-[13px] text-ink-muted hover:text-ink"
-            >
-              ✕
-            </span>
+            {onClear && (
+              <span
+                role="button"
+                aria-label={`Remove ${entityLabel.toLowerCase()}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClear();
+                  setOpen(false);
+                }}
+                className="pl-[2px] font-sans text-[13px] text-ink-muted hover:text-ink"
+              >
+                ✕
+              </span>
+            )}
           </span>
         ) : (
           <span className="font-sans text-[14px] text-transparent transition-colors hover:text-ink-muted">

@@ -29,6 +29,10 @@ const DUP_EXCLUDE = new Set([
   "assigned_at",
   "first_response_at",
   "scored_at",
+  // derived from crm_deal_downpayments, which do NOT copy — a duplicate
+  // carrying these would show "Complete ✓ / invoice sent" with no payments
+  "downpayment_completed_at",
+  "invoice_sent_at",
 ]);
 
 function table(boardKey: string) {

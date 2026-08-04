@@ -26,9 +26,10 @@ import {
   bedroomLabel,
   propertyTypeLabel,
 } from "@/components/crm/contacts/demand-config";
-import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmDealStage, CrmUser } from "@/lib/types";
+import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmDealGroup, CrmDealStage, CrmUser } from "@/lib/types";
 import { countryFlag } from "@/components/crm/country-cell";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
+import { RowTools, useRowTools } from "@/components/crm/row-tools";
 
 const ROW_H = 36;
 const STRIPE = "#00a0a0";
@@ -201,6 +202,7 @@ export function AcceptedDealsBoard({
   users,
   payments,
   stages = [],
+  groups = [],
 }: {
   profile: CrmUser;
   deals: CrmDeal[];
@@ -208,6 +210,8 @@ export function AcceptedDealsBoard({
   users: CrmUser[];
   payments: CrmDealDownpayment[];
   stages?: CrmDealStage[];
+  /** Offers-board groups — "Move to" re-files the row over there */
+  groups?: CrmDealGroup[];
 }) {
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -234,6 +238,17 @@ export function AcceptedDealsBoard({
   );
 
   const userById = new Map(users.map((u) => [u.id, u]));
+
+  // same row menu the other boards have: Open / Duplicate / Move to / Delete
+  const rowTools = useRowTools({
+    boardKey: "deals",
+    rows: localDeals,
+    setRows: setLocalDeals,
+    groups,
+    profile,
+    onToast: (message, tone) => setToast({ message, tone }),
+    onOpen: (rowId) => setOpenDealId(rowId),
+  });
 
   const patchDeal = (dealId: string, patch: Partial<CrmDeal>, silent = false) => {
     const prev = localDeals.find((d) => d.id === dealId);
@@ -399,7 +414,8 @@ export function AcceptedDealsBoard({
                 const canEdit = canEditRow(profile, deal);
 
                 return (
-                  <div key={deal.id} className="group/row flex w-fit items-stretch" style={{ height: ROW_H }}>
+                  <div key={deal.id} className="group/row relative flex w-fit items-stretch" style={{ height: ROW_H }}>
+                    <RowTools row={deal} tools={rowTools} />
                     <div
                       className="sticky left-0 z-10 flex items-stretch bg-white"
                       style={{ width: DEAL_NAME_COL_W }}

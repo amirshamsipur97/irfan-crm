@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
 import { recordBoardVisit } from "@/lib/visits";
 import { AcceptedDealsBoard } from "@/components/crm/deals/AcceptedDealsBoard";
-import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmDealStage, CrmUser } from "@/lib/types";
+import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmDealGroup, CrmDealStage, CrmUser } from "@/lib/types";
 
 /**
  * Deals — offers the client ACCEPTED (Move to deal on the Offers board).
@@ -35,6 +35,13 @@ export default async function DealsBoardPage() {
       // the shared deal drawer needs the stage list for its header pill
       supabase.from("crm_deal_stages").select("*").order("position").returns<CrmDealStage[]>(),
     ]);
+  // the row menu's "Move to" targets the Offers board's groups — a deal IS
+  // an offer row, so moving it here re-files it there
+  const { data: groups } = await supabase
+    .from("crm_deal_groups")
+    .select("*")
+    .order("position")
+    .returns<CrmDealGroup[]>();
 
   return (
     <AcceptedDealsBoard
@@ -44,6 +51,7 @@ export default async function DealsBoardPage() {
       users={users ?? []}
       payments={payments ?? []}
       stages={stages ?? []}
+      groups={groups ?? []}
     />
   );
 }
