@@ -188,7 +188,7 @@ export function LeadsBoard({
         currency: "OMR",
         pipeline_id: firstStage?.pipeline_id ?? "",
         stage_id: firstStage?.id ?? "",
-        owner_id: null,
+        owner_id: profile.id,
         priority: "medium",
         is_archived: false,
         next_followup_at: null,

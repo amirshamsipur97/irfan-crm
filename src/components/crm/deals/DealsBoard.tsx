@@ -306,7 +306,7 @@ export function DealsBoard({
         name: pick ? `Offer — ${pick.name}` : name.trim() || "New Offer",
         group_id: groupId,
         stage_id: firstStage?.id ?? "",
-        owner_id: pick ? profile.id : null,
+        owner_id: profile.id,
         deal_value: null,
         close_probability: null,
         expected_close_date: null,

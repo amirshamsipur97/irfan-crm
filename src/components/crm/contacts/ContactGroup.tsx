@@ -35,7 +35,7 @@ import {
   CustomColumnHeader,
   CustomValueCell,
 } from "@/components/crm/custom/custom-columns";
-import { isFullAccess } from "@/lib/permissions";
+import { canManageBoards, isFullAccess } from "@/lib/permissions";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
 
@@ -294,6 +294,7 @@ export function ContactGroup({
                           <OwnerCell
                             owner={users.find((u) => u.id === contact.owner_id)}
                             users={users}
+                            canReassign={canManageBoards(profile.role)}
                             onSelect={(ownerId) =>
                               onPatchContact(contact.id, { owner_id: ownerId })
                             }

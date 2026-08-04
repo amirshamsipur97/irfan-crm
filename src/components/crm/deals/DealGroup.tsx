@@ -19,7 +19,7 @@ import {
   CustomColumnHeader,
   CustomValueCell,
 } from "@/components/crm/custom/custom-columns";
-import { isFullAccess } from "@/lib/permissions";
+import { canManageBoards, isFullAccess } from "@/lib/permissions";
 import {
   DEAL_COLUMNS,
   DEAL_NAME_COL_W,
@@ -397,6 +397,7 @@ export function DealGroup({
                           <OwnerCell
                             owner={owner}
                             users={users}
+                            canReassign={canManageBoards(profile.role)}
                             onSelect={(ownerId) => onPatchDeal(deal.id, { owner_id: ownerId })}
                           />
                         </span>

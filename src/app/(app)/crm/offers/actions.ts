@@ -127,13 +127,13 @@ export async function addDeal(groupId: string, name: string, contactId?: string)
       group_id: groupId,
       stage_id: stage.id,
       created_by: user.id,
+      owner_id: user.id,
       ...(contact
         ? {
             contact_id: contact.id,
             contact_name: contact.name,
             offer_property_type: contact.property_type,
             offer_bedrooms: contact.bedrooms,
-            owner_id: user.id,
           }
         : {}),
     })

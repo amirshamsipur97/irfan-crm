@@ -7,7 +7,7 @@ import {
   CustomColumnHeader,
   CustomValueCell,
 } from "@/components/crm/custom/custom-columns";
-import { isFullAccess } from "@/lib/permissions";
+import { canManageBoards, isFullAccess } from "@/lib/permissions";
 
 import { useRef, useState } from "react";
 import { gsap } from "gsap";
@@ -316,6 +316,7 @@ export function LeadGroup({
                           <OwnerCell
                             owner={owner}
                             users={users}
+                            canReassign={canManageBoards(profile.role)}
                             onSelect={(ownerId) => onOwnerChange(lead.id, ownerId)}
                           />
                         </span>

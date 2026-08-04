@@ -327,19 +327,28 @@ export function OwnerCell({
   owner,
   users,
   onSelect,
+  canReassign = true,
 }: {
   owner: CrmUser | undefined;
   users: CrmUser[];
   onSelect: (ownerId: string | null) => void;
+  /** agents keep rows pinned to themselves — only the manage tier reassigns */
+  canReassign?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  // hovering any owner avatar reveals the person's full name, every role
+  const ownerName = owner ? owner.full_name || owner.email : "Unassigned";
   return (
     <div className="relative flex size-full items-center justify-center">
       <button
         type="button"
+        disabled={!canReassign}
         onClick={() => setOpen((v) => !v)}
-        aria-label="Assign owner"
-        className="flex items-center justify-center rounded-full transition-shadow hover:shadow-[0_0_0_2px_var(--color-cyan-tint)]"
+        aria-label={canReassign ? "Assign owner" : `Owner: ${ownerName}`}
+        title={ownerName}
+        className={`flex items-center justify-center rounded-full transition-shadow ${
+          canReassign ? "hover:shadow-[0_0_0_2px_var(--color-cyan-tint)]" : "cursor-default"
+        }`}
       >
         {owner ? (
           <Avatar name={owner.full_name || owner.email} src={owner.avatar_url} size={26} />

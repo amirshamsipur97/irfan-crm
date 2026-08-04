@@ -14,7 +14,7 @@ import { DealDrawer } from "./deal-drawer";
 import { InlineEdit, OwnerCell, Popover } from "@/components/crm/leads/cells";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { applyRowEdit } from "@/components/crm/persist";
-import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
+import { canEditRow, canManageBoards, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { updateDeal } from "@/app/(app)/crm/offers/actions";
 import {
   addDownpaymentPart,
@@ -431,6 +431,7 @@ export function AcceptedDealsBoard({
                               <OwnerCell
                                 owner={owner}
                                 users={users}
+                                canReassign={canManageBoards(profile.role)}
                                 onSelect={(ownerId) => patchDeal(deal.id, { owner_id: ownerId })}
                               />
                             </span>

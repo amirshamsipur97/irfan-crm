@@ -39,6 +39,9 @@ export async function addLead(groupId: string, name: string) {
       group_id: groupId,
       source: "manual",
       created_by: user.id,
+      // a new row belongs to whoever typed it — agents cannot reassign,
+      // so leaving this null would strand the row on "Unassigned"
+      owner_id: user.id,
     })
     .select("*")
     .single<Record<string, unknown>>();
