@@ -34,7 +34,7 @@ import {
 } from "@/components/crm/deals/activity-log";
 import { TimeCell } from "@/components/crm/activities/activity-cells";
 import { toLocalDateString } from "@/components/crm/activities/activities-config";
-import { OptionCell } from "@/components/crm/contacts/contact-cells";
+import { NoteDialogCell, OptionCell } from "@/components/crm/contacts/contact-cells";
 import { CenterEditCell, EmailCell, MoveToContactsCell, PhoneCell } from "./lead-cells";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 import { DealDoneBadge } from "@/components/crm/deal-done-badge";
@@ -380,10 +380,12 @@ export function LeadGroup({
                     case "notes":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
-                          {/* long text — anchor to its start, not its middle */}
-                          <CenterEditCell
-                            align="start"
+                          {/* a paragraph, not a tag — edits in its own dialog,
+                              same as the contacts First-negotiation note */}
+                          <NoteDialogCell
                             value={lead.notes}
+                            title={`Text — ${lead.name}`}
+                            placeholder="Notes about this lead…"
                             onSave={(next) => onPatchLead(lead.id, { notes: next })}
                           />
                         </span>
