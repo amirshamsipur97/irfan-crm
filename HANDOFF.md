@@ -66,8 +66,31 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `f28486b`,
+> Updated: **2026-08-04** — committed and pushed through `d0f874c`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-04 — Round 9: group titles pinned through the WHOLE horizontal scroll (commit `d0f874c`, DEPLOYED)
+
+User report (screenshot): scrolling right to the table's end dragged the
+"Active Deals" group title along. CAUSE: a sticky element only sticks
+within its containing block, and each group's <section> — a plain block
+child of the horizontal scroller — was only VIEWPORT-wide (its w-fit
+rows overflow it). After ~one screen of scrollLeft the title ran out of
+parent and slid off. FIX: every group <section> on all 10 boards is now
+`w-fit min-w-full` (w-fit = as wide as its rows so the title can stick
+to the very end; min-w-full keeps a COLLAPSED group at least
+viewport-wide, same behaviour as before for that case).
+- One-line patterned edit ×10 files (9 × "group pb-[24px]" +
+  AcceptedDealsBoard's "pb-[40px]").
+- Verified: class present on the served offers board and the board
+  renders identically; the pane was in its zero-viewport state (all
+  geometry APIs report 0 — known artifact) so scrollLeft couldn't be
+  driven; the fix is containing-block geometry, deterministic.
+- ⚠️ residual known imperfection: a COLLAPSED group's title still slides
+  after ~a viewport of scroll (its section shrinks to min-w-full; the
+  body that would widen it is unmounted). Nothing scrolls under a
+  collapsed group, so it reads fine; widening would need keeping the
+  collapsed body mounted — touchy with the GSAP collapse.
 
 ## SESSION 2026-08-04 — Round 8: board gutter painted — no more see-through on horizontal scroll (commit `f28486b`, DEPLOYED)
 
