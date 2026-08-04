@@ -66,8 +66,37 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `c780b32`,
+> Updated: **2026-08-04** — committed and pushed through `778c58f`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-04 — Round 5: Owner pinned for agents + full-name hover (commit `778c58f`, migration `crm_owner_reassign_manage_only`, DEPLOYED)
+
+User request: (a) agents' Owner on Leads/Contacts/Offers must stay fixed
+on themselves — it kept getting changed; (b) hovering any owner avatar
+must reveal the full name, for every role. SHIPPED:
+- Shared `OwnerCell` (leads/cells.tsx) gained `canReassign` (default
+  true) + a `title` tooltip (full name / email, "Unassigned" when none).
+  The tooltip reaches ALL 10 boards for free; the reassign lock is wired
+  on LeadGroup / ContactGroup / DealGroup / AcceptedDealsBoard via
+  `canManageBoards(profile.role)` — agents see a plain avatar, no picker.
+- Creators self-own: `addLead` and `addDeal` now insert
+  `owner_id = user.id` (contacts quick-creates and crm_convert_lead
+  already did); optimistic rows in LeadsBoard/DealsBoard match. A
+  backfill handed every unowned lead/contact/deal to its creator —
+  0 unowned rows remain on all three tables.
+- DB enforcement: `crm_guard_owner_reassign()` BEFORE UPDATE trigger on
+  crm_leads/crm_contacts/crm_deals — owner_id may only change when
+  `crm_can_manage()` (or auth.uid() is null = service/migration/
+  referential contexts; anon has no UPDATE grant). crm_convert_lead's
+  merge path never touches owner_id, verified before shipping.
+- ⚠️ MIGRATION GOTCHA hit here: the backfill UPDATEs must run BEFORE the
+  trigger exists (or the guard fires inside the migration itself — the
+  MCP session has no auth.uid... which is exactly why the null-uid
+  escape hatch exists). First apply failed on this, second (reordered)
+  succeeded.
+- Verified by impersonation (begin/rollback): sara edits her own lead ✓,
+  sara reassigning owner → refused with the exception ✓, admin
+  reassigning → allowed ✓. tsc/build clean, eslint steady at 37.
 
 ## SESSION 2026-08-04 — Round 4: row Delete opened to every member, own rows only (commit `fceb818` + migrations `crm_row_delete_owner_or_admin` / `crm_row_delete_requires_active_member`, DEPLOYED)
 
