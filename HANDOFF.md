@@ -66,8 +66,23 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `d0f874c`,
+> Updated: **2026-08-04** — committed and pushed through `364dd6a`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-05 — Leads "Text" edits in a dialog (commit `364dd6a`, DEPLOYED)
+
+User request: make the Leads Text column behave like the Contacts
+"First negotiation — <client>" note. The column now renders the SHARED
+`NoteDialogCell` (contact-cells.tsx) instead of the inline
+CenterEditCell — centered modal, textarea, Cancel/Save, portalled to
+<body>, title `Text — <lead name>`, placeholder "Notes about this
+lead…". The resting cell keeps the Round-7 start-aligned truncation and
+the full-text tooltip. `notes` was already in LEAD_PATCHABLE, so no
+action changes. CenterEditCell's `align` prop stays (added in Round 7,
+now unused on leads but part of the shared component's API).
+E2E in the pane on the REAL "gerard" lead: cell click → dialog titled
+"Text — gerard" with the full note in the textarea (screenshot) →
+Cancel → DB untouched (updated_at unchanged). tsc/build clean, eslint 37.
 
 ## SESSION 2026-08-05 — manual gmail exception member (no code, DB only)
 
