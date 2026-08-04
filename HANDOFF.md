@@ -66,8 +66,33 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `cc92e3a`,
+> Updated: **2026-08-04** — committed and pushed through `fceb818`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-04 — Round 4: row Delete opened to every member, own rows only (commit `fceb818` + migrations `crm_row_delete_owner_or_admin` / `crm_row_delete_requires_active_member`, DEPLOYED)
+
+User request: agents must be able to delete a lead/contact from the row
+menu (was developer/CEO only). SHIPPED both layers:
+- UI (`row-tools.tsx`): the Delete item now follows the SAME per-row
+  `canEditRow` rule as Duplicate/Move (owner or creator; manage tier
+  everything). `canDelete` left the RowTools type; the old "Only a
+  Developer or CEO…" tooltip became "Only the item's owner can delete
+  it" on non-editable rows. NOTE: the `canDelete` props still passed in
+  the 9 *Group.tsx files are the CUSTOM-COLUMN header delete (admin
+  tier) — untouched, different feature.
+- RLS: DELETE on all 9 board tables →
+  `crm_is_admin() or (crm_is_member() and (owner_id|agent_id = uid or
+  created_by = uid))` (viewings use agent_id). The crm_is_member() wrap
+  keeps a deactivated account with a live token refused, matching the
+  Round-16 group-delete rule.
+- Verified by impersonation (all in begin/rollback, zero data impact):
+  sara deletes her own lead ✓ and contact ✓, babak's lead/contact
+  refused (0 rows) ✓, DEACTIVATED preview refused ✓. tsc/build clean;
+  eslint steady at 37 (the Round-2 baseline).
+- ⚠️ Row delete has NO undo (the toast is informational) — it never had
+  one for admins either; cascades wipe satellites (tracking, documents,
+  downpayments). If the team starts losing rows, add a ConfirmDialog like
+  the group delete has.
 
 ## SESSION 2026-08-04 — Round 3: per-agent visibility EXTENDED to Contacts + Offers (migration `crm_contacts_offers_owner_visibility`, DB-only, no deploy needed)
 
