@@ -154,7 +154,7 @@ export function LeadGroup({
   const cellBorder = "border-b border-r border-line";
 
   return (
-    <section className="group pb-[24px]">
+    <section className="group w-fit min-w-full pb-[24px]">
       {/* group title — stays put while columns scroll */}
       <div className="sticky left-0 z-20 flex h-[40px] w-fit items-center pl-[5px]">
         <button

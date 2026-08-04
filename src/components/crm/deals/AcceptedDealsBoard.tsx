@@ -363,7 +363,7 @@ export function AcceptedDealsBoard({
               </p>
             </div>
           ) : (
-            <section className="pb-[40px]">
+            <section className="w-fit min-w-full pb-[40px]">
               <div className="sticky left-0 flex h-[40px] w-fit items-center pl-[5px]">
                 <span
                   className="font-display text-[18px] font-medium leading-[24px] tracking-[-0.1px]"
