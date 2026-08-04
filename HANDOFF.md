@@ -69,6 +69,42 @@ animations. Treat 36 as the baseline — only investigate if it grows.
 > Updated: **2026-08-04** — committed and pushed through `cc92e3a`,
 > all deployed, working tree clean.
 
+## SESSION 2026-08-04 — Round 3: per-agent visibility EXTENDED to Contacts + Offers (migration `crm_contacts_offers_owner_visibility`, DB-only, no deploy needed)
+
+User report: sara.zangeneh (agent) could see the client babak entered
+last night and took to offer. INVESTIGATION: crm_leads RLS was fine
+(impersonated sara saw 0 of babak's leads) — the "leak" was the DESIGNED
+team-wide visibility of Contacts/Offers (the long-standing open question
+#2). The user ruled: agents must only see their own. SHIPPED:
+- `crm_contacts` + `crm_deals` SELECT → `crm_is_admin() or owner or
+  created_by` (the exact crm_leads pattern from 08-02).
+- Flat member-read satellites now follow their parent via exists():
+  crm_contact_documents (contact), crm_deal_downpayments + crm_offers
+  inner ladder (deal), crm_reservations (deal, null-safe),
+  crm_viewings (deal AND contact, null-safe — standalone board rows stay
+  team-visible), crm_property_interests (lead AND contact AND deal).
+  crm_offer_tracking / crm_offer_floor_plans already chained.
+- VERIFIED by real impersonation: sara → 51 leads / 51 contacts /
+  0 offers / 0 tracking / 0 docs, gerard invisible; babak → his 1 lead +
+  1 contact + 2 offers + 2 tracking; CEO → everything (59/52/2/2).
+  Advisors: nothing new. No code changes — pages fetch under the
+  viewer's session and narrow automatically (boards handle empty).
+- Consequences to know: agents' dashboards/home now show THEIR numbers;
+  the Offers add-row live search recalls only the agent's own clients
+  (per the user's earlier spec); an agent typing another agent's client
+  creates a duplicate contact (duplicate-phone toast still fires on
+  edits); `crm_convert_lead` (definer) can still MERGE a lead into
+  another agent's contact when phone AND name match — the converter then
+  cannot see the absorbed card (rare; toast names it).
+- Residual team-visible surfaces, deliberate: crm_accounts (developer
+  companies, no client data), the shared Activities board
+  (crm_activity_items "Related item" can carry offer names; barely used)
+  and crm_emails (empty until email goes live). Say the word to chain
+  those too.
+- ⚠️ a.shamsipour@ is still role AGENT — after this change that account
+  sees ONLY its own records. Upgrade it to developer if it is meant to
+  see the whole funnel.
+
 ## SESSION 2026-08-04 — Round 2: Offers add-row live client recall (commit `cc92e3a`, DEPLOYED)
 
 User request: the "+ Add offer" box must recall Contacts LIVE while
@@ -218,8 +254,9 @@ plans · one group per board.
 4. Auth "leaked password protection" is off (Supabase dashboard toggle).
 
 **Open product questions the user has never answered**
-- Extend the per-agent visibility rule (today only Leads) to Contacts /
-  Offers / Deals? A converted client is still visible team-wide.
+- ~~Extend the per-agent visibility rule to Contacts / Offers / Deals?~~
+  **ANSWERED 2026-08-04: yes — shipped** (migration
+  `crm_contacts_offers_owner_visibility`, see the Round 3 entry above).
 - Store age as a date of birth instead of a snapshot number?
 
 **Natural next steps if the user has no new request**
