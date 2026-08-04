@@ -30,15 +30,21 @@ export function TopBar({ profile }: { profile: CrmUser }) {
       <div className="flex items-center">
         <Link
           href="/"
-          className="ml-[10px] flex h-[42px] items-center rounded-[4px] p-px"
+          className="ml-[10px] flex h-[42px] items-center gap-[10px] rounded-[4px] px-[6px]"
         >
-          <span className="flex size-[33px] items-center justify-center rounded-[6px] pl-[6px]">
-            <Icon name="logo" size={25} />
-          </span>
-          <span className="flex items-center gap-[4px] pl-[6px] pr-[10px]">
-            <span className="font-display text-[16px] font-light leading-[24px] text-ink">
-              CRM
-            </span>
+          {/* NexProp wordmark at its native 194:31.82 ratio — the teal mark
+              that used to sit here was Monday's own logo */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/figma/auth_nexprop_logo.svg"
+            alt="NexProp"
+            width={134}
+            height={22}
+            className="block shrink-0 select-none"
+            draggable={false}
+          />
+          <span className="font-display text-[16px] font-light leading-[24px] text-ink">
+            CRM
           </span>
         </Link>
       </div>

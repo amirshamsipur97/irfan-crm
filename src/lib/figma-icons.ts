@@ -2,8 +2,8 @@
 // Names follow the component they belong to in the design.
 
 export const ICONS = {
-  // top bar
-  logo: "/figma/imgVariant6.svg",
+  // top bar — the brand mark is NOT here: the Figma clone's teal glyph was
+  // Monday's own logo and was removed; TopBar renders the NexProp wordmark
   search: "/figma/imgVariant9.svg",
   bell: "/figma/imgVariant10.svg",
   inbox: "/figma/imgVariant11.svg",

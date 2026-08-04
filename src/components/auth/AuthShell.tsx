@@ -1,5 +1,3 @@
-import { Icon } from "@/components/ui/Icon";
-
 /** Split auth layout from the Figma sign-in/sign-up frames: brand left, card right. */
 export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
@@ -17,14 +15,13 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
       </div>
       {children}
 
-      {/* product lockup — the TopBar's mark + wordmark, scaled 25→34px with
-          its spacing kept in proportion (gap 8px → 10px, same optical
-          baseline). Sits where the old "Power by NexProp" block did. */}
-      <div className="absolute bottom-[36px] left-1/2 flex -translate-x-1/2 select-none items-center gap-[10px]">
-        <Icon name="logo" size={34} />
-        <span className="font-display text-[22px] font-light leading-[32px] text-ink">
-          CRM
-        </span>
+      {/* Power by NexProp — Figma node 926-44209 */}
+      <div className="absolute bottom-[36px] left-1/2 flex w-[194px] -translate-x-1/2 select-none flex-col gap-[4px]">
+        <p className="font-sans text-[15px] font-medium capitalize leading-[19.8px] tracking-[1.68px] text-[#757272]">
+          Power by
+        </p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/figma/auth_nexprop_logo.svg" alt="NexProp" width={194} height={32} />
       </div>
     </main>
   );
