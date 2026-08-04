@@ -66,8 +66,33 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `6f3d9de`,
+> Updated: **2026-08-04** — committed and pushed through `f28486b`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-04 — Round 8: board gutter painted — no more see-through on horizontal scroll (commit `f28486b`, DEPLOYED)
+
+User report (screenshots): scrolling a board right, the columns slid
+VISIBLY through the 40px lane left of the pinned column (Owner avatars
+showing beside the group stripe). CAUSE: the lane (the row-handle
+gutter, from the scroller's pl-[40px]) is transparent, and sticky
+blocks stick at the CONTENT edge, never covering it.
+- globals.css gained `.gutter-cover::before` (absolute, -40px, 40px
+  wide, white) and a scripted patterned edit added the class to all 37
+  pinned blocks — the two byte-uniform patterns
+  ("sticky left-0 z-10 flex items-stretch bg-white" ×29 and
+  "sticky left-0 z-10 block bg-white" ×8) across the 10 board files.
+  Group-title rows (w-fit, nothing scrolls under them) untouched. The
+  row handle is z-20, the blocks z-10 — handle stays above the cover.
+- Verified in the pane: 60 covers on the leads board with computed
+  ::before {40px, -40px, white}; prod CSS chunk contains the rule.
+  ⚠️ scrollLeft CANNOT be driven in the hidden pane (zero-viewport
+  state — scrollWidth 0), so the scrolled screenshot itself couldn't be
+  reproduced; the fix is pure CSS geometry.
+- 🔎 NOTICED DURING VERIFICATION, NOT CAUSED BY THIS CHANGE: the
+  accepted deal from earlier today (Offer — gerard, 95,550, owner
+  babak) was DELETED by a team member between ~13:00 and ~14:00 — and a
+  lead went 59→58. Row delete has NO undo, but crm_audit_log holds the
+  full row jsonb if restoration is ever wanted. The user was told.
 
 ## SESSION 2026-08-04 — Round 7: long-text cells anchor to the START of the text (commit `6f3d9de`, DEPLOYED)
 
