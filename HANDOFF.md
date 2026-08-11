@@ -66,8 +66,34 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `fbe189f`,
+> Updated: **2026-08-04** — committed and pushed through `07c9d3b`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-12 — Leads: pipeline Status column dropped, Temperature renamed Status (commit `07c9d3b`, no migration)
+
+User request, two halves of one change: delete the Leads Status column
+(the pipeline stage) and call the temperature field "Status" instead.
+- board-config: the `status` column is gone; the `temperature` column's
+  LABEL is now "Status" (key/DB column stay `temperature` — renaming the
+  column would have meant a migration for zero gain).
+- LeadGroup: the `case "status"` StatusCell block, the StatusCell import,
+  `stageById` and the now-unused `stages` / `onStageChange` props are
+  removed; LeadsBoard stops passing them and drops the now-unused
+  `updateLeadStage` import. eslint stays at the 37 baseline.
+- Quick filters: the stage dim (also labelled "Status") is gone, the
+  temperature dim is now "Status" — one word, one meaning.
+- Renamed the label in the SAME breath on the Contacts board and in the
+  lead / contact / offer-deal drawers, so the vocabulary matches
+  everywhere.
+- 🔒 `crm_leads.stage_id` IS UNTOUCHED — still set on insert, still
+  drives the drawer's stage pill, the "Stage journey" section and the
+  scoring trigger. Only the board column went. Consequence to know: the
+  stage can no longer be CHANGED from anywhere in the UI (nothing else
+  ever edited it). Re-add the column if that is ever wanted.
+- Verified in the pane: exactly ONE "Status" header on Leads, no
+  "Temperature" string anywhere, the picker opens Warm/Cold/Pending
+  (screenshot), and the lead drawer still renders with its stage pill
+  and Stage journey intact.
 
 ## SESSION 2026-08-11 — Round 3: an offer names its PROJECT and covers N UNITS (commit `fbe189f`, migration `crm_offer_project_and_unit_count`, DEPLOYED)
 
