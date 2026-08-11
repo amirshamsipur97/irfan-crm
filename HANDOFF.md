@@ -66,8 +66,42 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `95746a0`,
+> Updated: **2026-08-04** — committed and pushed through `47c5b71`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-11 — Round 2: owner hover tip + agent-side verification (commit `47c5b71`, DEPLOYED)
+
+User: the owner hover was slow and unstyled; and check the day's changes
+really reach AGENTS. SHIPPED + VERIFIED:
+- NEW `components/ui/HoverTip.tsx`: dark rounded chip, ~120ms delay
+  (was the browser's ~1s+ native `title`), portalled to <body> (a tip
+  inside a cell is clipped by the board scroller), centred under the
+  anchor, flips above when short of room, clamps to the viewport, hides
+  on scroll/resize/pointer-down. `title` removed from OwnerCell.
+- 🚨 THE TRAP, and why the tip wraps the button instead of sitting on
+  it: for agents the owner button is `disabled`, and a DISABLED control
+  fires NO pointer events — handlers on the button would have hidden
+  the tooltip from exactly the role that cannot open the picker and
+  needs the name most. Handlers live on the wrapper span.
+- 🐛 CAUGHT IN TESTING: the wrapper is `display:contents`, which
+  generates no box, so `getBoundingClientRect()` returned all zeros and
+  the tip pinned to the screen corner. It now measures
+  `wrapRef.current.firstElementChild`. Would have shipped broken —
+  the pane's zero-viewport state masked it until `resize_window`
+  (preset desktop) gave a real 1280×720 viewport. **Use resize_window
+  when geometry matters; it fixes the zero-viewport artifact.**
+- AGENT-SIDE PROOF (preview account temporarily switched to role
+  'agent', own probe lead inserted, both reverted afterwards): Leads
+  board showed ONLY its own lead, Temperature column rendered "Cold" in
+  blue, owner button `disabled: true`, and the tooltip still appeared
+  centred 6px under the avatar reading the full name (screenshots).
+  Contacts board as agent: Temperature column present (no rows — the
+  agent owns no contacts, per Round 3 visibility).
+- Cleanup: probe lead deleted, preview back to developer + deactivated.
+  eslint back to the 37 baseline (the new file's exhaustive-deps warning
+  was fixed with useCallback rather than left to drift).
+- FYI the team is already using the field: 5 leads carry a temperature
+  and the board has grown to 104 leads.
 
 ## SESSION 2026-08-11 — lead TEMPERATURE across the funnel (commit `95746a0`, migration `crm_lead_temperature`, DEPLOYED)
 
