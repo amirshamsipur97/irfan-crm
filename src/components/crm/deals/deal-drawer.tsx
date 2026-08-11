@@ -184,7 +184,7 @@ export function DealDrawer({
                   "—"
                 )}
               </DetailRow>
-              <DetailRow label="Temperature">
+              <DetailRow label="Status">
                 <TemperaturePill value={client.temperature} />
               </DetailRow>
               <DetailRow label="Gender">{genderLabel(client.gender)}</DetailRow>

@@ -205,7 +205,7 @@ export function LeadDrawer({
               "—"
             )}
           </DetailRow>
-          <DetailRow label="Temperature">
+          <DetailRow label="Status">
             <TemperaturePill value={lead.temperature} />
           </DetailRow>
           <DetailRow label="Gender">{genderLabel(lead.gender)}</DetailRow>

@@ -244,7 +244,7 @@ export function ContactDrawer({
               "—"
             )}
           </DetailRow>
-          <DetailRow label="Temperature">
+          <DetailRow label="Status">
             <TemperaturePill value={contact.temperature} />
           </DetailRow>
           <DetailRow label="Gender">{genderLabel(contact.gender)}</DetailRow>

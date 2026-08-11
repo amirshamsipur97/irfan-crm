@@ -13,7 +13,7 @@ import { useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Icon } from "@/components/ui/Icon";
-import type { CrmLead, CrmLeadGroup, CrmStage, CrmUser } from "@/lib/types";
+import type { CrmLead, CrmLeadGroup, CrmUser } from "@/lib/types";
 import {
   BOARD_COLUMNS,
   LEAD_SOURCES,
@@ -24,7 +24,6 @@ import {
   Checkbox,
   InlineEdit,
   OwnerCell,
-  StatusCell,
   TimelineCell,
 } from "./cells";
 import {
@@ -48,7 +47,6 @@ const ROW_H = 36;
 export function LeadGroup({
   group,
   leads,
-  stages,
   users,
   isNew = false,
   customColumns,
@@ -60,7 +58,6 @@ export function LeadGroup({
   onRenameGroup,
   onDeleteGroup,
   onRenameLead,
-  onStageChange,
   onOwnerChange,
   onAddLead,
   onLogActivity,
@@ -73,7 +70,6 @@ export function LeadGroup({
 }: {
   group: CrmLeadGroup;
   leads: CrmLead[];
-  stages: CrmStage[];
   users: CrmUser[];
   isNew?: boolean;
   customColumns: CrmCustomColumn[];
@@ -86,7 +82,6 @@ export function LeadGroup({
   /** present only for admin tier — hides the header trash button otherwise */
   onDeleteGroup?: () => void;
   onRenameLead: (leadId: string, name: string) => void;
-  onStageChange: (leadId: string, stageId: string) => void;
   onOwnerChange: (leadId: string, ownerId: string | null) => void;
   onAddLead: (name: string) => void;
   onLogActivity: (leadId: string, payload: LogPayload) => void;
@@ -106,7 +101,6 @@ export function LeadGroup({
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
 
-  const stageById = new Map(stages.map((s) => [s.id, s]));
   const userById = new Map(users.map((u) => [u.id, u]));
 
   const toggleCollapse = contextSafe(() => {
@@ -238,7 +232,6 @@ export function LeadGroup({
 
           {/* rows */}
           {leads.map((lead) => {
-            const stage = stageById.get(lead.stage_id);
             const owner = lead.owner_id ? userById.get(lead.owner_id) : undefined;
             return (
               <div key={lead.id} className="group/row relative flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, lead.id)}>
@@ -277,16 +270,6 @@ export function LeadGroup({
                 {BOARD_COLUMNS.map((col) => {
                   const w = { width: col.w };
                   switch (col.key) {
-                    case "status":
-                      return (
-                        <span key={col.key} className={`${cellBorder} block`} style={w}>
-                          <StatusCell
-                            stage={stage}
-                            stages={stages}
-                            onSelect={(stageId) => onStageChange(lead.id, stageId)}
-                          />
-                        </span>
-                      );
                     case "score": {
                       const band = lead.score_band ?? "cold";
                       const bandColor =

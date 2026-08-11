@@ -30,7 +30,6 @@ import {
   renameLead,
   updateLead,
   updateLeadOwner,
-  updateLeadStage,
 } from "@/app/(app)/crm/leads/actions";
 import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import type { LogPayload } from "@/components/crm/deals/activity-log";
@@ -261,7 +260,6 @@ export function LeadsBoard({
 
   const filterDims: QuickFilterDim<CrmLead>[] = [
     { key: "group", label: "Group", get: (r) => r.group_id, format: (v) => localGroups.find((g) => g.id === v)?.name ?? "—", color: (v) => localGroups.find((g) => g.id === v)?.color },
-    { key: "stage", label: "Status", get: (r) => r.stage_id, format: (v) => stages.find((s) => s.id === v)?.name ?? "—", color: (v) => stages.find((s) => s.id === v)?.color },
     { key: "owner", label: "Owner", get: (r) => r.owner_id, format: (v) => users.find((u) => u.id === v)?.full_name ?? "—" },
     {
       key: "source",
@@ -272,7 +270,7 @@ export function LeadsBoard({
     },
     { key: "country", label: "Country", get: (r) => r.country },
     { key: "gender", label: "Gender", get: (r) => r.gender, format: (v) => genderLabel(String(v ?? "")), color: (v) => GENDER_OPTIONS.find((g) => g.key === v)?.color },
-    { key: "temperature", label: "Temperature", get: (r) => r.temperature, format: (v) => temperatureLabel(String(v ?? "")), color: (v) => TEMPERATURE_OPTIONS.find((t) => t.key === v)?.color },
+    { key: "temperature", label: "Status", get: (r) => r.temperature, format: (v) => temperatureLabel(String(v ?? "")), color: (v) => TEMPERATURE_OPTIONS.find((t) => t.key === v)?.color },
     // Blank = still an open lead; the chip mirrors the Move-to-contact ✓
     { key: "converted", label: "Moved to contact", get: (r) => (r.converted_contact_id ? "yes" : null), format: () => "Moved ✓", color: () => "#00c875" },
   ];
@@ -341,7 +339,6 @@ export function LeadsBoard({
               onEmailLead={setEmailLead}
               leads={sortedRows.filter((l) => l.group_id === group.id)}
               doneContactIds={doneContactIds}
-              stages={stages}
               users={users}
               onToggleCollapse={(collapsed) => {
                 setGroupCollapsed("leads", group.id, collapsed);
@@ -370,18 +367,6 @@ export function LeadsBoard({
                 persist(renameLead(leadId, name), {
                   setToast,
                   revert: () => patchLead(leadId, { name: row?.name }),
-                });
-              }}
-              onStageChange={(leadId, stageId) => {
-                const row = localLeads.find((l) => l.id === leadId);
-                if (row && !canEditRow(profile, row)) {
-                  setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
-                  return;
-                }
-                patchLead(leadId, { stage_id: stageId });
-                persist(updateLeadStage(leadId, stageId), {
-                  setToast,
-                  revert: () => patchLead(leadId, { stage_id: row?.stage_id }),
                 });
               }}
               onOwnerChange={(leadId, ownerId) => {
