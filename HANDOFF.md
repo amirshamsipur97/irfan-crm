@@ -66,8 +66,37 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `4101ba6`,
+> Updated: **2026-08-04** — committed and pushed through `95746a0`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-11 — lead TEMPERATURE across the funnel (commit `95746a0`, migration `crm_lead_temperature`, DEPLOYED)
+
+User request: a column for how hot a lead is — warm (green), cold
+(blue), pending (orange) — visible in the side drawer and carried to
+Contacts and onward. SHIPPED:
+- Migration adds `temperature` (CHECK warm|cold|pending) to crm_leads
+  AND crm_contacts, and rewrites `crm_convert_lead` to carry it:
+  fill-the-gap on a matched contact (never overwrites what the agent
+  set there), straight copy on create.
+- ONE list: `TEMPERATURE_OPTIONS` in lib/person-fields.ts (+
+  temperatureLabel / temperatureColor). Blue is #0086c0, deliberately
+  deeper than the board's stage blue (#579bfc) so the two colour
+  languages don't read as the same thing.
+- Leads board: new column BETWEEN Status and Owner (w 130) via the
+  shared OptionCell. Contacts board: same column after Owner.
+- Drawers: new shared `components/crm/temperature-pill.tsx` renders the
+  chip in the Details block of the LEAD drawer, the CONTACT drawer and
+  the offer/deal drawers' mirrored Client block — `DrawerClient` and
+  the `contact:contact_id(...)` select in offers/drawer-actions.ts
+  gained the field, so it reaches the end of the funnel.
+- Quick-filter dim on both boards; "temperature" added to both
+  PATCHABLE sets and both optimistic row placeholders; both types.
+- E2E on the live board: picker shows Warm/Cold/Pending in the right
+  colours (screenshot), picking Warm wrote to the DB, the lead drawer
+  showed the green chip; conversion carry verified in a rolled-back
+  transaction (pending → contact). Test value reverted — 0 leads and
+  0 contacts carry a temperature, no ZZTEMP residue. tsc/build clean,
+  eslint 37.
 
 ## SESSION 2026-08-05 — NexProp centred and alone in the top bar (commit `4101ba6`, DEPLOYED)
 
