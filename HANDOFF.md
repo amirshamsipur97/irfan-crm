@@ -66,8 +66,44 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `47c5b71`,
+> Updated: **2026-08-04** — committed and pushed through `fbe189f`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-11 — Round 3: an offer names its PROJECT and covers N UNITS (commit `fbe189f`, migration `crm_offer_project_and_unit_count`, DEPLOYED)
+
+User asked how "one client wants two 1-bed units in Azura" should be
+entered. INVESTIGATION of the live rows showed it could not be, cleanly:
+crm_deals carries the DEVELOPER company (crm_accounts) but had no
+project and no quantity, so the team was typing the project/unit into
+the free-text Offer details ("moruj 3 _ ground floor", "moruj 1 _
+Floor 1") and splitting one sale across duplicate rows. (crm_developments
+exists but is empty and unlinked — inventory is deliberately not tracked
+per unit, so linking offers to it was NOT the answer.)
+- Migration adds `project_name text` + `unit_count int NOT NULL default 1
+  check 1..999`.
+- 🚨 `deal_value` KEEPS meaning the TOTAL for the whole offer. It feeds
+  the GENERATED downpayment_amount column, the part-payments, the Deals
+  board and the dashboards — making it per-unit would have silently
+  broken every money figure. Per-unit price is DERIVED for display only.
+- Offers board: new "Project" column (shared TextCell, now with an
+  optional `suggestions` datalist built from project names already on
+  the board — stops Azura/azura/"Azura " fragmenting) and "Units"
+  (NumberCell, renders "× 2", coerces junk to 1). The price cell's
+  tooltip becomes "191,100 OMR total — 95,550 OMR per unit × 2".
+- Deals board: read-only Project column showing "Azura × 2"; deal
+  drawer header adds "· 2 units (95,550 each) · Azura". Project
+  quick-filter on both boards. PATCHABLE + types + optimistic row done.
+- E2E: typed Azura into a Project cell through the UI → DB; edited Units
+  2 → 3 through the UI → DB; per-unit maths verified (191,100/2=95,550);
+  tooltips read back from the DOM. Throwaway row deleted.
+- ⚠️ I briefly wrote "Azura" onto the team's REAL offer while hunting
+  for the right cell (the add-row client search and the cell editor
+  share the `border-teal-deep` class) — reverted immediately and the
+  four real offers were re-checked field by field afterwards. Match the
+  cell editor by `className.startsWith("size-full")`, not by a substring.
+- 🔧 TEST-DRIVER NOTE: firing onChange and onBlur from the SAME
+  `__reactProps$` snapshot commits the STALE draft — the handler closes
+  over the old state. Fire onChange, then RE-READ the props, then blur.
 
 ## SESSION 2026-08-11 — Round 2: owner hover tip + agent-side verification (commit `47c5b71`, DEPLOYED)
 
