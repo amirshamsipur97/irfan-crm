@@ -285,12 +285,18 @@ export function DealsBoard({
     { key: "client", label: "Client", get: (r) => r.contact_name },
     { key: "country", label: "Country", get: (r) => resolveClient(r)?.country ?? null },
     { key: "developer", label: "Developer", get: (r) => r.account_name },
+    { key: "project", label: "Project", get: (r) => r.project_name },
     { key: "offer_type", label: "Offer type", get: (r) => r.offer_property_type, format: (v) => propertyTypeLabel(String(v ?? "")), color: (v) => PROPERTY_TYPES.find((p) => p.key === v)?.color },
     { key: "offer_size", label: "Offer size", get: (r) => r.offer_bedrooms, format: (v) => bedroomLabel(String(v ?? "")), color: (v) => BEDROOM_OPTIONS.find((b) => b.key === v)?.color },
     // Blank = still an open offer
     { key: "accepted", label: "Moved to deal", get: (r) => (r.accepted_at ? "yes" : null), format: () => "Moved ✓", color: () => "#00c875" },
   ];
   const sortedRows = applyQuickFilters([...visibleDeals].sort(byPosition), filterDims, qf.state);
+  // every project name already typed on this board, for the Project cell's
+  // suggestion list — keeps "Azura" from splitting into three spellings
+  const projectSuggestions = [
+    ...new Set(localDeals.map((d) => d.project_name?.trim()).filter(Boolean) as string[]),
+  ].sort();
 
 
   const handleAddDeal = async (groupId: string, name: string, pick?: PickerOption) => {
@@ -318,6 +324,8 @@ export function DealsBoard({
         currency: "OMR",
         lost_reason: null,
         next_step: null,
+        project_name: null,
+        unit_count: 1,
         offer_property_type: picked?.property_type ?? null,
         offer_bedrooms: picked?.bedrooms ?? null,
         offer_details: null,
@@ -428,6 +436,7 @@ export function DealsBoard({
                   renameDealGroup(group.id, name);
                 }}
                 onPatchDeal={patchDeal}
+                projectSuggestions={projectSuggestions}
                 onAddDeal={(name, pick) => handleAddDeal(group.id, name, pick)}
               />
             ))}

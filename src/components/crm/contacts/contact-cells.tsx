@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { CELL_BUTTON, CELL_BUTTON_TEXT, CELL_INPUT, CELL_INPUT_TEXT } from "@/components/crm/cell-style";
 import { Popover } from "@/components/crm/leads/cells";
@@ -124,30 +124,52 @@ export function TitleCell({
 export function TextCell({
   value,
   onSave,
+  suggestions,
+  placeholder,
 }: {
   value: string | null;
   onSave: (next: string) => void;
+  /**
+   * Values already used elsewhere, offered as a native datalist. Free text
+   * still wins — this only stops "Azura" / "azura" / "Azura " becoming three
+   * different projects when everyone types the name by hand.
+   */
+  suggestions?: string[];
+  placeholder?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? "");
+  // one id per cell instance, so two open editors never share a list
+  const listId = useId();
 
   if (editing) {
     const commit = () => {
       setEditing(false);
-      if (draft !== (value ?? "")) onSave(draft);
+      const next = draft.trim();
+      if (next !== (value ?? "")) onSave(next);
     };
     return (
-      <input
-        autoFocus
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") commit();
-          if (e.key === "Escape") setEditing(false);
-        }}
-        className={CELL_INPUT_TEXT}
-      />
+      <>
+        <input
+          autoFocus
+          value={draft}
+          list={suggestions?.length ? listId : undefined}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") setEditing(false);
+          }}
+          className={CELL_INPUT_TEXT}
+        />
+        {!!suggestions?.length && (
+          <datalist id={listId}>
+            {suggestions.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
+        )}
+      </>
     );
   }
   return (
@@ -158,7 +180,7 @@ export function TextCell({
         setEditing(true);
       }}
       className={CELL_BUTTON_TEXT}
-      title={value ?? "Add comment"}
+      title={value ?? placeholder ?? "Add comment"}
     >
       <span className="min-w-0 truncate">{value ?? ""}</span>
     </button>

@@ -19,8 +19,12 @@ export const DEAL_COLUMNS: { key: string; label: string; w: number }[] = [
   // stock rotates weekly and is shared with other agencies, so an offer is
   // pinned to the developer and the kind of unit, never to a specific unit
   { key: "accounts", label: "Developer", w: 200 },
+  // which development the units are in ("Azura") — free text with suggestions
+  { key: "project", label: "Project", w: 170 },
   { key: "offer_property_type", label: "Offer type", w: 150 },
   { key: "offer_bedrooms", label: "Offer size", w: 110 },
+  // two 1-beds in one project = ONE offer row with Units 2, not two rows
+  { key: "units", label: "Units", w: 90 },
   { key: "value", label: "Offer price", w: 140 },
   { key: "vs_budget", label: "vs budget", w: 130 },
   { key: "close_date", label: "Expected Close Date", w: 180 },

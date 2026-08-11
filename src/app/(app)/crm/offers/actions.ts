@@ -25,6 +25,8 @@ const PATCHABLE = new Set([
   "currency",
   "lost_reason",
   "next_step",
+  "project_name",
+  "unit_count",
   "offer_property_type",
   "offer_bedrooms",
   "offer_details",

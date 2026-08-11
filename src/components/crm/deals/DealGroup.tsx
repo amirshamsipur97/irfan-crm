@@ -140,6 +140,7 @@ export function DealGroup({
   onAddDeal,
   contactOptions,
   onCreateContact,
+  projectSuggestions = [],
   tools,
 }: {
   group: CrmDealGroup;
@@ -166,6 +167,8 @@ export function DealGroup({
   accountOptions: PickerOption[];
   onCreateAccount: (dealId: string, name: string) => void;
   onCreateContact: (dealId: string, name: string) => void;
+  /** project names already in use, so the same one is not typed three ways */
+  projectSuggestions?: string[];
   tools?: RowToolsConfig;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
@@ -403,21 +406,55 @@ export function DealGroup({
                           />
                         </span>
                       );
-                    case "value":
+                    case "project":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <TextCell
+                            value={deal.project_name}
+                            suggestions={projectSuggestions}
+                            placeholder="Which project?"
+                            onSave={(next) =>
+                              onPatchDeal(deal.id, { project_name: next || null })
+                            }
+                          />
+                        </span>
+                      );
+                    case "units":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
                           <NumberCell
-                            value={deal.deal_value == null ? null : Number(deal.deal_value)}
+                            value={deal.unit_count ?? 1}
+                            format={(v) => `× ${v}`}
+                            title={`${deal.unit_count ?? 1} unit${(deal.unit_count ?? 1) > 1 ? "s" : ""} of this type — the offer price covers all of them`}
+                            onSave={(next) =>
+                              onPatchDeal(deal.id, {
+                                // blank or nonsense means the usual single unit
+                                unit_count: next == null || next < 1 ? 1 : Math.floor(next),
+                              })
+                            }
+                          />
+                        </span>
+                      );
+                    case "value": {
+                      const units = deal.unit_count ?? 1;
+                      const total = deal.deal_value == null ? null : Number(deal.deal_value);
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <NumberCell
+                            value={total}
                             format={(v) => compactMoney(v)}
                             title={
-                              deal.deal_value == null
+                              total == null
                                 ? undefined
-                                : money(Number(deal.deal_value))
+                                : units > 1
+                                  ? `${money(total)} total — ${money(total / units)} per unit × ${units}`
+                                  : money(total)
                             }
                             onSave={(next) => onPatchDeal(deal.id, { deal_value: next })}
                           />
                         </span>
                       );
+                    }
                     case "client_demand": {
                       // mirrored from the linked contact so the two can never drift
                       const want = [

@@ -159,6 +159,10 @@ export interface CrmDeal {
   next_step: string | null;
   /** the sales offer itself — what we put in front of the client.
    *  The developer is account_id/account_name; stock is not tracked per unit. */
+  /** the development the offered units are in, e.g. "Azura" */
+  project_name: string | null;
+  /** how many units of this type — deal_value stays the TOTAL for all */
+  unit_count: number;
   offer_property_type: string | null;
   offer_bedrooms: string | null;
   offer_details: string | null;

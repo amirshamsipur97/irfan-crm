@@ -150,6 +150,14 @@ export function DealDrawer({
           <div className="mt-[8px] flex flex-wrap items-center gap-[8px] font-sans text-[13px] text-ink-muted">
             {stage && <Pill label={stage.name} color={stage.color} />}
             <span>{money(deal.deal_value, deal.currency)}</span>
+            {/* multi-unit offers: say so, and spell out the per-unit price so
+                nobody reads the total as the price of one apartment */}
+            {(deal.unit_count ?? 1) > 1 && deal.deal_value != null && (
+              <span>
+                · {deal.unit_count} units ({money(Number(deal.deal_value) / deal.unit_count, deal.currency)} each)
+              </span>
+            )}
+            {deal.project_name && <span>· {deal.project_name}</span>}
             {owner && <span>· {owner.full_name}</span>}
             {deal.expected_close_date && <span>· closes {shortDate(deal.expected_close_date)}</span>}
             {deal.contact_name && <span>· {deal.contact_name}</span>}

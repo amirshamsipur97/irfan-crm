@@ -39,6 +39,7 @@ const COLS: { key: string; label: string; w: number }[] = [
   { key: "client", label: "Client", w: 180 },
   { key: "country", label: "Country", w: 130 },
   { key: "developer", label: "Developer", w: 170 },
+  { key: "project", label: "Project", w: 170 },
   { key: "offer", label: "Accepted offer", w: 190 },
   { key: "price", label: "Offer price", w: 130 },
   { key: "dp_percent", label: "Downpayment %", w: 130 },
@@ -296,6 +297,7 @@ export function AcceptedDealsBoard({
     { key: "client", label: "Client", get: (r) => clientOf(r)?.name ?? r.contact_name },
     { key: "country", label: "Country", get: (r) => clientOf(r)?.country ?? null },
     { key: "developer", label: "Developer", get: (r) => r.account_name },
+    { key: "project", label: "Project", get: (r) => r.project_name },
     {
       key: "downpayment",
       label: "Downpayment",
@@ -520,6 +522,28 @@ export function AcceptedDealsBoard({
                                     {v}
                                   </span>
                                 ))
+                              )}
+                            </span>
+                          );
+                        case "project":
+                          return (
+                            <span
+                              key={col.key}
+                              className={`${cellBorder} flex items-center justify-center truncate bg-canvas px-[8px] font-sans text-[14px] leading-[20px] text-ink`}
+                              style={w}
+                              title="From the accepted offer — edit it on the Offers board"
+                            >
+                              {deal.project_name ? (
+                                <span className="truncate">
+                                  {deal.project_name}
+                                  {(deal.unit_count ?? 1) > 1 && (
+                                    <span className="pl-[4px] text-ink-muted">
+                                      × {deal.unit_count}
+                                    </span>
+                                  )}
+                                </span>
+                              ) : (
+                                <span className="text-ink-muted">—</span>
                               )}
                             </span>
                           );
