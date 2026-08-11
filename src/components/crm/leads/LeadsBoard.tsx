@@ -42,7 +42,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
-import { GENDER_OPTIONS, genderLabel } from "@/lib/person-fields";
+import { GENDER_OPTIONS, TEMPERATURE_OPTIONS, genderLabel, temperatureLabel } from "@/lib/person-fields";
 
 export function LeadsBoard({
   profile,
@@ -177,6 +177,7 @@ export function LeadsBoard({
         country_code: null,
         country: null,
         gender: null,
+        temperature: null,
         age: null,
         email: null,
         company: null,
@@ -271,6 +272,7 @@ export function LeadsBoard({
     },
     { key: "country", label: "Country", get: (r) => r.country },
     { key: "gender", label: "Gender", get: (r) => r.gender, format: (v) => genderLabel(String(v ?? "")), color: (v) => GENDER_OPTIONS.find((g) => g.key === v)?.color },
+    { key: "temperature", label: "Temperature", get: (r) => r.temperature, format: (v) => temperatureLabel(String(v ?? "")), color: (v) => TEMPERATURE_OPTIONS.find((t) => t.key === v)?.color },
     // Blank = still an open lead; the chip mirrors the Move-to-contact ✓
     { key: "converted", label: "Moved to contact", get: (r) => (r.converted_contact_id ? "yes" : null), format: () => "Moved ✓", color: () => "#00c875" },
   ];

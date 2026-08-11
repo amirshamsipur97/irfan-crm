@@ -7,6 +7,7 @@ import { canAnimate } from "@/lib/motion";
 import { money } from "@/components/crm/deals/deals-config";
 import { countryFlag } from "@/components/crm/country-cell";
 import { ageLabel, genderLabel } from "@/lib/person-fields";
+import { TemperaturePill } from "@/components/crm/temperature-pill";
 import { shortDate } from "./board-config";
 import { activityTime } from "@/components/crm/activities/activities-config";
 import type {
@@ -203,6 +204,9 @@ export function LeadDrawer({
             ) : (
               "—"
             )}
+          </DetailRow>
+          <DetailRow label="Temperature">
+            <TemperaturePill value={lead.temperature} />
           </DetailRow>
           <DetailRow label="Gender">{genderLabel(lead.gender)}</DetailRow>
           <DetailRow label="Age">{ageLabel(lead.age)}</DetailRow>

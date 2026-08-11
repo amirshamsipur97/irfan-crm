@@ -84,6 +84,8 @@ export interface CrmLead {
   /** who the client is, as captured on the call */
   gender: string | null;
   age: number | null;
+  /** how hot the person is (warm|cold|pending) — not the pipeline status */
+  temperature: string | null;
   email: string | null;
   company: string | null;
   title: string | null;
@@ -195,6 +197,8 @@ export interface CrmContact {
   /** who the client is, as captured on the call */
   gender: string | null;
   age: number | null;
+  /** how hot the person is (warm|cold|pending) — not the pipeline status */
+  temperature: string | null;
   name: string;
   email: string | null;
   email_label: string | null;

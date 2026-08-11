@@ -20,6 +20,8 @@ export interface DrawerClient {
   country: string | null;
   gender: string | null;
   age: number | null;
+  /** how hot the client is — set on the lead, carried by the conversion */
+  temperature: string | null;
   email: string | null;
   phone: string | null;
   country_code: string | null;
@@ -51,7 +53,7 @@ export async function getDealRelations(dealId: string) {
       supabase
         // the client rides along so the drawer can show who this offer is for
         .from("crm_deals")
-        .select("name, contact_name, contact:contact_id(code, name, country, gender, age, email, phone, country_code)")
+        .select("name, contact_name, contact:contact_id(code, name, country, gender, age, temperature, email, phone, country_code)")
         .eq("id", dealId)
         .maybeSingle<{
           name: string;

@@ -15,6 +15,9 @@ export const BOARD_COLUMNS: {
   headerIcon?: IconName;
 }[] = [
   { key: "status", label: "Status", w: 140 },
+  // how hot the person is — sits next to Status, but answers a different
+  // question (Status = where in the funnel, Temperature = how likely to buy)
+  { key: "temperature", label: "Temperature", w: 130 },
   { key: "owner", label: "Owner", w: 98 },
   { key: "first_name", label: "First name", w: 150 },
   { key: "last_name", label: "Last name", w: 150 },

@@ -8,6 +8,8 @@ export const CONTACT_COLUMNS: {
   connected?: boolean;
 }[] = [
   { key: "owner", label: "Owner", w: 100 },
+  // carried over from the lead by crm_convert_lead, editable here too
+  { key: "temperature", label: "Temperature", w: 130 },
   { key: "email", label: "Email", w: 189 },
   { key: "phone", label: "Phone", w: 170 },
   // nationality, picked separately — the dial code can't stand in for it

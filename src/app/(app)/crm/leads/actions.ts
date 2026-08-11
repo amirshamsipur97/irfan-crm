@@ -210,6 +210,7 @@ const LEAD_PATCHABLE = new Set([
   "country_code",
   "country",
   "gender",
+  "temperature",
   "age",
   "company",
   "title",

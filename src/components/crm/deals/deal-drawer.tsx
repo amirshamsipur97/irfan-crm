@@ -26,6 +26,7 @@ import {
 } from "@/app/(app)/crm/offers/drawer-actions";
 import { countryFlag } from "@/components/crm/country-cell";
 import { ageLabel, genderLabel } from "@/lib/person-fields";
+import { TemperaturePill } from "@/components/crm/temperature-pill";
 
 const OFFER_COLORS: Record<string, string> = {
   draft: "#c4c4c4",
@@ -174,6 +175,9 @@ export function DealDrawer({
                 ) : (
                   "—"
                 )}
+              </DetailRow>
+              <DetailRow label="Temperature">
+                <TemperaturePill value={client.temperature} />
               </DetailRow>
               <DetailRow label="Gender">{genderLabel(client.gender)}</DetailRow>
               <DetailRow label="Age">{ageLabel(client.age)}</DetailRow>

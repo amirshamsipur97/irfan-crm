@@ -26,7 +26,7 @@ import { EmailCell, PhoneCell } from "@/components/crm/leads/lead-cells";
 import { ConnectPicker, type PickerOption } from "@/components/crm/deals/connect-picker";
 import { DealDoneBadge } from "@/components/crm/deal-done-badge";
 import { CountryCell } from "@/components/crm/country-cell";
-import { GENDER_OPTIONS } from "@/lib/person-fields";
+import { GENDER_OPTIONS, TEMPERATURE_OPTIONS } from "@/lib/person-fields";
 import type { CrmUser } from "@/lib/types";
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
 import { CUSTOM_COL_W } from "@/lib/custom-columns";
@@ -378,6 +378,16 @@ export function ContactGroup({
                           <CountryCell
                             value={contact.country}
                             onSave={(next) => onPatchContact(contact.id, { country: next })}
+                          />
+                        </span>
+                      );
+                    case "temperature":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block`} style={w}>
+                          <OptionCell
+                            value={contact.temperature}
+                            options={TEMPERATURE_OPTIONS}
+                            onSelect={(next) => onPatchContact(contact.id, { temperature: next })}
                           />
                         </span>
                       );

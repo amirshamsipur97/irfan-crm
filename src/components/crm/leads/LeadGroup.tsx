@@ -40,7 +40,7 @@ import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm
 import { DealDoneBadge } from "@/components/crm/deal-done-badge";
 import { CountryCell } from "@/components/crm/country-cell";
 import { NumberCell } from "@/components/crm/deals/deal-cells";
-import { GENDER_OPTIONS } from "@/lib/person-fields";
+import { GENDER_OPTIONS, TEMPERATURE_OPTIONS } from "@/lib/person-fields";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
 
 const ROW_H = 36;
@@ -446,6 +446,16 @@ export function LeadGroup({
                           <CountryCell
                             value={lead.country}
                             onSave={(next) => onPatchLead(lead.id, { country: next })}
+                          />
+                        </span>
+                      );
+                    case "temperature":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block`} style={w}>
+                          <OptionCell
+                            value={lead.temperature}
+                            options={TEMPERATURE_OPTIONS}
+                            onSelect={(next) => onPatchLead(lead.id, { temperature: next })}
                           />
                         </span>
                       );

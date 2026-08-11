@@ -16,6 +16,7 @@ const PATCHABLE = new Set([
   "country_code",
   "country",
   "gender",
+  "temperature",
   "age",
   "title",
   "contact_type",

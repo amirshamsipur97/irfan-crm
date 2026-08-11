@@ -37,7 +37,7 @@ import {
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
-import { GENDER_OPTIONS, genderLabel } from "@/lib/person-fields";
+import { GENDER_OPTIONS, TEMPERATURE_OPTIONS, genderLabel, temperatureLabel } from "@/lib/person-fields";
 import {
   BEDROOM_OPTIONS,
   PROPERTY_TYPES,
@@ -155,6 +155,7 @@ export function ContactsBoard({
     { key: "bedrooms", label: "Size", get: (r) => r.bedrooms, format: (v) => bedroomLabel(String(v ?? "")), color: (v) => BEDROOM_OPTIONS.find((b) => b.key === v)?.color },
     { key: "country", label: "Country", get: (r) => r.country },
     { key: "gender", label: "Gender", get: (r) => r.gender, format: (v) => genderLabel(String(v ?? "")), color: (v) => GENDER_OPTIONS.find((g) => g.key === v)?.color },
+    { key: "temperature", label: "Temperature", get: (r) => r.temperature, format: (v) => temperatureLabel(String(v ?? "")), color: (v) => TEMPERATURE_OPTIONS.find((t) => t.key === v)?.color },
     { key: "account", label: "Developer account", get: (r) => r.account_name },
   ];
   const sortedRows = applyQuickFilters([...localContacts].sort(byPosition), filterDims, qf.state);
@@ -211,6 +212,7 @@ export function ContactsBoard({
         country_code: null,
         country: null,
         gender: null,
+        temperature: null,
         age: null,
         title: null,
         contact_type: null,

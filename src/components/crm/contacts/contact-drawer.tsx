@@ -11,6 +11,7 @@ import { DemandSection } from "./demand-section";
 import { TrackingSection } from "./tracking-section";
 import { countryFlag } from "@/components/crm/country-cell";
 import { ageLabel, genderLabel } from "@/lib/person-fields";
+import { TemperaturePill } from "@/components/crm/temperature-pill";
 import { activityTime } from "@/components/crm/activities/activities-config";
 import type { CrmContact, CrmDeal, CrmOfferFloorPlan, CrmUser } from "@/lib/types";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
@@ -242,6 +243,9 @@ export function ContactDrawer({
             ) : (
               "—"
             )}
+          </DetailRow>
+          <DetailRow label="Temperature">
+            <TemperaturePill value={contact.temperature} />
           </DetailRow>
           <DetailRow label="Gender">{genderLabel(contact.gender)}</DetailRow>
           <DetailRow label="Age">{ageLabel(contact.age)}</DetailRow>
