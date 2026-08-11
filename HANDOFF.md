@@ -66,8 +66,54 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `07c9d3b`,
+> Updated: **2026-08-04** — committed and pushed through `6e48fac`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-12 — Round 2: confirm-before-delete + draggable COLUMNS (commits `b319ac0`, `6e48fac`, migration `crm_column_order_prefs`, DEPLOYED)
+
+Two requests in one turn.
+
+**A. Ask before deleting (commit `b319ac0`) — DONE everywhere.**
+Row delete had NO confirmation and no undo. Every destructive action now
+routes through the shared ConfirmDialog (Cancel / "Yes, delete"):
+- board rows on all 10 boards (one change in the shared row menu),
+- custom columns (they drop their value on every row of the board),
+- contact documents and offer floor plans (real files in the bucket),
+- downpayment parts (money — deleting one can flip a deal back out of
+  Complete; the dialog names the amount).
+New `useConfirm<T>()` hook in ConfirmDialog.tsx for per-item ✕ buttons.
+Dialogs are portalled to <body> (transformed row ancestors trap fixed).
+E2E on a throwaway lead: Cancel left the row in the DB, "Yes, delete"
+removed it.
+
+**B. Column drag-and-drop (commit `6e48fac`) — Leads, Contacts, Offers.**
+- Migration `crm_column_order_prefs`: `crm_column_order(user_id,
+  board_key, keys[])`, RLS own-rows. PER-USER on purpose — one agent
+  rearranging must not shuffle the board under seven others typing in it
+  (same call as crm_group_prefs / home layout).
+- `components/crm/column-order.tsx`: `useColumnOrder` + `applyColumnOrder`.
+  Pointer events with a ghost + insert indicator, mirroring row-tools
+  (Safari + the tilted ghost need manual dragging). Header cells carry
+  `data-col-key` and are the handle.
+- Reconciliation is deliberate: unknown saved keys are dropped, columns
+  added in code later are appended — a saved layout can never strand or
+  hide a new column.
+- Header, cells AND the summary/filler width all iterate the SAME ordered
+  array, so they cannot disagree.
+- Wired: Leads, Contacts, Offers (+ their pages fetch getColumnOrder).
+- ⚠️ NOT YET WIRED: Deals(accepted), Accounts, Client Projects,
+  Activities, Developments, Units, Viewings — the kit is board-agnostic
+  and their column arrays follow the identical `COLS.map` shape, so each
+  is the same four edits (header loop → `columns.map` + drag props, cells
+  loop, two props, board hook + page fetch). The allow-list in
+  column-order-actions.ts already contains all ten board keys.
+- ⚠️ VERIFICATION LIMIT, stated plainly: the pane was stuck in its
+  zero-viewport state and `document.elementFromPoint` returns null there,
+  so the DRAG GESTURE itself could not be exercised end-to-end. What WAS
+  verified: 13/14/15 draggable headers with cursor grab on the three
+  boards, and a hand-written order in crm_column_order applied correctly
+  after reload — headers AND cells both moved (screenshot). The gesture
+  code is the same shape as the shipped row drag.
 
 ## SESSION 2026-08-12 — Leads: pipeline Status column dropped, Temperature renamed Status (commit `07c9d3b`, no migration)
 
