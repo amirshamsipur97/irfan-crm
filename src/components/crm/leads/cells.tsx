@@ -13,6 +13,7 @@ import { createPortal } from "react-dom";
 import { CELL_BUTTON, CELL_BUTTON_TEXT, CELL_INPUT, CELL_INPUT_TEXT } from "@/components/crm/cell-style";
 import { Avatar } from "@/components/ui/Avatar";
 import { Icon } from "@/components/ui/Icon";
+import { HoverTip } from "@/components/ui/HoverTip";
 import type { CrmStage, CrmUser } from "@/lib/types";
 import { daysAgoLabel, leadHash } from "./board-config";
 
@@ -352,27 +353,30 @@ export function OwnerCell({
   const ownerName = owner ? owner.full_name || owner.email : "Unassigned";
   return (
     <div className="relative flex size-full items-center justify-center">
-      <button
-        type="button"
-        disabled={!canReassign}
-        onClick={() => setOpen((v) => !v)}
-        aria-label={canReassign ? "Assign owner" : `Owner: ${ownerName}`}
-        title={ownerName}
-        className={`flex items-center justify-center rounded-full transition-shadow ${
-          canReassign ? "hover:shadow-[0_0_0_2px_var(--color-cyan-tint)]" : "cursor-default"
-        }`}
-      >
-        {owner ? (
-          <Avatar name={owner.full_name || owner.email} src={owner.avatar_url} size={26} />
-        ) : (
-          <span className="flex size-[26px] items-center justify-center rounded-full border border-dashed border-line-strong bg-canvas">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
-              <circle cx="8" cy="5.2" r="2.6" stroke="#9699a6" strokeWidth="1.2" />
-              <path d="M2.8 13.4c.9-2.5 2.8-3.8 5.2-3.8s4.3 1.3 5.2 3.8" stroke="#9699a6" strokeWidth="1.2" strokeLinecap="round" />
-            </svg>
-          </span>
-        )}
-      </button>
+      {/* the tip wraps the button rather than sitting on it: for agents the
+          button is disabled, and disabled controls fire no pointer events */}
+      <HoverTip label={ownerName}>
+        <button
+          type="button"
+          disabled={!canReassign}
+          onClick={() => setOpen((v) => !v)}
+          aria-label={canReassign ? "Assign owner" : `Owner: ${ownerName}`}
+          className={`flex items-center justify-center rounded-full transition-shadow ${
+            canReassign ? "hover:shadow-[0_0_0_2px_var(--color-cyan-tint)]" : "cursor-default"
+          }`}
+        >
+          {owner ? (
+            <Avatar name={owner.full_name || owner.email} src={owner.avatar_url} size={26} />
+          ) : (
+            <span className="flex size-[26px] items-center justify-center rounded-full border border-dashed border-line-strong bg-canvas">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+                <circle cx="8" cy="5.2" r="2.6" stroke="#9699a6" strokeWidth="1.2" />
+                <path d="M2.8 13.4c.9-2.5 2.8-3.8 5.2-3.8s4.3 1.3 5.2 3.8" stroke="#9699a6" strokeWidth="1.2" strokeLinecap="round" />
+              </svg>
+            </span>
+          )}
+        </button>
+      </HoverTip>
       <Popover open={open} onClose={() => setOpen(false)} className="w-[220px]">
         <div className="flex max-h-[240px] flex-col gap-[2px] overflow-y-auto">
           {users.map((u) => (
