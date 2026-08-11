@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { ConfirmDialog, useConfirm } from "@/components/ui/ConfirmDialog";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { canAnimate } from "@/lib/motion";
@@ -74,6 +76,7 @@ export function ContactDrawer({
   onClose: () => void;
   onToast?: (message: string, tone?: "success" | "alert") => void;
 }) {
+  const { pending: planToDelete, ask: askPlan, close: closePlan } = useConfirm<CrmOfferFloorPlan>();
   const [composerOpen, setComposerOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const [deals, setDeals] = useState<DrawerDeal[]>([]);
@@ -371,7 +374,7 @@ export function ContactDrawer({
                               <button
                                 type="button"
                                 aria-label={`Remove ${p.file_name}`}
-                                onClick={() => removePlan(p)}
+                                onClick={() => askPlan(p)}
                                 className="shrink-0 rounded-[4px] px-[4px] font-sans text-[12px] text-alert transition-colors hover:bg-[#ffe9ec]"
                               >
                                 ✕
@@ -416,6 +419,23 @@ export function ContactDrawer({
           onDone={(message, tone) => onToast?.(message, tone)}
         />
       )}
+
+      {/* floor plans are real files in the private bucket */}
+      {planToDelete &&
+        createPortal(
+          <ConfirmDialog
+            title={`Remove "${planToDelete.file_name}"?`}
+            message="The floor plan is deleted from storage as well. This cannot be undone."
+            confirmLabel="Yes, remove"
+            onCancel={closePlan}
+            onConfirm={() => {
+              const plan = planToDelete;
+              closePlan();
+              removePlan(plan);
+            }}
+          />,
+          document.body
+        )}
     </div>
   );
 }

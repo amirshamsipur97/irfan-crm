@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 /** Small centered confirm for destructive actions (delete group etc.). */
 export function ConfirmDialog({
   title,
@@ -42,4 +44,18 @@ export function ConfirmDialog({
       </div>
     </div>
   );
+}
+
+/**
+ * Pending-item state for a destructive action, so a ✕ next to a row can ask
+ * before it fires. `ask(item)` opens, `close()` cancels; render the dialog
+ * from `pending` and call the real action in onConfirm.
+ */
+export function useConfirm<T>() {
+  const [pending, setPending] = useState<T | null>(null);
+  return {
+    pending,
+    ask: (item: T) => setPending(item),
+    close: () => setPending(null),
+  };
 }

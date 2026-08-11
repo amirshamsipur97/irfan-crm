@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { ConfirmDialog, useConfirm } from "@/components/ui/ConfirmDialog";
 import { createClient } from "@/lib/supabase/client";
 import { isTempId, STILL_SAVING_MESSAGE } from "@/components/crm/persist";
 import { money } from "@/components/crm/deals/deals-config";
@@ -54,6 +56,7 @@ export function DemandSection({
   /** fired after a document is added/removed, so the drawer's feed refreshes */
   onChanged?: () => void;
 }) {
+  const { pending: docToDelete, ask: askDoc, close: closeDoc } = useConfirm<CrmContactDocument>();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [demand, setDemand] = useState({
@@ -394,7 +397,7 @@ export function DemandSection({
                 <button
                   type="button"
                   aria-label={`Remove ${doc.name}`}
-                  onClick={() => remove(doc)}
+                  onClick={() => askDoc(doc)}
                   className="shrink-0 rounded-[4px] px-[5px] py-[2px] font-sans text-[12px] text-alert transition-colors hover:bg-[#ffe9ec]"
                 >
                   ✕
@@ -404,6 +407,23 @@ export function DemandSection({
           ))}
         </ul>
       )}
+
+      {/* a document is a real file in the private bucket — ask before it goes */}
+      {docToDelete &&
+        createPortal(
+          <ConfirmDialog
+            title={`Remove "${docToDelete.name}"?`}
+            message="The file is deleted from storage as well. This cannot be undone."
+            confirmLabel="Yes, remove"
+            onCancel={closeDoc}
+            onConfirm={() => {
+              const doc = docToDelete;
+              closeDoc();
+              remove(doc);
+            }}
+          />,
+          document.body
+        )}
     </>
   );
 }

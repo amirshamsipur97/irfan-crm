@@ -8,7 +8,9 @@
  */
 
 import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Popover } from "@/components/crm/leads/cells";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { isTempId, STILL_SAVING_MESSAGE } from "@/components/crm/persist";
 import type { CrmUser } from "@/lib/types";
@@ -172,6 +174,7 @@ export function RowTools({
 }) {
   const [open, setOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const editable = tools.canEdit(row.id);
   const draggedRef = useRef(false);
 
@@ -370,7 +373,7 @@ export function RowTools({
           className={`${ITEM_CLS} text-alert`}
           onClick={() => {
             setOpen(false);
-            tools.onDelete(row.id);
+            setConfirmDelete(true);
           }}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#e2445c" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
@@ -379,6 +382,24 @@ export function RowTools({
           Delete
         </button>
       </Popover>
+
+      {/* deleting a row is permanent and takes its tracking entries,
+          documents and payments with it — always ask first. Portalled so
+          the fixed overlay is not trapped by a transformed row ancestor. */}
+      {confirmDelete &&
+        createPortal(
+          <ConfirmDialog
+            title={`Delete "${row.name}"?`}
+            message="This permanently removes the item and everything attached to it. It cannot be undone."
+            confirmLabel="Yes, delete"
+            onCancel={() => setConfirmDelete(false)}
+            onConfirm={() => {
+              setConfirmDelete(false);
+              tools.onDelete(row.id);
+            }}
+          />,
+          document.body
+        )}
     </span>
   );
 }

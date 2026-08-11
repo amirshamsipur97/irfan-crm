@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Icon } from "@/components/ui/Icon";
 import { Checkbox, InlineEdit, OwnerCell, Popover } from "@/components/crm/leads/cells";
 import { OptionCell, TextCell } from "@/components/crm/contacts/contact-cells";
@@ -118,6 +120,7 @@ export function CustomColumnHeader({
   onRename: (label: string) => void;
   onDelete: () => void;
 }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
   return (
     <span
       className="group/cch relative flex items-center justify-center gap-[4px] whitespace-nowrap border-b border-r border-t border-line bg-white px-[4px] font-sans text-[14px] leading-[20px] text-ink"
@@ -133,7 +136,7 @@ export function CustomColumnHeader({
         <button
           type="button"
           aria-label={`Delete column ${column.label}`}
-          onClick={onDelete}
+          onClick={() => setConfirmDelete(true)}
           className="absolute right-[2px] top-1/2 flex size-[18px] -translate-y-1/2 items-center justify-center rounded-[4px] text-ink-muted opacity-0 transition-opacity hover:bg-[var(--hover-ghost)] group-hover/cch:opacity-100"
         >
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden>
@@ -141,6 +144,22 @@ export function CustomColumnHeader({
           </svg>
         </button>
       )}
+
+      {/* dropping a column throws away its value on EVERY row of the board */}
+      {confirmDelete &&
+        createPortal(
+          <ConfirmDialog
+            title={`Delete the "${column.label}" column?`}
+            message="Every value entered in this column, on every row of the board, is deleted with it. This cannot be undone."
+            confirmLabel="Yes, delete"
+            onCancel={() => setConfirmDelete(false)}
+            onConfirm={() => {
+              setConfirmDelete(false);
+              onDelete();
+            }}
+          />,
+          document.body
+        )}
     </span>
   );
 }

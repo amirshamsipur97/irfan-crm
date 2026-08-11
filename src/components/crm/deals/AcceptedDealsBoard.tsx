@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { ConfirmDialog, useConfirm } from "@/components/ui/ConfirmDialog";
 import { useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -99,6 +101,7 @@ function PaymentsCell({
   const [amountDraft, setAmountDraft] = useState("");
   const [dateDraft, setDateDraft] = useState(localToday());
   const [saving, setSaving] = useState(false);
+  const { pending: partToDelete, ask: askPart, close: closePart } = useConfirm<CrmDealDownpayment>();
 
   const paid = parts.reduce((s, p) => s + Number(p.amount), 0);
 
@@ -158,7 +161,7 @@ function PaymentsCell({
               <button
                 type="button"
                 aria-label={`Delete part ${p.part_no}`}
-                onClick={() => onDeleted(p.id)}
+                onClick={() => askPart(p)}
                 className="shrink-0 rounded-[4px] px-[4px] text-[12px] text-alert transition-colors hover:bg-[var(--hover-ghost)]"
               >
                 ✕
@@ -192,6 +195,23 @@ function PaymentsCell({
           </div>
         )}
       </Popover>
+
+      {/* a recorded payment is money on the books — never drop it silently */}
+      {partToDelete &&
+        createPortal(
+          <ConfirmDialog
+            title={`Delete part ${partToDelete.part_no}?`}
+            message={`${money(Number(partToDelete.amount), partToDelete.currency)} is removed from this deal's downpayment, which may take it back out of "Complete".`}
+            confirmLabel="Yes, delete"
+            onCancel={closePart}
+            onConfirm={() => {
+              const part = partToDelete;
+              closePart();
+              onDeleted(part.id);
+            }}
+          />,
+          document.body
+        )}
     </div>
   );
 }
