@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { withCollapsePrefs } from "@/lib/group-prefs";
 import { getProfile } from "@/lib/profile";
+import { getColumnOrder } from "@/app/(app)/crm/column-order-actions";
 import { recordBoardVisit } from "@/lib/visits";
 import { ContactsBoard } from "@/components/crm/contacts/ContactsBoard";
 import type { CrmAccount, CrmContact, CrmContactGroup, CrmDeal, CrmUser } from "@/lib/types";
@@ -36,6 +37,8 @@ export default async function ContactsBoardPage() {
         .order("position")
         .returns<CrmCustomColumn[]>(),
     ]);
+  const columnOrder = await getColumnOrder("contacts");
+
 
   return (
     <ContactsBoard
@@ -46,6 +49,7 @@ export default async function ContactsBoardPage() {
       users={users ?? []}
       accounts={accounts ?? []}
       customColumns={customColumns ?? []}
+      columnOrder={columnOrder}
     />
   );
 }

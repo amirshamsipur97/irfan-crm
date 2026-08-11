@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { withCollapsePrefs } from "@/lib/group-prefs";
 import { getProfile } from "@/lib/profile";
+import { getColumnOrder } from "@/app/(app)/crm/column-order-actions";
 import { recordBoardVisit } from "@/lib/visits";
 import { DealsBoard } from "@/components/crm/deals/DealsBoard";
 import type { CrmAccount, CrmContact, CrmDeal, CrmDealGroup, CrmDealStage, CrmUser } from "@/lib/types";
@@ -37,6 +38,8 @@ export default async function OffersBoardPage() {
         .order("position")
         .returns<CrmCustomColumn[]>(),
     ]);
+  const columnOrder = await getColumnOrder("offers");
+
 
   return (
     <DealsBoard
@@ -48,6 +51,7 @@ export default async function OffersBoardPage() {
       accounts={accounts ?? []}
       contacts={contacts ?? []}
       customColumns={customColumns ?? []}
+      columnOrder={columnOrder}
     />
   );
 }

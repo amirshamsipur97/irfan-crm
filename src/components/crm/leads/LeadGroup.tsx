@@ -66,6 +66,8 @@ export function LeadGroup({
   onOpenLead,
   onEmailLead,
   tools,
+  columns,
+  columnDrag,
   doneContactIds = [],
 }: {
   group: CrmLeadGroup;
@@ -90,6 +92,10 @@ export function LeadGroup({
   onOpenLead?: (leadId: string) => void;
   onEmailLead?: (lead: CrmLead) => void;
   tools?: RowToolsConfig;
+  /** the board's columns in this user's saved order */
+  columns: typeof BOARD_COLUMNS;
+  /** drag-to-reorder handle props for the header cells */
+  columnDrag?: { headerProps: (key: string) => Record<string, unknown>; draggingKey: string | null };
   /** contacts whose deal completed its downpayment — marks the source lead */
   doneContactIds?: string[];
 }) {
@@ -208,16 +214,23 @@ export function LeadGroup({
                 Lead
               </span>
             </div>
-            {BOARD_COLUMNS.map((col) => (
-              <span
-                key={col.key}
-                className="flex items-center justify-center gap-[4px] border-b border-r border-t border-line bg-white font-sans text-[14px] leading-[20px] text-ink"
-                style={{ width: col.w }}
-              >
-                {col.label}
-                {col.headerIcon && <Icon name={col.headerIcon} size={16} />}
-              </span>
-            ))}
+            {columns.map((col) => {
+              const drag = columnDrag?.headerProps(col.key) ?? {};
+              const { style: dragStyle, ...dragRest } = drag as { style?: React.CSSProperties };
+              return (
+                <span
+                  key={col.key}
+                  {...dragRest}
+                  className={`flex items-center justify-center gap-[4px] border-b border-r border-t border-line bg-white font-sans text-[14px] leading-[20px] text-ink transition-opacity ${
+                    columnDrag?.draggingKey === col.key ? "opacity-40" : ""
+                  }`}
+                  style={{ width: col.w, ...dragStyle }}
+                >
+                  {col.label}
+                  {col.headerIcon && <Icon name={col.headerIcon} size={16} />}
+                </span>
+              );
+            })}
             {customColumns.map((col) => (
               <CustomColumnHeader
                 key={col.id}
@@ -267,7 +280,7 @@ export function LeadGroup({
                   </span>
                 </div>
 
-                {BOARD_COLUMNS.map((col) => {
+                {columns.map((col) => {
                   const w = { width: col.w };
                   switch (col.key) {
                     case "score": {
@@ -534,7 +547,7 @@ export function LeadGroup({
             </div>
             <span
               className="border-b border-line bg-white"
-              style={{ width: BOARD_COLUMNS.reduce((s, c) => s + c.w, 0) + customColumns.length * CUSTOM_COL_W + 40 }}
+              style={{ width: columns.reduce((s, c) => s + c.w, 0) + customColumns.length * CUSTOM_COL_W + 40 }}
             />
           </div>
 

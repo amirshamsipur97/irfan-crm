@@ -62,6 +62,8 @@ export function ContactGroup({
   onOpenContact,
   onEmailContact,
   tools,
+  columns,
+  columnDrag,
 }: {
   group: CrmContactGroup;
   contacts: CrmContact[];
@@ -84,6 +86,10 @@ export function ContactGroup({
   onOpenContact?: (contactId: string) => void;
   onEmailContact?: (contact: CrmContact) => void;
   tools?: RowToolsConfig;
+  /** the board's columns in this user's saved order */
+  columns: typeof CONTACT_COLUMNS;
+  /** drag-to-reorder handle props for the header cells */
+  columnDrag?: { headerProps: (key: string) => Record<string, unknown>; draggingKey: string | null };
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -203,11 +209,19 @@ export function ContactGroup({
                 Contact
               </span>
             </div>
-            {CONTACT_COLUMNS.map((col) => (
+            {columns.map((col) => (
               <span
                 key={col.key}
-                className="relative flex items-center justify-center gap-[4px] whitespace-nowrap border-b border-r border-t border-line bg-white px-[4px] font-sans text-[14px] leading-[20px] text-ink"
-                style={{ width: col.w }}
+                data-col-key={col.key}
+                onPointerDown={
+                  (columnDrag?.headerProps(col.key) as {
+                    onPointerDown?: (e: React.PointerEvent<HTMLElement>) => void;
+                  })?.onPointerDown
+                }
+                className={`relative flex items-center justify-center gap-[4px] whitespace-nowrap border-b border-r border-t border-line bg-white px-[4px] font-sans text-[14px] leading-[20px] text-ink transition-opacity ${
+                  columnDrag?.draggingKey === col.key ? "opacity-40" : ""
+                }`}
+                style={{ width: col.w, cursor: columnDrag ? "grab" : undefined }}
               >
                 {col.label}
                 {col.connected && (
@@ -285,7 +299,7 @@ export function ContactGroup({
                   </span>
                 </div>
 
-                {CONTACT_COLUMNS.map((col) => {
+                {columns.map((col) => {
                   const w = { width: col.w };
                   switch (col.key) {
                     case "owner":
@@ -511,7 +525,7 @@ export function ContactGroup({
             </div>
             <span
               className="border-b border-line bg-white"
-              style={{ width: CONTACT_COLUMNS.reduce((s, c) => s + c.w, 0) + customColumns.length * CUSTOM_COL_W + 40 }}
+              style={{ width: columns.reduce((s, c) => s + c.w, 0) + customColumns.length * CUSTOM_COL_W + 40 }}
             />
           </div>
         </div>

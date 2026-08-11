@@ -142,6 +142,8 @@ export function DealGroup({
   onCreateContact,
   projectSuggestions = [],
   tools,
+  columns,
+  columnDrag,
 }: {
   group: CrmDealGroup;
   deals: CrmDeal[];
@@ -170,6 +172,10 @@ export function DealGroup({
   /** project names already in use, so the same one is not typed three ways */
   projectSuggestions?: string[];
   tools?: RowToolsConfig;
+  /** the board's columns in this user's saved order */
+  columns: typeof DEAL_COLUMNS;
+  /** drag-to-reorder handle props for the header cells */
+  columnDrag?: { headerProps: (key: string) => Record<string, unknown>; draggingKey: string | null };
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -286,15 +292,24 @@ export function DealGroup({
                 Client
               </span>
             </div>
-            {DEAL_COLUMNS.map((col) => (
-              <span
-                key={col.key}
-                className="flex items-center justify-center gap-[4px] whitespace-nowrap border-b border-r border-t border-line bg-white px-[4px] font-sans text-[14px] leading-[20px] text-ink"
-                style={{ width: col.w }}
-              >
-                {col.label}
-              </span>
-            ))}
+            {columns.map((col) => {
+              const drag = (columnDrag?.headerProps(col.key) ?? {}) as {
+                style?: React.CSSProperties;
+              };
+              const { style: dragStyle, ...dragRest } = drag;
+              return (
+                <span
+                  key={col.key}
+                  {...dragRest}
+                  className={`flex items-center justify-center gap-[4px] whitespace-nowrap border-b border-r border-t border-line bg-white px-[4px] font-sans text-[14px] leading-[20px] text-ink transition-opacity ${
+                    columnDrag?.draggingKey === col.key ? "opacity-40" : ""
+                  }`}
+                  style={{ width: col.w, ...dragStyle }}
+                >
+                  {col.label}
+                </span>
+              );
+            })}
             {customColumns.map((col) => (
               <CustomColumnHeader
                 key={col.id}
@@ -382,7 +397,7 @@ export function DealGroup({
                   </span>
                 </div>
 
-                {DEAL_COLUMNS.map((col) => {
+                {columns.map((col) => {
                   const w = { width: col.w };
                   switch (col.key) {
                     case "stage":
@@ -667,14 +682,14 @@ export function DealGroup({
             </div>
             <span
               className="border-b border-line bg-white"
-              style={{ width: DEAL_COLUMNS.reduce((s, c) => s + c.w, 0) + customColumns.length * CUSTOM_COL_W + 40 }}
+              style={{ width: columns.reduce((s, c) => s + c.w, 0) + customColumns.length * CUSTOM_COL_W + 40 }}
             />
           </div>
 
           {/* summary row */}
           <div className="flex w-fit items-stretch" style={{ height: ROW_H }}>
             <span className="gutter-cover sticky left-0 z-10 block bg-white" style={{ width: DEAL_NAME_COL_W }} />
-            {DEAL_COLUMNS.map((col) => (
+            {columns.map((col) => (
               <span
                 key={col.key}
                 className="flex flex-col items-center justify-center border-b border-r border-line bg-white"

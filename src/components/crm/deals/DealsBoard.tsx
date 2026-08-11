@@ -13,6 +13,8 @@ import { BoardHeader } from "@/components/crm/leads/BoardHeader";
 import { GROUP_COLORS } from "@/components/crm/leads/board-config";
 import { SuccessToast } from "@/components/ui/SuccessToast";
 import { DealGroup } from "./DealGroup";
+import { DEAL_COLUMNS } from "./deals-config";
+import { useColumnOrder } from "@/components/crm/column-order";
 import { SalesReport } from "./SalesReport";
 import { PipelineView } from "./PipelineView";
 import {
@@ -57,6 +59,7 @@ export function DealsBoard({
   accounts,
   contacts,
   customColumns = [],
+  columnOrder = null,
 }: {
   profile: CrmUser;
   groups: CrmDealGroup[];
@@ -66,6 +69,8 @@ export function DealsBoard({
   accounts: CrmAccount[];
   contacts: CrmContact[];
   customColumns?: CrmCustomColumn[];
+  /** this user's saved column order */
+  columnOrder?: string[] | null;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState("Main table");
@@ -139,6 +144,7 @@ export function DealsBoard({
     onOpen: openClientDrawer,
   });
   const [localColumns, setLocalColumns] = useServerState(customColumns);
+  const columnDrag = useColumnOrder({ boardKey: "offers", columns: DEAL_COLUMNS, savedOrder: columnOrder });
   useEffect(
     () => setAccountOptions(accounts.map((a) => ({ id: a.id, name: a.name, sub: a.domain }))),
     [accounts]
@@ -437,6 +443,8 @@ export function DealsBoard({
                 }}
                 onPatchDeal={patchDeal}
                 projectSuggestions={projectSuggestions}
+                columns={columnDrag.columns}
+                columnDrag={columnDrag}
                 onAddDeal={(name, pick) => handleAddDeal(group.id, name, pick)}
               />
             ))}

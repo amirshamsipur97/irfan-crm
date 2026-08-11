@@ -3,6 +3,7 @@ import { withCollapsePrefs } from "@/lib/group-prefs";
 import type { CrmCustomColumn } from "@/lib/custom-columns";
 import { getProfile } from "@/lib/profile";
 import { recordBoardVisit } from "@/lib/visits";
+import { getColumnOrder } from "@/app/(app)/crm/column-order-actions";
 import { LeadsBoard } from "@/components/crm/leads/LeadsBoard";
 import type { CrmLead, CrmLeadGroup, CrmStage, CrmUnit, CrmUser } from "@/lib/types";
 
@@ -44,6 +45,8 @@ export default async function LeadsBoardPage() {
         .not("contact_id", "is", null)
         .returns<{ contact_id: string }[]>(),
     ]);
+  const columnOrder = await getColumnOrder("leads");
+
 
   return (
     <LeadsBoard
@@ -54,6 +57,7 @@ export default async function LeadsBoardPage() {
       users={users ?? []}
       units={units ?? []}
       customColumns={customColumns ?? []}
+      columnOrder={columnOrder}
       doneContactIds={(doneDeals ?? []).map((d) => d.contact_id)}
     />
   );

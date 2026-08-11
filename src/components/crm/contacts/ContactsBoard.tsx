@@ -12,6 +12,8 @@ import type { CrmAccount, CrmContact, CrmContactGroup, CrmDeal, CrmUser } from "
 import { BoardHeader } from "@/components/crm/leads/BoardHeader";
 import { GROUP_COLORS } from "@/components/crm/leads/board-config";
 import { ContactGroup } from "./ContactGroup";
+import { useColumnOrder } from "@/components/crm/column-order";
+import { CONTACT_COLUMNS } from "./contacts-config";
 import { ContactDrawer } from "./contact-drawer";
 import {
   addContact,
@@ -53,6 +55,7 @@ export function ContactsBoard({
   users,
   accounts,
   customColumns,
+  columnOrder = null,
 }: {
   profile: CrmUser;
   groups: CrmContactGroup[];
@@ -61,6 +64,8 @@ export function ContactsBoard({
   users: CrmUser[];
   accounts: CrmAccount[];
   customColumns: CrmCustomColumn[];
+  /** this user's saved column order */
+  columnOrder?: string[] | null;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [localContacts, setLocalContacts] = useServerState(contacts);
@@ -70,6 +75,7 @@ export function ContactsBoard({
   const [openContactId, setOpenContactId] = useState<string | null>(null);
 
   const [localColumns, setLocalColumns] = useServerState(customColumns);
+  const columnDrag = useColumnOrder({ boardKey: "contacts", columns: CONTACT_COLUMNS, savedOrder: columnOrder });
 
   const handleAddColumn = async (type: CustomColumnType) => {
     const result = await addCustomColumn("contacts", type);
@@ -288,6 +294,8 @@ export function ContactsBoard({
               group={group}
               isNew={group.id === newGroupId}
               tools={rowTools}
+              columns={columnDrag.columns}
+              columnDrag={columnDrag}
               onDeleteGroup={() => requestDeleteGroup(group)}
               onEmailContact={setEmailContact}
               contacts={sortedRows.filter(

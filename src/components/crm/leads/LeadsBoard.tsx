@@ -19,7 +19,8 @@ import type { CrmLead, CrmLeadGroup, CrmStage, CrmUnit, CrmUser } from "@/lib/ty
 import { BoardHeader } from "./BoardHeader";
 import { LeadGroup } from "./LeadGroup";
 import { LeadDrawer } from "./lead-drawer";
-import { GROUP_COLORS, sourceColor, sourceLabel } from "./board-config";
+import { BOARD_COLUMNS, GROUP_COLORS, sourceColor, sourceLabel } from "./board-config";
+import { useColumnOrder } from "@/components/crm/column-order";
 import {
   addGroup,
   addLead,
@@ -51,6 +52,7 @@ export function LeadsBoard({
   users,
   units = [],
   customColumns = [],
+  columnOrder = null,
   doneContactIds = [],
 }: {
   profile: CrmUser;
@@ -60,6 +62,8 @@ export function LeadsBoard({
   users: CrmUser[];
   units?: CrmUnit[];
   customColumns?: CrmCustomColumn[];
+  /** this user's saved column order, null until they drag one */
+  columnOrder?: string[] | null;
   /** contacts whose deal completed its downpayment — marks the source lead */
   doneContactIds?: string[];
 }) {
@@ -72,6 +76,7 @@ export function LeadsBoard({
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
 
   const [localColumns, setLocalColumns] = useServerState(customColumns);
+  const columnDrag = useColumnOrder({ boardKey: "leads", columns: BOARD_COLUMNS, savedOrder: columnOrder });
 
   useGSAP(
     () => {
@@ -335,6 +340,8 @@ export function LeadsBoard({
               group={group}
               isNew={group.id === newGroupId}
               tools={rowTools}
+              columns={columnDrag.columns}
+              columnDrag={columnDrag}
               onDeleteGroup={() => requestDeleteGroup(group)}
               onEmailLead={setEmailLead}
               leads={sortedRows.filter((l) => l.group_id === group.id)}
