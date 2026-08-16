@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { activityTime } from "./activities-config";
+import { activityTime, parseLocalDate } from "./activities-config";
 
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -14,8 +14,8 @@ const POPOVER_H = 420;
 /** merge a picked calendar day with the time-of-day of the current value (9:00 default) */
 function withTime(day: Date, current: string | null): string {
   const d = new Date(day);
-  if (current) {
-    const c = new Date(current);
+  const c = parseLocalDate(current);
+  if (c) {
     d.setHours(c.getHours(), c.getMinutes(), 0, 0);
   } else {
     d.setHours(9, 0, 0, 0);
@@ -51,7 +51,8 @@ export function TimeCell({
   const [open, setOpen] = useState(false);
   const [showTime, setShowTime] = useState(false);
   const [pos, setPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
-  const selected = value ? new Date(value) : null;
+  // date-only values are the agent's LOCAL day, not UTC midnight
+  const selected = parseLocalDate(value);
   const today = new Date();
   const [viewYear, setViewYear] = useState((selected ?? today).getFullYear());
   const [viewMonth, setViewMonth] = useState((selected ?? today).getMonth());

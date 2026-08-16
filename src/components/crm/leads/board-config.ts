@@ -1,4 +1,5 @@
 import type { IconName } from "@/lib/figma-icons";
+import { parseLocalDate } from "@/components/crm/activities/activities-config";
 
 /** Column layout of the Leads main table (widths from the Figma frame). */
 export const NAME_COL_W = 292;
@@ -101,13 +102,17 @@ export function dialFlag(code: string | null): string | null {
 }
 
 export function shortDate(iso: string | null): string {
-  if (!iso) return "";
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  // a date-only column is a calendar day, not an instant — parsing it as
+  // UTC would show the day before on any machine west of UTC
+  const d = parseLocalDate(iso);
+  if (!d) return "";
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 export function daysAgoLabel(iso: string | null): string | null {
-  if (!iso) return null;
-  const days = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
+  const parsed = parseLocalDate(iso);
+  if (!parsed) return null;
+  const days = Math.max(0, Math.floor((Date.now() - parsed.getTime()) / 86400000));
   return `${days}d ago`;
 }
 

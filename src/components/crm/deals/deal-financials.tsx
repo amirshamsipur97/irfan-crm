@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { todayLocalDateString } from "@/components/crm/activities/activities-config";
 import { money } from "./deals-config";
 import { shortDate } from "@/components/crm/leads/board-config";
 import type {
@@ -329,12 +330,12 @@ export function DealFinancials({
                     <div className="flex shrink-0 items-center gap-[6px]">
                       <Pill
                         label={
-                          s.due_date && s.due_date < new Date().toISOString().slice(0, 10)
+                          s.due_date && s.due_date < todayLocalDateString()
                             ? "Overdue"
                             : "Pending"
                         }
                         color={
-                          s.due_date && s.due_date < new Date().toISOString().slice(0, 10)
+                          s.due_date && s.due_date < todayLocalDateString()
                             ? "#e2445c"
                             : "#fdab3d"
                         }

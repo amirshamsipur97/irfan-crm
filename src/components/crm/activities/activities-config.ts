@@ -41,15 +41,40 @@ export function activityTime(iso: string | null): string {
 }
 
 /**
+ * Parse a stored value into the day the agent MEANT.
+ *
+ * `new Date("2026-08-20")` is defined to parse as UTC midnight, so a
+ * date-only column read back on a machine west of UTC lands on the 19th —
+ * the cell shows the wrong day, the calendar highlights the wrong day, and
+ * the "correction" the agent then makes reads as a day out to everyone
+ * else. Date-only strings are therefore built as LOCAL midnight here;
+ * real timestamps (which carry a zone) are parsed normally.
+ */
+export function parseLocalDate(value: string | null): Date | null {
+  if (!value) return null;
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (dateOnly) {
+    return new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]));
+  }
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
  * LOCAL calendar date (YYYY-MM-DD) from an ISO timestamp — for date-only
  * columns. Never slice(0,10) the raw ISO: it is UTC and shifts a day for
  * timezones ahead of UTC (Oman +04).
  */
 export function toLocalDateString(iso: string | null): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
+  const d = parseLocalDate(iso);
+  if (!d) return null;
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** Today as YYYY-MM-DD in the viewer's own timezone. */
+export function todayLocalDateString(): string {
+  return toLocalDateString(new Date().toISOString()) as string;
 }
 
 /** value for <input type="datetime-local"> from an ISO timestamp */

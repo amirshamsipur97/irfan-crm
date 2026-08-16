@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { todayLocalDateString } from "@/components/crm/activities/activities-config";
 import { getProfile } from "@/lib/profile";
 import { canViewFinance, isFullAccess } from "@/lib/permissions";
 import { Surface } from "@/components/shell/AppChrome";
@@ -206,7 +207,7 @@ export default async function FinancePage() {
                 <tbody>
                   {(upcoming ?? []).map((s) => {
                     const tx = txs.find((t) => t.id === s.transaction_id);
-                    const overdue = (s.due_date ?? "") < new Date().toISOString().slice(0, 10);
+                    const overdue = (s.due_date ?? "") < todayLocalDateString();
                     return (
                       <tr key={s.id} className="border-b border-line-soft last:border-b-0">
                         <td className="px-[14px] py-[9px] text-ink">{s.due_date}</td>

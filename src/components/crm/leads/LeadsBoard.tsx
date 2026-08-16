@@ -20,6 +20,7 @@ import { BoardHeader } from "./BoardHeader";
 import { LeadGroup } from "./LeadGroup";
 import { LeadDrawer } from "./lead-drawer";
 import { BOARD_COLUMNS, GROUP_COLORS, sourceColor, sourceLabel } from "./board-config";
+import { todayLocalDateString } from "@/components/crm/activities/activities-config";
 import { useColumnOrder } from "@/components/crm/column-order";
 import {
   addGroup,
@@ -176,7 +177,7 @@ export function LeadsBoard({
         first_name: null,
         last_name: null,
         notes: null,
-        lead_date: new Date().toISOString().slice(0, 10),
+        lead_date: todayLocalDateString(),
         phone: null,
         country_code: null,
         country: null,
