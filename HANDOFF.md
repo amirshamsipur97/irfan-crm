@@ -66,8 +66,38 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `6e48fac`,
+> Updated: **2026-08-04** — committed and pushed through `79d67a5`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-12 — Round 3: the Leads date off-by-one, fixed for every timezone (commit `79d67a5`, no migration)
+
+Agents reported the Leads Date landing a day out. crm_leads.lead_date is
+a plain `date`, so the DB was innocent — the round trip was not.
+- ROOT CAUSE: `new Date("2026-08-20")` is SPEC'D to parse as UTC
+  midnight. Rendering/reading that instant with LOCAL getters gives the
+  20th only when the machine is at or east of UTC. PROVEN by running the
+  old helpers under TZ: Muscat → "Aug 20", but New_York and
+  Los_Angeles → "Aug 19", and the calendar highlighted the 19th too — so
+  the day an agent picked to "fix" it read as a day out to everyone else.
+  (In Muscat itself the round trip was already correct, which is why a
+  pane test on this machine could never reproduce it — I picked day 20
+  through the UI and 2026-08-20 was stored.)
+- FIX: `parseLocalDate()` in activities-config.ts builds a date-ONLY
+  string as LOCAL midnight and passes real timestamps through untouched.
+  Routed through it: `TimeCell`'s `selected` (calendar highlight) and
+  `withTime`'s carried time, plus `shortDate` and `daysAgoLabel`.
+  `toLocalDateString` now uses it too, so its output is stable whatever
+  it is handed.
+- Verified across Asia/Muscat, Asia/Tehran, UTC, America/New_York,
+  America/Los_Angeles and Pacific/Kiritimati: same day shown, same day
+  highlighted, same day saved in all six.
+- Also killed the last `toISOString().slice(0,10)` "today" values (the
+  long-standing anti-pattern): the optimistic new-lead date and the two
+  finance overdue comparisons were using the UTC day, which is YESTERDAY
+  in Oman before 04:00. New `todayLocalDateString()` helper.
+- ⚠️ The reported "opens with a lag" was NOT reproduced here and is NOT
+  fixed. The board now carries 112 leads × ~14 cells; if it persists,
+  look at board size/virtualisation, not at TimeCell.
 
 ## SESSION 2026-08-12 — Round 2: confirm-before-delete + draggable COLUMNS (commits `b319ac0`, `6e48fac`, migration `crm_column_order_prefs`, DEPLOYED)
 
