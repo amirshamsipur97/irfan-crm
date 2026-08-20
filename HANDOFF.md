@@ -66,8 +66,29 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
 
-> Updated: **2026-08-04** — committed and pushed through `79d67a5`,
+> Updated: **2026-08-04** — committed and pushed through `d5f84f6`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-12 — Round 4: Owner shows the FULL NAME (commit `d5f84f6`, no migration)
+
+The owner column showed only the avatar's two initials ("BC", "SZ"), so
+nobody could tell whose row it was without hovering. The shared
+`OwnerCell` now renders the coloured chip PLUS the full name beside it
+(the chip is unchanged — that was the "same format" the user asked to
+keep). The cell is start-aligned when it holds a name and stays centred
+when the row is unassigned (dashed circle, no text).
+- Every Owner column widened 98/100 → 190, in ALL ten board configs plus
+  the Viewings "Agent" column, so the longest live names
+  ("nastaran sistani", "amanollah afrash") do not clip — measured
+  scrollWidth vs clientWidth on the live board: 0 clipped of 144 cells.
+- Works the same for agents: verified with the preview account
+  temporarily switched to role 'agent' — name rendered, button still
+  disabled per the Round-5 reassign lock (screenshots for both roles).
+- The HoverTip stays: it is still the affordance when a very long name
+  is truncated, and it names an unassigned row.
+- ⚠️ DEV-SERVER NOTE: the Next dev server died mid-session (navigations
+  returned "denied or failed", curl gave 000) — restarting it via
+  preview_start fixed it; nothing to do with the change.
 
 ## SESSION 2026-08-12 — Round 3: the Leads date off-by-one, fixed for every timezone (commit `79d67a5`, no migration)
 
