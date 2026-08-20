@@ -7,7 +7,7 @@ export const DEVELOPMENT_COLUMNS: {
   /** connected-board columns get the green header underline */
   connected?: boolean;
 }[] = [
-  { key: "owner", label: "Owner", w: 98 },
+  { key: "owner", label: "Owner", w: 190 },
   { key: "developer", label: "Developer", w: 192, connected: true },
   { key: "status", label: "Status", w: 170 },
   { key: "location", label: "Location", w: 180 },

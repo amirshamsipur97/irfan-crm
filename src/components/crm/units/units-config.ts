@@ -13,7 +13,7 @@ export const UNIT_COLUMNS: {
   { key: "area", label: "Area", w: 110 },
   { key: "price", label: "Price", w: 140 },
   { key: "status", label: "Status", w: 150 },
-  { key: "owner", label: "Owner", w: 98 },
+  { key: "owner", label: "Owner", w: 190 },
   { key: "handover", label: "Handover", w: 130 },
 ];
 

@@ -7,7 +7,7 @@ export const VIEWING_COLUMNS: {
   /** connected-board columns get the green header underline */
   connected?: boolean;
 }[] = [
-  { key: "agent", label: "Agent", w: 98 },
+  { key: "agent", label: "Agent", w: 190 },
   { key: "contact", label: "Contact", w: 192, connected: true },
   { key: "unit", label: "Unit", w: 170, connected: true },
   { key: "start", label: "When", w: 180 },

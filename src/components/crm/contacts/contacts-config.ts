@@ -7,7 +7,7 @@ export const CONTACT_COLUMNS: {
   /** connected-board columns get the green header underline */
   connected?: boolean;
 }[] = [
-  { key: "owner", label: "Owner", w: 100 },
+  { key: "owner", label: "Owner", w: 190 },
   // carried over from the lead by crm_convert_lead, editable here too
   { key: "temperature", label: "Status", w: 130 },
   { key: "email", label: "Email", w: 189 },

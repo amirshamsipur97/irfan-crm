@@ -10,7 +10,7 @@ export const ROW_HEIGHTS: Record<ItemHeight, number> = {
 };
 
 export const ACTIVITY_COLUMNS: { key: string; label: string; w: number }[] = [
-  { key: "owner", label: "Owner", w: 98 },
+  { key: "owner", label: "Owner", w: 190 },
   { key: "type", label: "Activity Type", w: 168 },
   { key: "start", label: "Start time", w: 200 },
   { key: "end", label: "End time", w: 200 },

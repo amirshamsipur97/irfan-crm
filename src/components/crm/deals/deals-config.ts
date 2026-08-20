@@ -12,7 +12,7 @@ export const DEAL_COLUMNS: { key: string; label: string; w: number }[] = [
   // the CLIENT is the first (sticky) column — an offer is made TO a person,
   // so the row itself is picked from Contacts, not typed as free text
   { key: "stage", label: "Stage", w: 159 },
-  { key: "owner", label: "Owner", w: 98 },
+  { key: "owner", label: "Owner", w: 190 },
   { key: "client_demand", label: "Client wants", w: 170 },
   { key: "client_country", label: "Country", w: 130 },
   { key: "client_budget", label: "Client budget", w: 140 },

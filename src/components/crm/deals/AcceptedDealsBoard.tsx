@@ -37,7 +37,7 @@ const ROW_H = 36;
 const STRIPE = "#00a0a0";
 
 const COLS: { key: string; label: string; w: number }[] = [
-  { key: "owner", label: "Owner", w: 98 },
+  { key: "owner", label: "Owner", w: 190 },
   { key: "client", label: "Client", w: 180 },
   { key: "country", label: "Country", w: 130 },
   { key: "developer", label: "Developer", w: 170 },

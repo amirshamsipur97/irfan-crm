@@ -21,7 +21,7 @@ export const BOARD_COLUMNS: {
   // (crm_leads.stage_id is untouched and still drives the drawer's stage
   // journey and the lead score.)
   { key: "temperature", label: "Status", w: 130 },
-  { key: "owner", label: "Owner", w: 98 },
+  { key: "owner", label: "Owner", w: 190 },
   { key: "first_name", label: "First name", w: 150 },
   { key: "last_name", label: "Last name", w: 150 },
   { key: "phone", label: "Telephone", w: 170 },

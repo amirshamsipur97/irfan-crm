@@ -352,7 +352,11 @@ export function OwnerCell({
   // hovering any owner avatar reveals the person's full name, every role
   const ownerName = owner ? owner.full_name || owner.email : "Unassigned";
   return (
-    <div className="relative flex size-full items-center justify-center">
+    <div
+      className={`relative flex size-full items-center px-[6px] ${
+        owner ? "justify-start" : "justify-center"
+      }`}
+    >
       {/* the tip wraps the button rather than sitting on it: for agents the
           button is disabled, and disabled controls fire no pointer events */}
       <HoverTip label={ownerName}>
@@ -361,12 +365,19 @@ export function OwnerCell({
           disabled={!canReassign}
           onClick={() => setOpen((v) => !v)}
           aria-label={canReassign ? "Assign owner" : `Owner: ${ownerName}`}
-          className={`flex items-center justify-center rounded-full transition-shadow ${
+          className={`flex min-w-0 max-w-full items-center rounded-[14px] px-[3px] py-[1px] transition-shadow ${
             canReassign ? "hover:shadow-[0_0_0_2px_var(--color-cyan-tint)]" : "cursor-default"
           }`}
         >
           {owner ? (
-            <Avatar name={owner.full_name || owner.email} src={owner.avatar_url} size={26} />
+            <>
+              <Avatar name={owner.full_name || owner.email} src={owner.avatar_url} size={26} />
+              {/* the initials alone made agents guess who "BC" was — the
+                  chip keeps its colour, the name is spelled out beside it */}
+              <span className="min-w-0 truncate pl-[6px] font-sans text-[13px] leading-[18px] text-ink">
+                {ownerName}
+              </span>
+            </>
           ) : (
             <span className="flex size-[26px] items-center justify-center rounded-full border border-dashed border-line-strong bg-canvas">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
