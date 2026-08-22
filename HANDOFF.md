@@ -14,8 +14,11 @@ read the three sections above before touching anything.)
 
 ### 🔴 The system is LIVE — read this before your first command
 
-As of **2026-08-03** the CRM is in daily production use by **8 members
-(7 agents + the CEO)** who are entering real client data right now.
+As of **2026-08-12** the CRM is in daily production use by **17 active
+members (12 agents, 2 CEOs, 3 developers)** entering real client data
+right now: **174 leads · 102 contacts · 17 offers · 1 accepted deal ·
+27 developer accounts**. It grows between sessions — re-count, never
+quote these numbers back.
 
 1. **Never wipe, reseed or "clean up" data.** Rows appear between your
    queries — the team is typing while you work. Match by **id, never by
@@ -25,7 +28,7 @@ As of **2026-08-03** the CRM is in daily production use by **8 members
 2. **Ask before anything destructive or permission-widening.** Two
    examples from 08-03 that were confirmed first: zeroing the boards, and
    opening group-delete to every role.
-3. `git log --oneline -5` — the tree must be clean and end at **`7802a6f`**
+3. `git log --oneline -5` — the tree must be clean and end at **`f26d397`**
    (or later). `git status` must be empty.
 4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
    GitHub does NOT deploy. Push after every commit anyway (backup):
@@ -41,15 +44,18 @@ As of **2026-08-03** the CRM is in daily production use by **8 members
 6. **Roles change between sessions.** Re-read `crm_users` at the start
    instead of trusting any roster written here.
 
-### Health baseline (measured at close of 2026-08-03)
+### Health baseline (measured at close of 2026-08-12)
 
 `npx tsc --noEmit` → clean. `npx next build` → clean.
-`npx eslint src` → **36 errors, all pre-existing and all false alarms for
-this codebase** (identical count before and after this session's work):
-the React-Compiler rules complain about `useGSAP`/`contextSafe` touching
-refs and about `Date.now()` inside async server components. HANDOFF has
-warned since 07-26 that "fixing" the GSAP ones breaks the collapse
-animations. Treat 36 as the baseline — only investigate if it grows.
+`npx eslint src` → **37 errors + 3 warnings, all pre-existing and all
+false alarms for this codebase** (was 36 before the boards grew; the
+extra one is the same React-Compiler family). The rules complain about
+`useGSAP`/`contextSafe` touching refs and about `Date.now()` inside async
+server components. HANDOFF has warned since 07-26 that "fixing" the GSAP
+ones breaks the collapse animations. Treat **37** as the baseline — only
+investigate if it grows, and clean up anything YOUR change adds (this
+session fixed two of its own: an exhaustive-deps warning in HoverTip and
+an unused destructure in ContactGroup).
 
 ### Standing conventions (violating these has caused real bugs)
 
@@ -65,8 +71,36 @@ animations. Treat 36 as the baseline — only investigate if it grows.
   `begin; … set local role authenticated; … rollback;` block — and never
   trust a row count read from inside that session (RLS hides rows both
   ways; re-check from a privileged session).
+- **Dates: never `new Date("YYYY-MM-DD")` and never
+  `toISOString().slice(0,10)`.** The first parses as UTC midnight (wrong
+  day west of UTC), the second gives the UTC day (yesterday in Oman
+  before 04:00). Use `parseLocalDate` / `toLocalDateString` /
+  `todayLocalDateString` from `activities-config.ts`.
+- **A confirm dialog guards every destructive action** (rows, custom
+  columns, documents, floor plans, payment parts). New destructive UI
+  gets one too — `ConfirmDialog` + the `useConfirm` hook, portalled to
+  `<body>`.
+- Per-USER prefs (group collapse, home layout, column order) never
+  change another member's view. Keep new layout prefs per-user.
 
-> Updated: **2026-08-04** — committed and pushed through `d5f84f6`,
+### Testing in the Browser pane — the recipe that actually works
+
+1. Rename the 3 `loading.tsx` files (`(app)/`, `(app)/crm/`,
+   `(admin)/admin/`) → the boards hydrate in the hidden pane. **Restore
+   them before committing.**
+2. Drive React through `__reactProps$` handlers; raw clicks are dead.
+   Fire `onChange`, then **re-read the props** before `onBlur` — both
+   from one snapshot commits the STALE draft.
+3. `window.innerWidth`, `getBoundingClientRect` and
+   `document.elementFromPoint` can all report 0/null (zero-viewport
+   artifact). `resize_window` preset `desktop` usually fixes it; when it
+   does not, verify from server-rendered HTML (`curl`) or from the DB
+   instead of guessing.
+4. Match a cell editor by `className.startsWith("size-full")` — the
+   add-row search box shares the `border-teal-deep` substring, and
+   typing into the wrong one writes to a REAL row.
+
+> Updated: **2026-08-12** — committed and pushed through `f26d397`,
 > all deployed, working tree clean.
 
 ## SESSION 2026-08-12 — Round 4: Owner shows the FULL NAME (commit `d5f84f6`, no migration)
@@ -682,9 +716,47 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
-## 📊 LIVE SYSTEM STATE — end of 2026-08-03
+## 📊 LIVE SYSTEM STATE — end of 2026-08-12 (CURRENT)
 
-**https://crm.irfaninvest.com** · code at `7802a6f` · everything deployed.
+**https://crm.irfaninvest.com** · code at `f26d397` · everything deployed.
+
+**Team: 17 active.** 12 agents · CEOs shirdel.realestate.broker@ and
+kh.hamidiii@gmail.com · developers amiralishamsipur@gmail.com (the
+user's own **Google-only** login — no password on it, "Continue with
+Google"), korooshkhaleghi72@gmail.com and nastaran.sistani@ ·
+preview@irfancrm.local kept DEACTIVATED. The roster moves every few
+days — **re-read `crm_users`, do not trust this list**. Two gmail
+accounts were hand-registered through the invite exception
+(kh.hamidiii@, korooshkhaleghi72@): crm_invites row → `crm_request_access`
+→ `crm_approve_member`; a used invite must have `used_at` cleared before
+it can be re-run.
+
+**Real data (do not touch):** 174 leads · 102 contacts · 17 offers ·
+1 accepted deal · 2 downpayment parts · 27 developer accounts · 43 leads
+already carry a Status (warm/cold/pending) · 2 members have saved a
+custom column order.
+
+**What shipped 2026-08-11/12** (details in the session entries above):
+lead Status field (warm/cold/pending) carried across the whole funnel ·
+offers gained Project + Units · confirm-before-delete everywhere ·
+column drag-to-reorder on Leads/Contacts/Offers · the timezone date fix ·
+Owner cells show full names · the top bar shows the NexProp wordmark
+(Monday's teal mark was removed from the repo entirely).
+
+**Known open items**
+1. **Email is still dark** — no RESEND_API_KEY / verified domain, no
+   Zoho SMTP. Approvals show the temp password on screen only and every
+   "Send email" returns 503. Still the biggest launch item, and it needs
+   the user, not code.
+2. Column drag is wired on **Leads, Contacts, Offers only** — Deals,
+   Accounts, Client Projects, Activities, Developments, Units and
+   Viewings still need the same four mechanical edits (the kit and the
+   board allow-list already cover all ten).
+3. The "picker opens with a lag" report was never reproduced; if it
+   returns, look at board size (174 leads × ~14 cells), not TimeCell.
+4. Auth "leaked password protection" is still off (Supabase toggle).
+
+### ⚠️ HISTORICAL — the state below is from 2026-08-03, kept for context
 
 **Team (8 active).** amiralishamsipur@gmail.com = **developer** (the
 user's own Google login, the account to work from) · shirdel.realestate
