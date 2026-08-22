@@ -103,6 +103,94 @@ an unused destructure in ContactGroup).
 > Updated: **2026-08-12** — committed and pushed through `f26d397`,
 > all deployed, working tree clean.
 
+## SESSION 2026-08-22 — Leads: Export to Excel (commit `PENDING`, no migration)
+
+The team asked for one thing: a button on Leads that hands them the whole
+board as an Excel file. It is in the header toolbar next to Import, labelled
+**Export to Excel**, and it downloads `leads-YYYY-MM-DD.xlsx`.
+
+**Why a real .xlsx and not a CSV.** Half this board is Persian and every
+useful column is a phone number. Excel opens a CSV in the system codepage
+(Persian turns to mojibake unless the user knows to pick UTF-8 in the import
+wizard) and it eats a leading `+`, turning `+968 91234567` into a float. A
+real workbook has neither problem.
+
+**No new dependency.** `src/lib/xlsx.ts` is a ~280-line writer: inline
+strings (no shared-string table to keep in step), a store-only zip built with
+a hand-rolled CRC32, real Excel date cells, a frozen bold header row, an
+autofilter over the range and per-column widths. Store-only means no zlib, so
+it runs in the browser; 178 rows lands at ~290 KB. It takes `XlsxSheet[]`, so
+a second sheet costs nothing when a board wants one.
+
+**Dates go out as real Excel dates, computed from the Y/M/D parts.** The
+serial is `Date.UTC(y, m-1, d)` minus the 1899-12-30 epoch — never a `Date`
+instance, for exactly the reason `parseLocalDate` exists (see the 08-12
+entry). Verified: a lead dated 2026-08-22 reads back as 2026-08-22.
+
+**What goes in the file** (`src/components/crm/leads/lead-export.ts`,
+34 columns today): every board column in board order, then every custom
+column the team has added, then the bookkeeping block the board does not
+show — pipeline stage, lead score, score band, priority, interest, budget,
+currency, company, title, next follow-up, last activity, created by, created
+at, updated at and the lead's UUID. Labels come from the shared lists
+(`LEAD_SOURCES`, `TEMPERATURE_OPTIONS`, `GENDER_OPTIONS`, `PROPERTY_TYPES`,
+`BEDROOM_OPTIONS`), never a second copy.
+
+**Two things worth knowing about the mapping:**
+1. **"Moved to contact" follows the CELL, not the foreign key.** The board's
+   tick reads `custom.moved_to_contacts`; 127 live rows carry that flag but
+   only 92 have a `converted_contact_id` (the other 35 were merged into an
+   existing contact card). Keying the export off the id would have printed
+   "No" on 35 rows the agent can see a tick on.
+2. **Duplicate headers get numbered.** The board has a built-in "Text"
+   column and the team has since added a CUSTOM column also called "Text";
+   the second one exports as `Text (2)` so a pivot can tell them apart.
+
+**Scope of a click.** It exports the rows on screen — search and quick
+filters included, in the board's own group-then-position order. With no
+filters on that is the whole board. Empty result → an alert toast, no file.
+
+**One deliberate exception, and a data finding.** Four live leads have
+`group_id = null`, so they render under no group and are invisible on the
+board: two rows both named "Mike" (lead_date 2026-08-01), "Anil Jha" and
+"Dr Said Ghorbanali Ansari" — all four created 2026-08-11 by mehdi mehrjooy.
+The export includes them (last), because dropping real leads out of a data
+export is worse than showing them. **They still need a group assigned to be
+workable in the UI.** That is why the file says 178 rows while the board
+counts 174.
+
+**BoardHeader gained an opt-in `onExport` prop** (plus `exportLabel` and an
+`ExportGlyph` drawn to the Figma toolbar's 20px box — the Figma set has an
+Import arrow but no Export one, and a flipped Import reads as a mistake).
+Only Leads passes it, so the other nine boards are untouched; wiring one of
+them up is now three lines.
+
+**How it was verified.** The preview account is deactivated and the SQL to
+re-activate it was refused this session, so the board itself could not be
+signed into. Instead:
+- The real export path was run in Node over a **snapshot of all 178 live
+  leads** (17 users, 2 groups, 7 stages, both custom columns) and the output
+  loaded with **openpyxl**. Every non-null count matched SQL exactly:
+  notes 167, dates 178, status 43, country 109, gender 156, email 17,
+  phone 177, custom text 1, custom date 4, age 1, no-group 4, moved 127.
+  Types are right too — Telephone comes back as `str`, Date as `datetime`,
+  Age and score as `int`.
+- The UI half was driven in a browser on a **temporary fixture page at
+  `/preview-xlsx`** (public because proxy.ts treats anything starting
+  `/preview` as public). Verified: the button renders in the toolbar, a click
+  produces a PK-magic blob with the right MIME and the right filename, the
+  toast reads "4 leads exported to Excel", a search narrows the file to one
+  row, an empty result shows the alert toast and writes nothing, and the
+  console stays clean. **The fixture page was deleted afterwards.**
+- Edge cases covered in a unit pass: `<`, `>`, `&`, `"`, apostrophes,
+  newlines and tabs inside notes, NUL and other control bytes (stripped —
+  XML 1.0 forbids them), a 400-char note, a zero, an unparseable date
+  (falls back to text), and a sheet name with `/` `:` `*` and 43 characters.
+
+`.claude/launch.json` was missing from the checkout and is now committed —
+name `irfan-crm`, port 3070, exactly what HANDOFF has been telling every
+session to use.
+
 ## SESSION 2026-08-12 — Round 4: Owner shows the FULL NAME (commit `d5f84f6`, no migration)
 
 The owner column showed only the avatar's two initials ("BC", "SZ"), so
@@ -731,10 +819,13 @@ accounts were hand-registered through the invite exception
 → `crm_approve_member`; a used invite must have `used_at` cleared before
 it can be re-run.
 
-**Real data (do not touch):** 174 leads · 102 contacts · 17 offers ·
-1 accepted deal · 2 downpayment parts · 27 developer accounts · 43 leads
-already carry a Status (warm/cold/pending) · 2 members have saved a
-custom column order.
+**Real data (do not touch), re-counted 2026-08-22:** 178 leads · 102
+contacts · 17 offers · 1 accepted deal · 2 downpayment parts · 27 developer
+accounts · 43 leads carry a Status (warm/cold/pending) · 127 leads marked
+moved-to-contact · 2 members have saved a custom column order. The Leads
+board now has TWO custom columns the team added themselves ("next follow up",
+date, and "Text", text) — the old note that Activities held the only custom
+column anywhere is out of date.
 
 **What shipped 2026-08-11/12** (details in the session entries above):
 lead Status field (warm/cold/pending) carried across the whole funnel ·
@@ -755,6 +846,12 @@ Owner cells show full names · the top bar shows the NexProp wordmark
 3. The "picker opens with a lag" report was never reproduced; if it
    returns, look at board size (174 leads × ~14 cells), not TimeCell.
 4. Auth "leaked password protection" is still off (Supabase toggle).
+5. **Four leads have no group and are invisible on the board** — two "Mike"
+   rows, "Anil Jha" and "Dr Said Ghorbanali Ansari", all created 2026-08-11
+   by mehdi mehrjooy with `group_id = null`. They exist in the DB and in the
+   Excel export, but no agent can see or work them until a group is set.
+6. Export to Excel is wired on **Leads only**; the shared BoardHeader prop
+   makes adding it to the other nine boards a three-line change each.
 
 ### ⚠️ HISTORICAL — the state below is from 2026-08-03, kept for context
 

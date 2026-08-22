@@ -44,6 +44,8 @@ import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
 import { GENDER_OPTIONS, TEMPERATURE_OPTIONS, genderLabel, temperatureLabel } from "@/lib/person-fields";
+import { downloadXlsx } from "@/lib/xlsx";
+import { buildLeadsSheet, leadsFileName } from "./lead-export";
 
 export function LeadsBoard({
   profile,
@@ -283,6 +285,45 @@ export function LeadsBoard({
   const sortedRows = applyQuickFilters([...visibleLeads].sort(byPosition), filterDims, qf.state);
 
 
+  /**
+   * Excel export. It writes the rows on screen — search and quick filters
+   * included, in the same group-then-position order the board draws — because
+   * an export that quietly hands back something other than what you are
+   * looking at is a bug report waiting to happen. With no filters on, that is
+   * the whole board, which is the normal case.
+   *
+   * The one deliberate addition: a lead whose group_id points at nothing
+   * renders on no group and is therefore invisible on the board (four live
+   * rows are in that state today). Dropping real leads out of a data export
+   * is worse than showing them, so they go last.
+   */
+  const handleExport = () => {
+    const ordered = [
+      ...localGroups.flatMap((g) => sortedRows.filter((l) => l.group_id === g.id)),
+      ...sortedRows.filter((l) => !localGroups.some((g) => g.id === l.group_id)),
+    ];
+    if (!ordered.length) {
+      setToast({ message: "Nothing to export — no leads match the current filters.", tone: "alert" });
+      return;
+    }
+    try {
+      downloadXlsx(leadsFileName(), [
+        buildLeadsSheet({
+          leads: ordered,
+          groups: localGroups,
+          users,
+          stages,
+          customColumns: localColumns,
+        }),
+      ]);
+      setToast({
+        message: `${ordered.length} lead${ordered.length === 1 ? "" : "s"} exported to Excel`,
+      });
+    } catch {
+      setToast({ message: "Could not build the Excel file.", tone: "alert" });
+    }
+  };
+
   const handleAddColumn = async (type: CustomColumnType) => {
     const result = await addCustomColumn("leads", type);
     if (result.error || !result.column) {
@@ -322,6 +363,7 @@ export function LeadsBoard({
             activeTab="Main table"
             onTabChange={() => {}}
             newLabel="New lead"
+            onExport={handleExport}
             searchValue={search}
             onSearch={setSearch}
             users={users}

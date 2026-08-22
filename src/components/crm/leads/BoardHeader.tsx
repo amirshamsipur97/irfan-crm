@@ -31,19 +31,44 @@ function ToolbarIcon({ src }: { src: string }) {
 
 function GhostAction({
   icon,
+  onClick,
+  title,
   children,
 }: {
   icon: React.ReactNode;
+  onClick?: () => void;
+  title?: string;
   children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
+      onClick={onClick}
+      title={title}
       className="flex h-[32px] items-center justify-center gap-[8px] rounded-[4px] px-[8px] py-[4px] font-sans text-[14px] leading-[24px] text-ink transition-colors hover:bg-[var(--hover-ghost)]"
     >
       {icon}
       <span className="whitespace-nowrap">{children}</span>
     </button>
+  );
+}
+
+/**
+ * Export glyph. The Figma toolbar set has an Import arrow but no Export one,
+ * and flipping Import upside-down reads as a mistake — this is drawn to the
+ * same 20px box and inherits the toolbar's ink colour.
+ */
+function ExportGlyph() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M10 3v9m0 0 3.2-3.2M10 12 6.8 8.8M4 13.5v1.7c0 .99.8 1.8 1.8 1.8h8.4c1 0 1.8-.81 1.8-1.8v-1.7"
+        stroke="currentColor"
+        strokeWidth={1.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
@@ -58,6 +83,8 @@ export function BoardHeader({
   onNew,
   automateLabel = "Automate",
   showImport = true,
+  onExport,
+  exportLabel = "Export to Excel",
   searchValue,
   onSearch,
   quickFilters,
@@ -71,6 +98,9 @@ export function BoardHeader({
   onNew: () => void;
   automateLabel?: string;
   showImport?: boolean;
+  /** when provided, the toolbar grows an Export button that downloads the board */
+  onExport?: () => void;
+  exportLabel?: string;
   /** when provided, the toolbar Search button becomes a live row filter */
   searchValue?: string;
   onSearch?: (q: string) => void;
@@ -119,6 +149,15 @@ export function BoardHeader({
         <div className="flex items-center gap-[4px]">
           {showImport && (
             <GhostAction icon={<Icon name="bhImport" size={20} />}>Import</GhostAction>
+          )}
+          {onExport && (
+            <GhostAction
+              icon={<ExportGlyph />}
+              onClick={onExport}
+              title="Download every row you can see as an .xlsx file"
+            >
+              {exportLabel}
+            </GhostAction>
           )}
           <GhostAction icon={<Icon name="bhAutomate" size={20} />}>{automateLabel}</GhostAction>
           <IconButton icon="bhChat" size={32} label="Board discussion" />
