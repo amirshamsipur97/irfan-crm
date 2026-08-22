@@ -103,7 +103,7 @@ an unused destructure in ContactGroup).
 > Updated: **2026-08-12** — committed and pushed through `f26d397`,
 > all deployed, working tree clean.
 
-## SESSION 2026-08-22 — Leads: Export to Excel (commit `PENDING`, no migration)
+## SESSION 2026-08-22 — Leads: Export to Excel (commit `0394886`, no migration)
 
 The team asked for one thing: a button on Leads that hands them the whole
 board as an Excel file. It is in the header toolbar next to Import, labelled
