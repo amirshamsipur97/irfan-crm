@@ -28,7 +28,7 @@ quote these numbers back.
 2. **Ask before anything destructive or permission-widening.** Two
    examples from 08-03 that were confirmed first: zeroing the boards, and
    opening group-delete to every role.
-3. `git log --oneline -5` — the tree must be clean and end at **`e400346`**
+3. `git log --oneline -5` — the tree must be clean and end at **`3ee9836`**
    (or later). `git status` must be empty.
 4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
    GitHub does NOT deploy. Push after every commit anyway (backup):
@@ -100,7 +100,7 @@ an unused destructure in ContactGroup).
    add-row search box shares the `border-teal-deep` substring, and
    typing into the wrong one writes to a REAL row.
 
-> Updated: **2026-08-24** — committed and pushed through `e400346`,
+> Updated: **2026-08-24** — committed and pushed through `3ee9836`,
 > all deployed, working tree clean.
 
 ## SESSION 2026-08-22 — Leads: Export to Excel (commit `0394886`, no migration, DEPLOYED)
