@@ -28,7 +28,7 @@ quote these numbers back.
 2. **Ask before anything destructive or permission-widening.** Two
    examples from 08-03 that were confirmed first: zeroing the boards, and
    opening group-delete to every role.
-3. `git log --oneline -5` — the tree must be clean and end at **`73cb9af`**
+3. `git log --oneline -5` — the tree must be clean and end at **`6ff3ab6`**
    (or later). `git status` must be empty.
 4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
    GitHub does NOT deploy. Push after every commit anyway (backup):
@@ -110,8 +110,45 @@ an unused destructure in ContactGroup).
    This proved both 08-26 changes on the real markup.
    **Delete the file before committing — it ships as a public route.**
 
-> Updated: **2026-08-26** — committed and pushed through `73cb9af`,
+> Updated: **2026-08-26** — committed and pushed through `6ff3ab6`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-26 — one row tick at a time (commit `6ff3ab6`, no migration, DEPLOYED)
+
+Two checkboxes could sit green at once, which is exactly what the boards
+were built to do: `const [selected, setSelected] = useState<Set<string>>`
+per GROUP, plus a "select all in group" in the header.
+
+**Worth knowing before touching it: that Set was dead weight.** It was read
+in exactly three places — the row box's own `checked`, the header's
+`checked`, and the header's select-all handler. **No bulk action anywhere
+in the product consumed it**, so multi-select bought nothing and only let
+marks pile up. Grep confirmed it across all nine group components before
+anything was changed.
+
+**What it is now.** A single mark for the whole board, kept in the same
+store as the lit row — `active-row.ts` grew a second slot, keyed
+`${board_key}|checked` alongside `${board_key}|active`, exposed as
+`useCheckedRow(boardKey)` → `{ checkedId, isChecked, toggleChecked }`.
+Ticking a row clears the previous one **even in another group** (that is the
+whole reason the mark cannot live in group state), and ticking a ticked box
+clears it. A real click on the box also lights the row, because the click
+lands on the row and the row's mousedown fires — the two marks coincide
+when you use the checkbox, and only diverge if you click a cell instead.
+**They are deliberately NOT wired together**: clicking a cell must not tick
+a box.
+
+**"Select all in group" is gone**, because it could only ever produce the
+thing being prevented. Its `<span>` stays, holding a 16px spacer — pull the
+box out entirely and the header's "Lead" label slides out of line with the
+name column below it, since header and row share the same three-part block
+(6px stripe · checkbox span · label).
+
+**✅ VERIFIED IN THE PANE** with a TWO-GROUP harness (the single-group one
+could not have caught the case that matters): ticking a row in group one
+then a row in group two left exactly one box checked, ticking the same box
+again left none, 14 boxes render with no "Select all in group" among them,
+and the header stays aligned. Screenshot checked for the green box.
 
 ## SESSION 2026-08-26 — the row you click stays lit (commits `e2a3184` → `c3ae049` → `73cb9af`, no migration, DEPLOYED)
 
@@ -1021,7 +1058,7 @@ newline, drawer section verified on BOTH boards, test note reverted.
 
 ## 📊 LIVE SYSTEM STATE — end of 2026-08-26 (CURRENT)
 
-**https://crm.irfaninvest.com** · code at `73cb9af` · everything deployed.
+**https://crm.irfaninvest.com** · code at `6ff3ab6` · everything deployed.
 
 **Team: 18 active.** 13 agents · CEOs shirdel.realestate.broker@ and
 kh.hamidiii@gmail.com · developers amiralishamsipur@gmail.com (the
