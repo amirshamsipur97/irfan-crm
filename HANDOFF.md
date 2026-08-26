@@ -28,7 +28,7 @@ quote these numbers back.
 2. **Ask before anything destructive or permission-widening.** Two
    examples from 08-03 that were confirmed first: zeroing the boards, and
    opening group-delete to every role.
-3. `git log --oneline -5` — the tree must be clean and end at **`582d089`**
+3. `git log --oneline -5` — the tree must be clean and end at **`4d60204`**
    (or later). `git status` must be empty.
 4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
    GitHub does NOT deploy. Push after every commit anyway (backup):
@@ -100,10 +100,10 @@ an unused destructure in ContactGroup).
    add-row search box shares the `border-teal-deep` substring, and
    typing into the wrong one writes to a REAL row.
 
-> Updated: **2026-08-26** — committed and pushed through `582d089`,
+> Updated: **2026-08-26** — committed and pushed through `4d60204`,
 > all deployed, working tree clean.
 
-## SESSION 2026-08-26 — the column header bar is sticky on every board (commit `582d089`, no migration, DEPLOYED)
+## SESSION 2026-08-26 — the column header bar is sticky on every board (commits `582d089` + `4d60204`, no migration, DEPLOYED)
 
 Ask, in the user's words: make the subject row (Lead / Status / Owner /
 First name / …) sticky "like the side column we already have", on every
@@ -143,6 +143,22 @@ now clears it explicitly:
 `onComplete: () => bodyRef.current?.style.removeProperty("overflow")`.
 Added to all 9 group files (AcceptedDealsBoard has no collapse). **Keep it
 if you ever touch that animation.**
+
+**FOLLOW-UP the same day (commit `4d60204`) — the 8px band.** The user
+saw \"a few pixels of the row above\" along the top of the table once the bar
+was pinned. Root cause is the one this codebase already knows on the other
+axis: **a sticky child pins against the scroller's CONTENT box, not its
+padding box**, and every board scroller carries `pl-[40px] pt-[8px]`. So the
+bar pins 8px down and rows slide through the strip above it — precisely why
+`.gutter-cover` exists for the 40px handle lane on the left. New
+`.board-head::before` (globals.css, right under .gutter-cover) paints that
+strip, reaching 40px further left because .gutter-cover only covers the lane
+for the bar's own height. It renders inside the bar's z-30 stacking
+context, so it is above every row. **A cover was chosen over `top-[-8px]`
+deliberately**: the negative offset would jam the bar against the toolbar and
+would clip its top edge if a browser ever measured from the padding box
+instead, while a cover is harmless either way. **If the board scroller's
+`pt-[8px]` ever changes, change the 8px in `.board-head::before` with it.**
 
 **Boards covered (10):** Leads · Contacts · Offers (DealGroup) · Deals
 (AcceptedDealsBoard) · Accounts · Activities · Client Projects ·
@@ -896,7 +912,7 @@ newline, drawer section verified on BOTH boards, test note reverted.
 
 ## 📊 LIVE SYSTEM STATE — end of 2026-08-26 (CURRENT)
 
-**https://crm.irfaninvest.com** · code at `582d089` · everything deployed.
+**https://crm.irfaninvest.com** · code at `4d60204` · everything deployed.
 
 **Team: 18 active.** 13 agents · CEOs shirdel.realestate.broker@ and
 kh.hamidiii@gmail.com · developers amiralishamsipur@gmail.com (the
