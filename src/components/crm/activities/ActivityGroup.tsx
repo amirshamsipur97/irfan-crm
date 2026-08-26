@@ -29,6 +29,7 @@ import {
 } from "./activities-config";
 import { RelatedItemCell, TimeCell } from "./activity-cells";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
+import { useActiveRow } from "@/components/crm/active-row";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
 
 export function ActivityGroup({
@@ -74,6 +75,7 @@ export function ActivityGroup({
   const [addDraft, setAddDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
+  const activeRow = useActiveRow("activities");
 
   const userById = new Map(users.map((u) => [u.id, u]));
 
@@ -222,7 +224,7 @@ export function ActivityGroup({
                 key={activity.id}
                 className="group/row relative flex w-fit items-stretch"
                 style={{ height: ROW_H }}
-              {...dropTargetProps(tools, group.id, activity.id)}
+              {...dropTargetProps(tools, group.id, activity.id)} {...activeRow.rowProps(activity.id)}
               >
                 {tools && <RowTools row={activity} tools={tools} />}
                 <div

@@ -26,6 +26,7 @@ import { ConnectPicker, type PickerOption } from "@/components/crm/deals/connect
 import { TimeCell } from "@/components/crm/activities/activity-cells";
 import { VIEWING_COLUMNS, VIEWING_NAME_COL_W, VIEWING_STATUSES } from "./viewings-config";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
+import { useActiveRow } from "@/components/crm/active-row";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
 
 const ROW_H = 36;
@@ -77,6 +78,7 @@ export function ViewingGroup({
   const [addDraft, setAddDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
+  const activeRow = useActiveRow("viewings");
 
   const toggleCollapse = contextSafe(() => {
     const next = !collapsed;
@@ -223,7 +225,7 @@ export function ViewingGroup({
               key={viewing.id}
               className="group/row relative flex w-fit items-stretch"
               style={{ height: ROW_H }}
-            {...dropTargetProps(tools, group.id, viewing.id)}
+            {...dropTargetProps(tools, group.id, viewing.id)} {...activeRow.rowProps(viewing.id)}
             >
               {tools && <RowTools row={viewing} tools={tools} />}
               <div

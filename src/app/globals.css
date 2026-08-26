@@ -96,3 +96,26 @@ body {
   height: 8px;
   background: #fff;
 }
+
+/* The row you last clicked stays lit on every board (state in
+   components/crm/active-row.ts). Most board cells paint their OWN white
+   ground, so a tint on the row alone shows up under the pinned name block
+   and nowhere else — these rules put it on the cells too. The child
+   combinator is the safety rail: cells are direct children of the row, so
+   an open editor, a chip or a badge NESTED inside a cell keeps its own
+   background. The group colour stripe carries an inline style, hence
+   :not([style]); the span it skips is the only one that must stay its own
+   colour. The name span also has a hover utility that would grey out the
+   row you just clicked — an unlayered rule outranks it. The 40px handle
+   lane stays white on purpose: the highlight belongs to the table, not the
+   gutter. */
+[data-row-active],
+[data-row-active] > .bg-white,
+[data-row-active] > .bg-canvas,
+[data-row-active] .gutter-cover,
+[data-row-active] .gutter-cover > span:not([style]) {
+  background: var(--color-cyan-soft);
+}
+[data-row-active] .gutter-cover::before {
+  background: #fff;
+}

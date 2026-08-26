@@ -30,6 +30,7 @@ import { toLocalDateString } from "@/components/crm/activities/activities-config
 import { shortDate } from "@/components/crm/leads/board-config";
 import { UNIT_COLUMNS, UNIT_NAME_COL_W, UNIT_STATUSES, UNIT_TYPES } from "./units-config";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
+import { useActiveRow } from "@/components/crm/active-row";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
 
 const ROW_H = 36;
@@ -77,6 +78,7 @@ export function UnitGroup({
   const [addDraft, setAddDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
+  const activeRow = useActiveRow("units");
 
   const toggleCollapse = contextSafe(() => {
     const next = !collapsed;
@@ -223,7 +225,7 @@ export function UnitGroup({
               key={unit.id}
               className="group/row relative flex w-fit items-stretch"
               style={{ height: ROW_H }}
-            {...dropTargetProps(tools, group.id, unit.id)}
+            {...dropTargetProps(tools, group.id, unit.id)} {...activeRow.rowProps(unit.id)}
             >
               {tools && <RowTools row={unit} tools={tools} />}
               <div

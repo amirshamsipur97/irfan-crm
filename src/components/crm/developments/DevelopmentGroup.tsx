@@ -33,6 +33,7 @@ import {
   DEVELOPMENT_STATUSES,
 } from "./developments-config";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
+import { useActiveRow } from "@/components/crm/active-row";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
 
 const ROW_H = 36;
@@ -82,6 +83,7 @@ export function DevelopmentGroup({
   const [addDraft, setAddDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
+  const activeRow = useActiveRow("developments");
 
   const toggleCollapse = contextSafe(() => {
     const next = !collapsed;
@@ -231,7 +233,7 @@ export function DevelopmentGroup({
               key={dev.id}
               className="group/row relative flex w-fit items-stretch"
               style={{ height: ROW_H }}
-            {...dropTargetProps(tools, group.id, dev.id)}
+            {...dropTargetProps(tools, group.id, dev.id)} {...activeRow.rowProps(dev.id)}
             >
               {tools && <RowTools row={dev} tools={tools} />}
               <div

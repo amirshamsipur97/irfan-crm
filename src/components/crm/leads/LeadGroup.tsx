@@ -36,6 +36,7 @@ import { toLocalDateString } from "@/components/crm/activities/activities-config
 import { NoteDialogCell, OptionCell } from "@/components/crm/contacts/contact-cells";
 import { CenterEditCell, EmailCell, MoveToContactsCell, PhoneCell } from "./lead-cells";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
+import { useActiveRow } from "@/components/crm/active-row";
 import { DealDoneBadge } from "@/components/crm/deal-done-badge";
 import { CountryCell } from "@/components/crm/country-cell";
 import { NumberCell } from "@/components/crm/deals/deal-cells";
@@ -106,6 +107,7 @@ export function LeadGroup({
   const [composer, setComposer] = useState<{ lead: CrmLead; typeKey: string } | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
+  const activeRow = useActiveRow("leads");
 
   const userById = new Map(users.map((u) => [u.id, u]));
 
@@ -254,7 +256,7 @@ export function LeadGroup({
           {leads.map((lead) => {
             const owner = lead.owner_id ? userById.get(lead.owner_id) : undefined;
             return (
-              <div key={lead.id} className="group/row relative flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, lead.id)}>
+              <div key={lead.id} className="group/row relative flex w-fit items-stretch" style={{ height: ROW_H }} {...dropTargetProps(tools, group.id, lead.id)} {...activeRow.rowProps(lead.id)}>
                 {tools && <RowTools row={lead} tools={tools} />}
                 <div
                   className="gutter-cover sticky left-0 z-10 flex items-stretch bg-white"

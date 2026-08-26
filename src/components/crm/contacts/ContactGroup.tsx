@@ -37,6 +37,7 @@ import {
 } from "@/components/crm/custom/custom-columns";
 import { canManageBoards, isFullAccess } from "@/lib/permissions";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
+import { useActiveRow } from "@/components/crm/active-row";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
 
 const ROW_H = 36;
@@ -96,6 +97,7 @@ export function ContactGroup({
   const [addDraft, setAddDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
+  const activeRow = useActiveRow("contacts");
 
   const toggleCollapse = contextSafe(() => {
     const next = !collapsed;
@@ -258,7 +260,7 @@ export function ContactGroup({
                 key={contact.id}
                 className="group/row relative flex w-fit items-stretch"
                 style={{ height: ROW_H }}
-              {...dropTargetProps(tools, group.id, contact.id)}
+              {...dropTargetProps(tools, group.id, contact.id)} {...activeRow.rowProps(contact.id)}
               >
                 {tools && <RowTools row={contact} tools={tools} />}
                 <div

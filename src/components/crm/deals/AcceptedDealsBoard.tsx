@@ -32,6 +32,7 @@ import type { CrmContact, CrmDeal, CrmDealDownpayment, CrmDealGroup, CrmDealStag
 import { countryFlag } from "@/components/crm/country-cell";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 import { RowTools, useRowTools } from "@/components/crm/row-tools";
+import { useActiveRow } from "@/components/crm/active-row";
 
 const ROW_H = 36;
 const STRIPE = "#00a0a0";
@@ -259,6 +260,7 @@ export function AcceptedDealsBoard({
   );
 
   const userById = new Map(users.map((u) => [u.id, u]));
+  const activeRow = useActiveRow("deals");
 
   // same row menu the other boards have: Open / Duplicate / Move to / Delete
   const rowTools = useRowTools({
@@ -439,7 +441,7 @@ export function AcceptedDealsBoard({
                 const canEdit = canEditRow(profile, deal);
 
                 return (
-                  <div key={deal.id} className="group/row relative flex w-fit items-stretch" style={{ height: ROW_H }}>
+                  <div key={deal.id} className="group/row relative flex w-fit items-stretch" style={{ height: ROW_H }} {...activeRow.rowProps(deal.id)}>
                     <RowTools row={deal} tools={rowTools} />
                     <div
                       className="gutter-cover sticky left-0 z-10 flex items-stretch bg-white"

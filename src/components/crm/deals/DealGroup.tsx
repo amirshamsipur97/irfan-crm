@@ -37,6 +37,7 @@ import {
 } from "@/components/crm/contacts/demand-config";
 import { AddRowClientPicker, ConnectPicker, type PickerOption } from "./connect-picker";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
+import { useActiveRow } from "@/components/crm/active-row";
 import { DealDoneBadge } from "@/components/crm/deal-done-badge";
 import { countryFlag } from "@/components/crm/country-cell";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
@@ -181,6 +182,7 @@ export function DealGroup({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
+  const activeRow = useActiveRow("offers");
 
   const stageById = new Map(stages.map((s) => [s.id, s]));
   const userById = new Map(users.map((u) => [u.id, u]));
@@ -347,7 +349,7 @@ export function DealGroup({
                 key={deal.id}
                 className="group/row relative flex w-fit items-stretch"
                 style={{ height: ROW_H }}
-              {...dropTargetProps(tools, group.id, deal.id)}
+              {...dropTargetProps(tools, group.id, deal.id)} {...activeRow.rowProps(deal.id)}
               >
                 {tools && <RowTools row={deal} tools={tools} />}
                 <div

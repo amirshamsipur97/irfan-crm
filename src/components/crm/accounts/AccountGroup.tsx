@@ -22,6 +22,7 @@ import { CONNECTED_UNDERLINE } from "@/components/crm/contacts/contacts-config";
 import { ACCOUNT_COLUMNS, ACCOUNT_NAME_COL_W } from "./accounts-config";
 import { ContactsChipCell, DomainCell, IndustryCell } from "./account-cells";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
+import { useActiveRow } from "@/components/crm/active-row";
 import { EmailCell } from "@/components/crm/leads/lead-cells";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
 
@@ -72,6 +73,7 @@ export function AccountGroup({
   const [addDraft, setAddDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
+  const activeRow = useActiveRow("accounts");
 
   const toggleCollapse = contextSafe(() => {
     const next = !collapsed;
@@ -219,7 +221,7 @@ export function AccountGroup({
                 key={account.id}
                 className="group/row relative flex w-fit items-stretch"
                 style={{ height: ROW_H }}
-              {...dropTargetProps(tools, group.id, account.id)}
+              {...dropTargetProps(tools, group.id, account.id)} {...activeRow.rowProps(account.id)}
               >
                 {tools && <RowTools row={account} tools={tools} />}
                 <div
