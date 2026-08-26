@@ -28,7 +28,7 @@ quote these numbers back.
 2. **Ask before anything destructive or permission-widening.** Two
    examples from 08-03 that were confirmed first: zeroing the boards, and
    opening group-delete to every role.
-3. `git log --oneline -5` — the tree must be clean and end at **`9811358`**
+3. `git log --oneline -5` — the tree must be clean and end at **`f807c67`**
    (or later). `git status` must be empty.
 4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
    GitHub does NOT deploy. Push after every commit anyway (backup):
@@ -110,9 +110,50 @@ an unused destructure in ContactGroup).
    This proved both 08-26 changes on the real markup.
    **Delete the file before committing — it ships as a public route.**
 
-> Updated: **2026-08-26** — committed and pushed through `9811358`, plus
+> Updated: **2026-08-26** — committed and pushed through `f807c67`, plus
 > the DB-only migration `crm_lead_contact_mirror`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-26 — an offer keeps its number (commit `f807c67`, no migration, DEPLOYED)
+
+Reported: "the first offer to a contact is made correctly with number 1, but
+the offers after it repeat the number."
+
+**It was the label, not the data.** `tracking-section.tsx` printed
+`Offer {offerIndex + 1}` — the offer's INDEX in the array the contact drawer
+hands it — and `getContactRelations` loads offers **`created_at` DESC**. So
+the offer you had just made was always index 0 and came out "Offer 1" again,
+while every older offer silently slid down a number underneath it. Nothing
+was wrong with the rows; three offers exist for C-0127 TALIB and two each for
+C-0103 and C-0111, all correct in the DB.
+
+**Fix: `offerNumbers()` in `deals-config.ts`** — sorts a COPY by
+`created_at` (id as tie-break, because TALIB's second and third offers were
+saved in the same minute) and returns an id→number Map. The number is now a
+property of WHEN the offer was made, so it holds whatever order the caller
+renders in. Both the drawer's Offers cards and the Lead-tracking trails read
+the same Map, so they agree.
+
+**Also fixed while there:** the drawer's offer cards printed `d.name`, and
+every offer of one client is stored as the same string "Offer — <client>" —
+so a client with three offers got three identical cards. They now read
+"Offer N · <project>".
+
+**⚠️ STILL OPEN, deliberately:** on the OFFERS BOARD itself all of a
+client's rows are still literally named "Offer — TALIB" with nothing to tell
+them apart. Changing the stored `name` there is a bigger move — it is
+written by `offers/actions.ts`, `DealsBoard.tsx` and `DealGroup.tsx`, and
+`crm_propagate_contact_rename` pushes contact renames into
+`crm_deals.contact_name`. Was flagged to the user, not done.
+
+**✅ VERIFIED IN THE PANE** with a throwaway `/preview-offer` route (same
+trick as the board harnesses: `PUBLIC_PATHS` matches on
+`startsWith("/preview")`) rendering the real `TrackingSection` with three
+offers handed over NEWEST-FIRST, exactly as the drawer does. Read back:
+newest = "Offer 3", oldest = "Offer 1", and the helper's own map printed
+`[{"c-third":3},{"b-second":2},{"a-first":1}]`. Route deleted before the
+commit. The drawer's own card is behind auth and was NOT rendered in the
+pane — same one-line label, tsc and build clean.
 
 ## SESSION 2026-08-26 — a lead and its contact are ONE person now (migration `crm_lead_contact_mirror`, DB-ONLY, no deploy)
 
@@ -1123,7 +1164,7 @@ newline, drawer section verified on BOTH boards, test note reverted.
 
 ## 📊 LIVE SYSTEM STATE — end of 2026-08-26 (CURRENT)
 
-**https://crm.irfaninvest.com** · code at `9811358` · everything deployed.
+**https://crm.irfaninvest.com** · code at `f807c67` · everything deployed.
 
 **Team: 18 active.** 13 agents · CEOs shirdel.realestate.broker@ and
 kh.hamidiii@gmail.com · developers amiralishamsipur@gmail.com (the
