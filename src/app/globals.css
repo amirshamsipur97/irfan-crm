@@ -79,3 +79,20 @@ body {
   width: 40px;
   background: #fff;
 }
+
+/* Same story one axis over. The board scroller carries pt-[8px], and a
+   sticky top-0 child pins below that padding, not at the very top edge —
+   so an 8px band was left above the pinned column-header bar and rows
+   showed through it as they scrolled past. This paints that band (plus
+   the 40px handle lane at its left, which .gutter-cover only covers for
+   the bar's own height). Inside the bar's z-30 stacking context, so it
+   sits above every row. */
+.board-head::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: -40px;
+  right: 0;
+  height: 8px;
+  background: #fff;
+}

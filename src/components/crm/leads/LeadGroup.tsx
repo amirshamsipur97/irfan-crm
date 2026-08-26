@@ -196,8 +196,11 @@ export function LeadGroup({
 
       {!collapsed && (
         <div ref={bodyRef} className="w-fit">
-          {/* column headers */}
-          <div className="sticky top-0 z-30 flex h-[36px] w-fit items-stretch bg-white">
+          {/* column headers — .board-head paints the 8px band the scroller's
+              pt-[8px] leaves above the pinned bar (sticky offsets measure from
+              the content box), the same reason .gutter-cover paints the 40px
+              lane on the left */}
+          <div className="board-head sticky top-0 z-30 flex h-[36px] w-fit items-stretch bg-white">
             <div
               className="gutter-cover sticky left-0 z-10 flex items-stretch bg-white"
               style={{ width: NAME_COL_W }}
