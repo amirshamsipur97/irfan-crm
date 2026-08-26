@@ -28,7 +28,7 @@ quote these numbers back.
 2. **Ask before anything destructive or permission-widening.** Two
    examples from 08-03 that were confirmed first: zeroing the boards, and
    opening group-delete to every role.
-3. `git log --oneline -5` — the tree must be clean and end at **`3ee9836`**
+3. `git log --oneline -5` — the tree must be clean and end at **`582d089`**
    (or later). `git status` must be empty.
 4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
    GitHub does NOT deploy. Push after every commit anyway (backup):
@@ -100,8 +100,63 @@ an unused destructure in ContactGroup).
    add-row search box shares the `border-teal-deep` substring, and
    typing into the wrong one writes to a REAL row.
 
-> Updated: **2026-08-24** — committed and pushed through `3ee9836`,
+> Updated: **2026-08-26** — committed and pushed through `582d089`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-26 — the column header bar is sticky on every board (commit `582d089`, no migration, DEPLOYED)
+
+Ask, in the user's words: make the subject row (Lead / Status / Owner /
+First name / …) sticky "like the side column we already have", on every
+sheet and page.
+
+**The one-line change, ten times.** Every board renders its header the same
+way — `{/* column headers */}` followed by
+`<div className="flex h-[36px] w-fit items-stretch">`. That row is now
+`sticky top-0 z-30 … bg-white`. The scroll container is the board's own
+`div.thin-scroll.overflow-auto` (identical in all ten boards), so the row
+pins to the top of the board area, not the window. The sticky-left first
+cell inside it is untouched and keeps its `gutter-cover`, so the top-left
+corner covers the 40px gutter in both directions at once.
+
+**Per-group, not per-board — and that is correct.** Each group renders its
+own header inside its own `bodyRef` div, so a header sticks only while its
+group is on screen and the next group's header takes over when it arrives.
+The group TITLE is deliberately NOT sticky (it was not asked for); it
+scrolls away under the pinned header and reappears for the next group,
+because a section's `pb-[24px]` puts the next title below the previous
+body's bottom.
+
+**z-30 was picked, not guessed.** Rows and the header's own left cell are
+`z-10`, group titles `z-20`, so the header needed to clear both. Everything
+that must sit ABOVE it — dialogs, portalled popovers, the ConnectPicker —
+already lives at `z-50`/`z-[70]`/`z-[80]`/`z-[90]`+ on `<body>`, so nothing
+was buried. Non-portalled inline pickers inside rows now pass under the
+header, which is the wanted behaviour.
+
+**⚠️ The trap that would have made this fail silently.** The collapse
+animation does `gsap.set(bodyRef.current, { overflow: "hidden" })` and
+relies on `clearProps: "all"` to take it off again. If that leftover ever
+survived, the group body would become the nearest scrollport and the header
+would stick to a box that never scrolls — no error, no visual clue, just a
+header that quietly stops working after a collapse/expand. The expand tween
+now clears it explicitly:
+`onComplete: () => bodyRef.current?.style.removeProperty("overflow")`.
+Added to all 9 group files (AcceptedDealsBoard has no collapse). **Keep it
+if you ever touch that animation.**
+
+**Boards covered (10):** Leads · Contacts · Offers (DealGroup) · Deals
+(AcceptedDealsBoard) · Accounts · Activities · Client Projects ·
+Developments · Units · Viewings. Team / Finance / Emails / Dashboard have
+no board table, so there was nothing to pin.
+
+**⚠️ NOT verified in a browser.** The Browser pane (`preview_start`) and the
+SQL that re-activates `preview@irfancrm.local` were both refused by the
+permission classifier this session, so the usual pane E2E did not run. The
+user was told, and chose to ship it and look on Safari himself. `tsc` clean,
+`next build` clean, `eslint src` at exactly the 37+3 baseline. If it needs a
+second pass, the suspects in order are: a leftover `overflow` (see above),
+the 8px `pt` on the scroll container, and inline pickers now painting under
+the header.
 
 ## SESSION 2026-08-22 — Leads: Export to Excel (commit `0394886`, no migration, DEPLOYED)
 
@@ -839,9 +894,9 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
-## 📊 LIVE SYSTEM STATE — end of 2026-08-24 (CURRENT)
+## 📊 LIVE SYSTEM STATE — end of 2026-08-26 (CURRENT)
 
-**https://crm.irfaninvest.com** · code at `f26d397` · everything deployed.
+**https://crm.irfaninvest.com** · code at `582d089` · everything deployed.
 
 **Team: 18 active.** 13 agents · CEOs shirdel.realestate.broker@ and
 kh.hamidiii@gmail.com · developers amiralishamsipur@gmail.com (the
@@ -854,8 +909,8 @@ accounts were hand-registered through the invite exception
 → `crm_approve_member`; a used invite must have `used_at` cleared before
 it can be re-run.
 
-**Real data (do not touch), re-counted 2026-08-22:** 178 leads · 102
-contacts · 17 offers · 1 accepted deal · 2 downpayment parts · 27 developer
+**Real data (do not touch), re-counted 2026-08-26:** 202 leads · 124
+contacts · 18 offers · 1 accepted deal · 2 downpayment parts · 31 developer
 accounts · 43 leads carry a Status (warm/cold/pending) · 127 leads marked
 moved-to-contact · 2 members have saved a custom column order. The Leads
 board now has TWO custom columns the team added themselves ("next follow up",
