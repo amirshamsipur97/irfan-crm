@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/ui/Avatar";
 import { isTempId, STILL_SAVING_MESSAGE } from "@/components/crm/persist";
-import { money } from "@/components/crm/deals/deals-config";
+import { money, offerNumbers } from "@/components/crm/deals/deals-config";
 import {
   addTrackingEntry,
   deleteTrackingEntry,
@@ -280,6 +280,10 @@ export function TrackingSection({
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // numbered by WHEN each offer was made, not by its place in this list —
+  // the drawer hands them over newest-first
+  const offerNo = offerNumbers(offers);
+
   const idsKey = offers
     .map((o) => o.id)
     .filter((id) => !isTempId(id))
@@ -435,7 +439,7 @@ export function TrackingSection({
               {/* offer header with the + */}
               <div className="flex items-center justify-between gap-[8px] pb-[8px]">
                 <p className="m-0 min-w-0 truncate font-sans text-[13.5px] font-semibold leading-[20px] text-ink">
-                  Offer {offerIndex + 1}
+                  Offer {offerNo.get(offer.id) ?? offerIndex + 1}
                   <span className="pl-[6px] font-normal text-ink-muted">
                     {money(offer.deal_value, offer.currency)}
                     {offer.account_name ? ` · ${offer.account_name}` : ""}
@@ -447,7 +451,7 @@ export function TrackingSection({
                   </span>
                   <button
                     type="button"
-                    aria-label={`Add follow-up to offer ${offerIndex + 1}`}
+                    aria-label={`Add follow-up to offer ${offerNo.get(offer.id) ?? offerIndex + 1}`}
                     title="Add to this timeline"
                     onClick={() => {
                       resetForm();

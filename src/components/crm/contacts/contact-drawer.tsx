@@ -6,7 +6,7 @@ import { ConfirmDialog, useConfirm } from "@/components/ui/ConfirmDialog";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { canAnimate } from "@/lib/motion";
-import { money } from "@/components/crm/deals/deals-config";
+import { money, offerNumbers } from "@/components/crm/deals/deals-config";
 import { shortDate, sourceLabel } from "@/components/crm/leads/board-config";
 import { canEditRow } from "@/lib/permissions";
 import { DemandSection } from "./demand-section";
@@ -166,6 +166,10 @@ export function ContactDrawer({
   );
 
   const dealsValue = deals.reduce((sum, d) => sum + (d.deal_value ?? 0), 0);
+  // stable per-client numbering: the list arrives newest-first, so a number
+  // taken from the position would move under the client every time they get
+  // another offer
+  const offerNo = offerNumbers(deals);
 
   return (
     <div className="fixed inset-0 z-[90]">
@@ -319,7 +323,16 @@ export function ContactDrawer({
                   >
                     <div className="flex items-center justify-between">
                       <div className="min-w-0">
-                        <p className="m-0 truncate font-sans text-[14px] leading-[20px] text-ink">{d.name}</p>
+                        {/* every offer of one client is stored under the same
+                            name ("Offer — <client>"), which says nothing inside
+                            that client's own drawer — the number and the project
+                            are what tell them apart */}
+                        <p className="m-0 truncate font-sans text-[14px] leading-[20px] text-ink">
+                          Offer {offerNo.get(d.id) ?? 1}
+                          {d.project_name ? (
+                            <span className="pl-[6px] text-ink-muted">{d.project_name}</span>
+                          ) : null}
+                        </p>
                         <p className="m-0 font-sans text-[12px] leading-[16px] text-ink-muted">
                           {money(d.deal_value, d.currency)}
                           {d.expected_close_date ? ` · closes ${shortDate(d.expected_close_date)}` : ""}

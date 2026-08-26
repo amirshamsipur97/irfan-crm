@@ -66,6 +66,27 @@ export function compactMoney(value: number | null | undefined, currency = "OMR")
   }).format(n)} ${currency}`;
 }
 
+/**
+ * "Offer 1", "Offer 2"… for one client's offers.
+ *
+ * The number has to come from WHEN the offer was made, never from its place
+ * in the list. The contact drawer loads offers newest-first, so numbering by
+ * position made every new offer "Offer 1" again and silently renumbered all
+ * the older ones under it. Sorting a copy by created_at pins each offer to
+ * its own number whatever order the caller renders in; the id is the
+ * tie-break so two offers saved in the same instant still order the same way
+ * on every render.
+ */
+export function offerNumbers<T extends { id: string; created_at: string }>(
+  offers: T[]
+): Map<string, number> {
+  return new Map(
+    [...offers]
+      .sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))
+      .map((offer, i) => [offer.id, i + 1] as const)
+  );
+}
+
 /** Monday computes forecast value as deal value × close probability. */
 export function forecastValue(value: number | null, probability: number | null): number {
   if (!value || probability == null) return 0;
