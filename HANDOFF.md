@@ -28,7 +28,7 @@ quote these numbers back.
 2. **Ask before anything destructive or permission-widening.** Two
    examples from 08-03 that were confirmed first: zeroing the boards, and
    opening group-delete to every role.
-3. `git log --oneline -5` — the tree must be clean and end at **`6ff3ab6`**
+3. `git log --oneline -5` — the tree must be clean and end at **`9811358`**
    (or later). `git status` must be empty.
 4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
    GitHub does NOT deploy. Push after every commit anyway (backup):
@@ -110,8 +110,73 @@ an unused destructure in ContactGroup).
    This proved both 08-26 changes on the real markup.
    **Delete the file before committing — it ships as a public route.**
 
-> Updated: **2026-08-26** — committed and pushed through `6ff3ab6`,
+> Updated: **2026-08-26** — committed and pushed through `9811358`, plus
+> the DB-only migration `crm_lead_contact_mirror`,
 > all deployed, working tree clean.
+
+## SESSION 2026-08-26 — a lead and its contact are ONE person now (migration `crm_lead_contact_mirror`, DB-ONLY, no deploy)
+
+"Mirror the lead and contact data — a change on either side shows up on the
+other." Until now **Move to contact COPIED the shared fields once** and the
+two rows drifted from that second onward.
+
+**Two AFTER UPDATE triggers**, `crm_leads_mirror` and `crm_contacts_mirror`,
+over the pair `crm_leads.converted_contact_id = crm_contacts.id`.
+
+**The 14 mirrored columns** are exactly the ones `crm_convert_lead` already
+copies and that carry the same name on both tables: name · first_name ·
+last_name · email · phone · country_code · title · notes (the Leads "Text"
+column IS the contact's Notes) · lead_date · budget · country · gender ·
+age · temperature. Both tables carry identical CHECK constraints on gender /
+age / temperature, so nothing can bounce.
+
+**Deliberately NOT mirrored:**
+- `owner_id` — it decides who can SEE the row under per-agent visibility.
+  Mirroring it would move a record out of somebody's board as a side effect
+  of an unrelated edit. Ask before adding it.
+- `group_id` / `position` — per-board layout, not the person.
+- `company`↔`account_name` and `source`↔`lead_source` — differently named,
+  and `account_name` is tied to a real `account_id` link that a mirror would
+  clobber. (`crm_leads.source` is also NOT NULL, so a cleared contact field
+  would fail the write.)
+
+**⚠️ THE TRAP, and why the triggers look the way they do.** The obvious
+implementation pushes the whole column set on every update. That would have
+been a data-loss bug on day one: **110 pairs exist and 73 already disagree on
+temperature, 18 on notes, 14 on budget**, so the first agent to fix a phone
+number would have silently overwritten all of it. Each column is therefore
+pushed **only if THIS update changed it** —
+`case when new.c is distinct from old.c then new.c else target.c end`.
+
+**Termination is by convergence, not by a depth flag.** The WHERE only
+matches rows that still differ, so the answering trigger updates 0 rows and
+stops. That was chosen over `pg_trigger_depth() = 1` for a reason: when TWO
+leads point at one contact (the 08-24 sarraf backfill made three such rows),
+convergence still carries the change to the sibling lead, and a depth flag
+would have stranded it. `pg_trigger_depth() > 4` is only a backstop.
+
+**SECURITY DEFINER is required, not convenience.** Under per-agent
+visibility an agent editing their own lead cannot see — let alone write —
+the linked contact, so a plain trigger would silently mirror nothing. The
+flip side, worth knowing: an edit now reaches a row the editor could not
+otherwise touch. That is the feature, but it IS a widening.
+
+**Verified twice against real rows, both inside `begin … rollback`:** once
+before installing (functions + triggers + assertions, all rolled back) and
+once after, asserting lead→contact (title), contact→lead (age), that an
+unrelated third edit (temperature) crosses on its own **without dragging the
+other 13 columns**, and that the 110 pairs were left exactly as they were.
+Confirmed afterwards: 2 triggers enabled, 0 test markers, temperature still
+differs on 73 pairs — nothing was touched.
+
+**🔶 OPEN: the 110 existing pairs still disagree** (73 temperature, 18 notes,
+14 budget, 4 name, 3 phone, 3 country, 1 email). They were deliberately left
+alone — a backfill has to pick a winning side and would overwrite real work.
+Each field converges the first time somebody edits either side. If the user
+ever asks for a one-shot alignment, ask WHICH side wins per field first.
+
+**No deploy**: this is DB-only, no app code changed. Boards already open in a
+browser show the old value until refreshed.
 
 ## SESSION 2026-08-26 — one row tick at a time (commit `6ff3ab6`, no migration, DEPLOYED)
 
@@ -1058,7 +1123,7 @@ newline, drawer section verified on BOTH boards, test note reverted.
 
 ## 📊 LIVE SYSTEM STATE — end of 2026-08-26 (CURRENT)
 
-**https://crm.irfaninvest.com** · code at `6ff3ab6` · everything deployed.
+**https://crm.irfaninvest.com** · code at `9811358` · everything deployed.
 
 **Team: 18 active.** 13 agents · CEOs shirdel.realestate.broker@ and
 kh.hamidiii@gmail.com · developers amiralishamsipur@gmail.com (the
