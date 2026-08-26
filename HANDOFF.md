@@ -114,6 +114,77 @@ an unused destructure in ContactGroup).
 > the DB-only migration `crm_lead_contact_mirror`,
 > all deployed, working tree clean.
 
+## SESSION 2026-08-26 — one client, one phone number (migration `crm_unique_phone_guard`, DB-ONLY, no deploy)
+
+"An agent registers a phone number, the next person must not be able to
+register it, and whoever tries gets told it is already in the system."
+
+**It was already happening, five times.** Before the guard: `+9715428826`
+("Mike") on three leads across sara zangeneh and mehdi mehrjooy;
+`+96879491266` (Subhra Sinha) on mehdi mehrjooy and amanollah afrash;
+`+96898082573` (Mohamed Lamine Benras) on mehdi mehrjooy and mehdi sarraf;
+`+16502555574` on mehdi mehrjooy and mahammad faizal; `+46739582443` three
+times under one agent. **Per-agent visibility is the cause** — an agent
+cannot see that the client is already in the system, so nothing warned them.
+Contacts had no duplicates at all.
+
+**A UNIQUE INDEX was the obvious tool and the wrong one.** It refuses to
+build over the 12 rows that already collide, and once built it would block
+those rows from EVERY later edit — the team could not fix a name on them. A
+trigger only speaks up when somebody actually types a number, so the existing
+mess stays editable and only new collisions are stopped. Clean them up by
+hand when the user asks; the guard does not care that they exist.
+
+**Shape:** `crm_find_phone_owner(phone, kind, id, contact_id)` looks the
+number up in **both** tables and returns "Leads, owned by <name>" /
+"Contacts, owned by <name>", and two AFTER triggers
+(`crm_leads_phone_guard`, `crm_contacts_phone_guard`) raise `23505` with:
+
+> This phone number is already registered in the system (Leads, owned by
+> sara zangeneh). Please check with them instead of adding it again.
+
+That text reaches the agent with no client work at all: `updateLead` returns
+`error.message` verbatim and `applyRowEdit` shows it as an alert toast AND
+rolls the cell back. **No deploy was needed.**
+
+**Four things here are load-bearing:**
+- **AFTER, not BEFORE.** `normalized_phone` is a GENERATED column
+  (`country_code || phone`, stripped to digits and +) and Postgres fills
+  generated columns in AFTER the BEFORE triggers, so a BEFORE trigger reads
+  null. Raising in an AFTER trigger still aborts the write.
+- **SECURITY DEFINER.** The row being collided with usually belongs to
+  another agent and RLS hides it from the one typing, so a plain trigger
+  would find nothing and let the duplicate through.
+- **`crm_convert_lead` had to be patched.** Conversion copies the lead's
+  phone onto the new contact on purpose, and at that moment the lead's
+  `converted_contact_id` is still null — so the guard read the pair as two
+  people and refused EVERY conversion. It now sets
+  `crm.skip_phone_guard` (transaction-local) as its first statement. The
+  migration patches the body **through `pg_get_functiondef` + `replace`**
+  rather than retyping 60 lines, and is a no-op if the line is already there.
+  ⚠️ Side effect worth knowing: after a conversion, the guard is off for the
+  REST of that transaction. Harmless because each RPC is its own transaction.
+- **The exclusions.** A lead never collides with its own converted contact,
+  and two leads converted to the SAME contact never collide with each other
+  (the 08-24 sarraf backfill made rows like that).
+
+**✅ VERIFIED TWICE inside `begin … rollback`,** once before installing and
+once against the live triggers: the refusal fires with the right message and
+names the holder; a fresh number still saves; a row that is ALREADY one of
+the 12 duplicates can still be renamed; and — the test that mattered — a real
+conversion still works, run under **impersonation as the lead's own agent**
+(`set local role authenticated` + the uuid hardcoded into the JWT claims, per
+the standing gotcha), producing a contact. Everything rolled back; 124
+contacts before and after.
+
+**Small honest footnote:** the two rolled-back test conversions burned two
+values off `crm_contact_code_seq` (it sits at 192 while the highest real code
+is C-0186). Sequences do not roll back. Codes are identifiers, not counts, so
+nothing is wrong — the next contact just will not be C-0187.
+
+**Not a risk:** the toolbar's "Import" button is inert Monday chrome with no
+onClick, so there is no bulk path that could hit the guard mid-import.
+
 ## SESSION 2026-08-26 — an offer keeps its number (commit `f807c67`, no migration, DEPLOYED)
 
 Reported: "the first offer to a contact is made correctly with number 1, but
