@@ -60,6 +60,9 @@ export function useActiveRow(boardKey: string) {
    */
   const rowProps = (rowId: string) => ({
     "data-row-active": activeId === rowId ? "" : undefined,
+    // every OTHER row dims while one is lit, so the lit one carries the eye.
+    // Nothing dims while nothing is lit.
+    "data-row-dim": activeId !== null && activeId !== rowId ? "" : undefined,
     onMouseDown: () => setActiveRow(boardKey, rowId),
   });
 
