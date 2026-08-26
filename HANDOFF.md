@@ -28,7 +28,7 @@ quote these numbers back.
 2. **Ask before anything destructive or permission-widening.** Two
    examples from 08-03 that were confirmed first: zeroing the boards, and
    opening group-delete to every role.
-3. `git log --oneline -5` — the tree must be clean and end at **`c3ae049`**
+3. `git log --oneline -5` — the tree must be clean and end at **`73cb9af`**
    (or later). `git status` must be empty.
 4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
    GitHub does NOT deploy. Push after every commit anyway (backup):
@@ -110,10 +110,10 @@ an unused destructure in ContactGroup).
    This proved both 08-26 changes on the real markup.
    **Delete the file before committing — it ships as a public route.**
 
-> Updated: **2026-08-26** — committed and pushed through `c3ae049`,
+> Updated: **2026-08-26** — committed and pushed through `73cb9af`,
 > all deployed, working tree clean.
 
-## SESSION 2026-08-26 — the row you click stays lit (commits `e2a3184` + `c3ae049`, no migration, DEPLOYED)
+## SESSION 2026-08-26 — the row you click stays lit (commits `e2a3184` → `c3ae049` → `73cb9af`, no migration, DEPLOYED)
 
 Asked for on every sheet: click a row, it stands out from the rest of the
 board until another row is clicked.
@@ -182,6 +182,24 @@ laid OVER each other row — `rgb(0 0 0 / 10%)`, `inset: 0`, `z-index: 15`,
   puts the pinned cell's sticky at risk.
 - The hook adds `data-row-dim` only while something IS lit, so a board with
   nothing selected looks exactly as it did.
+
+**REVERSED, then redesigned (commit `73cb9af`) — READ THIS BEFORE
+BRINGING THE DIM BACK.** The 10% wash over every other row was tried and
+**rejected by the user**: one lit row is the whole affordance, and dimming
+the sheet made the other 20-odd rows harder to read for no gain. `c3ae049`
+is the shape that was NOT wanted; do not reintroduce it. What replaced it:
+the band goes back to the paler `--color-cyan-soft` and earns its weight
+from an EDGE instead of from contrast against a darkened sheet — teal
+hairlines top and bottom plus a soft lift, on `[data-row-active]::after`.
+The overlay geometry is exactly the one the dim used, kept for the same
+reasons: `inset: 0` reaches the pinned name block (it never leaves the
+row's own box however far the board scrolls sideways), `z-index: 15` sits
+above that block (10) and below the group title (20) and the pinned header
+bar (30) so the hairlines stop at the table and cross neither, and
+`pointer-events: none` keeps every click alive. Drawn on an overlay rather
+than the row's own box because **the row has no border to restyle** — its
+lines belong to each cell — so only an overlay can draw one unbroken pair
+of rules across the full width.
 
 **And one hole the child combinator left.** A few cells hand their whole box
 to a white `<button>` (Status, Date, the option cells) one level below the
@@ -1003,7 +1021,7 @@ newline, drawer section verified on BOTH boards, test note reverted.
 
 ## 📊 LIVE SYSTEM STATE — end of 2026-08-26 (CURRENT)
 
-**https://crm.irfaninvest.com** · code at `c3ae049` · everything deployed.
+**https://crm.irfaninvest.com** · code at `73cb9af` · everything deployed.
 
 **Team: 18 active.** 13 agents · CEOs shirdel.realestate.broker@ and
 kh.hamidiii@gmail.com · developers amiralishamsipur@gmail.com (the
