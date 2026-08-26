@@ -36,7 +36,7 @@ import { toLocalDateString } from "@/components/crm/activities/activities-config
 import { NoteDialogCell, OptionCell } from "@/components/crm/contacts/contact-cells";
 import { CenterEditCell, EmailCell, MoveToContactsCell, PhoneCell } from "./lead-cells";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
-import { useActiveRow } from "@/components/crm/active-row";
+import { useActiveRow, useCheckedRow } from "@/components/crm/active-row";
 import { DealDoneBadge } from "@/components/crm/deal-done-badge";
 import { CountryCell } from "@/components/crm/country-cell";
 import { NumberCell } from "@/components/crm/deals/deal-cells";
@@ -101,7 +101,7 @@ export function LeadGroup({
   doneContactIds?: string[];
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const { isChecked, toggleChecked } = useCheckedRow("leads");
   const [addDraft, setAddDraft] = useState("");
   const [logMenuFor, setLogMenuFor] = useState<string | null>(null);
   const [composer, setComposer] = useState<{ lead: CrmLead; typeKey: string } | null>(null);
@@ -147,15 +147,6 @@ export function LeadGroup({
       });
     }
   });
-
-  const toggleRow = (id: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-
 
   const cellBorder = "border-b border-r border-line";
 
@@ -212,12 +203,10 @@ export function LeadGroup({
                 style={{ backgroundColor: group.color }}
               />
               <span className="flex items-center border-b border-r border-t border-line pl-[8px] pr-[9px]">
-                <Checkbox label="Select all in group"
-                  checked={leads.length > 0 && selected.size === leads.length}
-                  onChange={() =>
-                    setSelected(selected.size === leads.length ? new Set() : new Set(leads.map((l) => l.id)))
-                  }
-                />
+                {/* no "select all": one tick per board, so this could only ever put
+                    several boxes green at once. The spacer keeps the header lined
+                    up with the checkbox column below it. */}
+                <span className="size-[16px] shrink-0" />
               </span>
               <span className="flex flex-1 items-center justify-center border-b border-r border-t border-line font-sans text-[14px] leading-[20px] text-ink">
                 Lead
@@ -266,8 +255,8 @@ export function LeadGroup({
                   <span className="flex items-center border-b border-r border-line pl-[8px] pr-[9px]">
                     <Checkbox
                       label={`Select ${lead.name}`}
-                      checked={selected.has(lead.id)}
-                      onChange={() => toggleRow(lead.id)}
+                      checked={isChecked(lead.id)}
+                      onChange={() => toggleChecked(lead.id)}
                     />
                   </span>
                   <span className="flex min-w-0 flex-1 items-center justify-between border-b border-r border-line px-[6px] transition-colors group-hover/row:bg-canvas">

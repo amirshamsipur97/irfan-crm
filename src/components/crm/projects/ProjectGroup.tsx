@@ -32,7 +32,7 @@ import {
 } from "./projects-config";
 import { TimelineRangeCell } from "./project-cells";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
-import { useActiveRow } from "@/components/crm/active-row";
+import { useActiveRow, useCheckedRow } from "@/components/crm/active-row";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
 
 const ROW_H = 36;
@@ -72,7 +72,7 @@ export function ProjectGroup({
   tools?: RowToolsConfig;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const { isChecked, toggleChecked } = useCheckedRow("projects");
   const [addDraft, setAddDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
@@ -176,17 +176,10 @@ export function ProjectGroup({
                 style={{ backgroundColor: group.color }}
               />
               <span className="flex items-center border-b border-r border-t border-line pl-[8px] pr-[9px]">
-                <Checkbox
-                  label="Select all in group"
-                  checked={projects.length > 0 && selected.size === projects.length}
-                  onChange={() =>
-                    setSelected(
-                      selected.size === projects.length
-                        ? new Set()
-                        : new Set(projects.map((p) => p.id))
-                    )
-                  }
-                />
+                {/* no "select all": one tick per board, so this could only ever put
+                    several boxes green at once. The spacer keeps the header lined
+                    up with the checkbox column below it. */}
+                <span className="size-[16px] shrink-0" />
               </span>
               <span className="flex flex-1 items-center justify-center border-b border-r border-t border-line font-sans text-[14px] leading-[20px] text-ink">
                 Project
@@ -236,15 +229,8 @@ export function ProjectGroup({
                 <span className="flex items-center border-b border-r border-line pl-[8px] pr-[9px]">
                   <Checkbox
                     label={`Select ${project.name}`}
-                    checked={selected.has(project.id)}
-                    onChange={() =>
-                      setSelected((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(project.id)) next.delete(project.id);
-                        else next.add(project.id);
-                        return next;
-                      })
-                    }
+                    checked={isChecked(project.id)}
+                    onChange={() => toggleChecked(project.id)}
                   />
                 </span>
                 <span className="flex min-w-0 flex-1 items-center justify-between border-b border-r border-line px-[6px] transition-colors group-hover/row:bg-canvas">

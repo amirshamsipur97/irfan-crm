@@ -29,7 +29,7 @@ import {
 } from "./activities-config";
 import { RelatedItemCell, TimeCell } from "./activity-cells";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
-import { useActiveRow } from "@/components/crm/active-row";
+import { useActiveRow, useCheckedRow } from "@/components/crm/active-row";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
 
 export function ActivityGroup({
@@ -71,7 +71,7 @@ export function ActivityGroup({
 }) {
   const ROW_H = rowH;
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const { isChecked, toggleChecked } = useCheckedRow("activities");
   const [addDraft, setAddDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
@@ -178,17 +178,10 @@ export function ActivityGroup({
                 style={{ backgroundColor: group.color }}
               />
               <span className="flex items-center border-b border-r border-t border-line pl-[8px] pr-[9px]">
-                <Checkbox
-                  label="Select all in group"
-                  checked={activities.length > 0 && selected.size === activities.length}
-                  onChange={() =>
-                    setSelected(
-                      selected.size === activities.length
-                        ? new Set()
-                        : new Set(activities.map((a) => a.id))
-                    )
-                  }
-                />
+                {/* no "select all": one tick per board, so this could only ever put
+                    several boxes green at once. The spacer keeps the header lined
+                    up with the checkbox column below it. */}
+                <span className="size-[16px] shrink-0" />
               </span>
               <span className="flex flex-1 items-center justify-center border-b border-r border-t border-line font-sans text-[14px] leading-[20px] text-ink">
                 Activity
@@ -235,15 +228,8 @@ export function ActivityGroup({
                   <span className="flex items-center border-b border-r border-line pl-[8px] pr-[9px]">
                     <Checkbox
                       label={`Select ${activity.name}`}
-                      checked={selected.has(activity.id)}
-                      onChange={() =>
-                        setSelected((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(activity.id)) next.delete(activity.id);
-                          else next.add(activity.id);
-                          return next;
-                        })
-                      }
+                      checked={isChecked(activity.id)}
+                      onChange={() => toggleChecked(activity.id)}
                     />
                   </span>
                   <span className="flex min-w-0 flex-1 items-center justify-between border-b border-r border-line px-[6px] transition-colors group-hover/row:bg-canvas">

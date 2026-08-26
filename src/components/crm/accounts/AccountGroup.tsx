@@ -22,7 +22,7 @@ import { CONNECTED_UNDERLINE } from "@/components/crm/contacts/contacts-config";
 import { ACCOUNT_COLUMNS, ACCOUNT_NAME_COL_W } from "./accounts-config";
 import { ContactsChipCell, DomainCell, IndustryCell } from "./account-cells";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
-import { useActiveRow } from "@/components/crm/active-row";
+import { useActiveRow, useCheckedRow } from "@/components/crm/active-row";
 import { EmailCell } from "@/components/crm/leads/lead-cells";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
 
@@ -69,7 +69,7 @@ export function AccountGroup({
   onEmailAccount?: (account: CrmAccount) => void;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const { isChecked, toggleChecked } = useCheckedRow("accounts");
   const [addDraft, setAddDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
@@ -169,17 +169,10 @@ export function AccountGroup({
                 style={{ backgroundColor: group.color }}
               />
               <span className="flex items-center border-b border-r border-t border-line pl-[8px] pr-[9px]">
-                <Checkbox
-                  label="Select all in group"
-                  checked={accounts.length > 0 && selected.size === accounts.length}
-                  onChange={() =>
-                    setSelected(
-                      selected.size === accounts.length
-                        ? new Set()
-                        : new Set(accounts.map((a) => a.id))
-                    )
-                  }
-                />
+                {/* no "select all": one tick per board, so this could only ever put
+                    several boxes green at once. The spacer keeps the header lined
+                    up with the checkbox column below it. */}
+                <span className="size-[16px] shrink-0" />
               </span>
               <span className="flex flex-1 items-center justify-center border-b border-r border-t border-line font-sans text-[14px] leading-[20px] text-ink">
                 Account
@@ -232,15 +225,8 @@ export function AccountGroup({
                   <span className="flex items-center border-b border-r border-line pl-[8px] pr-[9px]">
                     <Checkbox
                       label={`Select ${account.name}`}
-                      checked={selected.has(account.id)}
-                      onChange={() =>
-                        setSelected((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(account.id)) next.delete(account.id);
-                          else next.add(account.id);
-                          return next;
-                        })
-                      }
+                      checked={isChecked(account.id)}
+                      onChange={() => toggleChecked(account.id)}
                     />
                   </span>
                   <span className="flex min-w-0 flex-1 items-center justify-between border-b border-r border-line px-[6px] transition-colors group-hover/row:bg-canvas">

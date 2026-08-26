@@ -33,7 +33,7 @@ import {
   DEVELOPMENT_STATUSES,
 } from "./developments-config";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
-import { useActiveRow } from "@/components/crm/active-row";
+import { useActiveRow, useCheckedRow } from "@/components/crm/active-row";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
 
 const ROW_H = 36;
@@ -79,7 +79,7 @@ export function DevelopmentGroup({
   tools?: RowToolsConfig;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const { isChecked, toggleChecked } = useCheckedRow("developments");
   const [addDraft, setAddDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
@@ -184,17 +184,10 @@ export function DevelopmentGroup({
                 style={{ backgroundColor: group.color }}
               />
               <span className="flex items-center border-b border-r border-t border-line pl-[8px] pr-[9px]">
-                <Checkbox
-                  label="Select all in group"
-                  checked={developments.length > 0 && selected.size === developments.length}
-                  onChange={() =>
-                    setSelected(
-                      selected.size === developments.length
-                        ? new Set()
-                        : new Set(developments.map((d) => d.id))
-                    )
-                  }
-                />
+                {/* no "select all": one tick per board, so this could only ever put
+                    several boxes green at once. The spacer keeps the header lined
+                    up with the checkbox column below it. */}
+                <span className="size-[16px] shrink-0" />
               </span>
               <span className="flex flex-1 items-center justify-center border-b border-r border-t border-line font-sans text-[14px] leading-[20px] text-ink">
                 Development
@@ -244,15 +237,8 @@ export function DevelopmentGroup({
                 <span className="flex items-center border-b border-r border-line pl-[8px] pr-[9px]">
                   <Checkbox
                     label={`Select ${dev.name}`}
-                    checked={selected.has(dev.id)}
-                    onChange={() =>
-                      setSelected((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(dev.id)) next.delete(dev.id);
-                        else next.add(dev.id);
-                        return next;
-                      })
-                    }
+                    checked={isChecked(dev.id)}
+                    onChange={() => toggleChecked(dev.id)}
                   />
                 </span>
                 <span className="flex min-w-0 flex-1 items-center justify-between border-b border-r border-line px-[6px] transition-colors group-hover/row:bg-canvas">

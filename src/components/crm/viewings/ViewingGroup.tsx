@@ -26,7 +26,7 @@ import { ConnectPicker, type PickerOption } from "@/components/crm/deals/connect
 import { TimeCell } from "@/components/crm/activities/activity-cells";
 import { VIEWING_COLUMNS, VIEWING_NAME_COL_W, VIEWING_STATUSES } from "./viewings-config";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
-import { useActiveRow } from "@/components/crm/active-row";
+import { useActiveRow, useCheckedRow } from "@/components/crm/active-row";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
 
 const ROW_H = 36;
@@ -74,7 +74,7 @@ export function ViewingGroup({
   tools?: RowToolsConfig;
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const { isChecked, toggleChecked } = useCheckedRow("viewings");
   const [addDraft, setAddDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
@@ -176,17 +176,10 @@ export function ViewingGroup({
                 style={{ backgroundColor: group.color }}
               />
               <span className="flex items-center border-b border-r border-t border-line pl-[8px] pr-[9px]">
-                <Checkbox
-                  label="Select all in group"
-                  checked={viewings.length > 0 && selected.size === viewings.length}
-                  onChange={() =>
-                    setSelected(
-                      selected.size === viewings.length
-                        ? new Set()
-                        : new Set(viewings.map((v) => v.id))
-                    )
-                  }
-                />
+                {/* no "select all": one tick per board, so this could only ever put
+                    several boxes green at once. The spacer keeps the header lined
+                    up with the checkbox column below it. */}
+                <span className="size-[16px] shrink-0" />
               </span>
               <span className="flex flex-1 items-center justify-center border-b border-r border-t border-line font-sans text-[14px] leading-[20px] text-ink">
                 Viewing
@@ -236,15 +229,8 @@ export function ViewingGroup({
                 <span className="flex items-center border-b border-r border-line pl-[8px] pr-[9px]">
                   <Checkbox
                     label={`Select ${viewing.name}`}
-                    checked={selected.has(viewing.id)}
-                    onChange={() =>
-                      setSelected((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(viewing.id)) next.delete(viewing.id);
-                        else next.add(viewing.id);
-                        return next;
-                      })
-                    }
+                    checked={isChecked(viewing.id)}
+                    onChange={() => toggleChecked(viewing.id)}
                   />
                 </span>
                 <span className="flex min-w-0 flex-1 items-center justify-between border-b border-r border-line px-[6px] transition-colors group-hover/row:bg-canvas">

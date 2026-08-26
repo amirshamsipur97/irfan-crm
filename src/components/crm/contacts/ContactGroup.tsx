@@ -37,7 +37,7 @@ import {
 } from "@/components/crm/custom/custom-columns";
 import { canManageBoards, isFullAccess } from "@/lib/permissions";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
-import { useActiveRow } from "@/components/crm/active-row";
+import { useActiveRow, useCheckedRow } from "@/components/crm/active-row";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
 
 const ROW_H = 36;
@@ -93,7 +93,7 @@ export function ContactGroup({
   columnDrag?: { headerProps: (key: string) => Record<string, unknown>; draggingKey: string | null };
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const { isChecked, toggleChecked } = useCheckedRow("contacts");
   const [addDraft, setAddDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
@@ -202,17 +202,10 @@ export function ContactGroup({
                 style={{ backgroundColor: group.color }}
               />
               <span className="flex items-center border-b border-r border-t border-line pl-[8px] pr-[9px]">
-                <Checkbox
-                  label="Select all in group"
-                  checked={contacts.length > 0 && selected.size === contacts.length}
-                  onChange={() =>
-                    setSelected(
-                      selected.size === contacts.length
-                        ? new Set()
-                        : new Set(contacts.map((c) => c.id))
-                    )
-                  }
-                />
+                {/* no "select all": one tick per board, so this could only ever put
+                    several boxes green at once. The spacer keeps the header lined
+                    up with the checkbox column below it. */}
+                <span className="size-[16px] shrink-0" />
               </span>
               <span className="flex flex-1 items-center justify-center border-b border-r border-t border-line font-sans text-[14px] leading-[20px] text-ink">
                 Contact
@@ -271,15 +264,8 @@ export function ContactGroup({
                   <span className="flex items-center border-b border-r border-line pl-[8px] pr-[9px]">
                     <Checkbox
                       label={`Select ${contact.name}`}
-                      checked={selected.has(contact.id)}
-                      onChange={() =>
-                        setSelected((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(contact.id)) next.delete(contact.id);
-                          else next.add(contact.id);
-                          return next;
-                        })
-                      }
+                      checked={isChecked(contact.id)}
+                      onChange={() => toggleChecked(contact.id)}
                     />
                   </span>
                   <span className="flex min-w-0 flex-1 items-center justify-between border-b border-r border-line px-[6px] transition-colors group-hover/row:bg-canvas">

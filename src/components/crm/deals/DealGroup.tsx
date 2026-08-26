@@ -37,7 +37,7 @@ import {
 } from "@/components/crm/contacts/demand-config";
 import { AddRowClientPicker, ConnectPicker, type PickerOption } from "./connect-picker";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
-import { useActiveRow } from "@/components/crm/active-row";
+import { useActiveRow, useCheckedRow } from "@/components/crm/active-row";
 import { DealDoneBadge } from "@/components/crm/deal-done-badge";
 import { countryFlag } from "@/components/crm/country-cell";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
@@ -179,7 +179,7 @@ export function DealGroup({
   columnDrag?: { headerProps: (key: string) => Record<string, unknown>; draggingKey: string | null };
 }) {
   const [collapsed, setCollapsed] = useState(group.is_collapsed);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const { isChecked, toggleChecked } = useCheckedRow("offers");
   const bodyRef = useRef<HTMLDivElement>(null);
   const { contextSafe } = useGSAP({ scope: bodyRef });
   const activeRow = useActiveRow("offers");
@@ -287,15 +287,10 @@ export function DealGroup({
                 style={{ backgroundColor: group.color }}
               />
               <span className="flex items-center border-b border-r border-t border-line pl-[8px] pr-[9px]">
-                <Checkbox
-                  label="Select all in group"
-                  checked={deals.length > 0 && selected.size === deals.length}
-                  onChange={() =>
-                    setSelected(
-                      selected.size === deals.length ? new Set() : new Set(deals.map((d) => d.id))
-                    )
-                  }
-                />
+                {/* no "select all": one tick per board, so this could only ever put
+                    several boxes green at once. The spacer keeps the header lined
+                    up with the checkbox column below it. */}
+                <span className="size-[16px] shrink-0" />
               </span>
               <span className="flex flex-1 items-center justify-center border-b border-r border-t border-line font-sans text-[14px] leading-[20px] text-ink">
                 Client
@@ -360,15 +355,8 @@ export function DealGroup({
                   <span className="flex items-center border-b border-r border-line pl-[8px] pr-[9px]">
                     <Checkbox
                       label={`Select ${deal.name}`}
-                      checked={selected.has(deal.id)}
-                      onChange={() =>
-                        setSelected((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(deal.id)) next.delete(deal.id);
-                          else next.add(deal.id);
-                          return next;
-                        })
-                      }
+                      checked={isChecked(deal.id)}
+                      onChange={() => toggleChecked(deal.id)}
                     />
                   </span>
                   <span className="flex min-w-0 flex-1 items-center justify-between border-b border-r border-line px-[2px] transition-colors group-hover/row:bg-canvas">
