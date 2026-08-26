@@ -106,6 +106,10 @@ export function UnitGroup({
           duration: 0.3,
           ease: "power2.out",
           clearProps: "all",
+          // the sticky column header measures against the board scroll
+          // container — a leftover overflow:hidden here would turn this
+          // div into the scrollport and silently kill it
+          onComplete: () => bodyRef.current?.style.removeProperty("overflow"),
         });
       });
     }
@@ -159,7 +163,7 @@ export function UnitGroup({
       {!collapsed && (
         <div ref={bodyRef} className="w-fit">
           {/* column headers */}
-          <div className="flex h-[36px] w-fit items-stretch">
+          <div className="sticky top-0 z-30 flex h-[36px] w-fit items-stretch bg-white">
             <div
               className="gutter-cover sticky left-0 z-10 flex items-stretch bg-white"
               style={{ width: UNIT_NAME_COL_W }}

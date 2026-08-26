@@ -399,7 +399,7 @@ export function AcceptedDealsBoard({
               </div>
 
               {/* column headers */}
-              <div className="flex h-[36px] w-fit items-stretch">
+              <div className="sticky top-0 z-30 flex h-[36px] w-fit items-stretch bg-white">
                 <div
                   className="gutter-cover sticky left-0 z-10 flex items-stretch bg-white"
                   style={{ width: DEAL_NAME_COL_W }}
