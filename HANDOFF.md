@@ -169,11 +169,11 @@ other 13 columns**, and that the 110 pairs were left exactly as they were.
 Confirmed afterwards: 2 triggers enabled, 0 test markers, temperature still
 differs on 73 pairs — nothing was touched.
 
-**🔶 OPEN: the 110 existing pairs still disagree** (73 temperature, 18 notes,
-14 budget, 4 name, 3 phone, 3 country, 1 email). They were deliberately left
-alone — a backfill has to pick a winning side and would overwrite real work.
-Each field converges the first time somebody edits either side. If the user
-ever asks for a one-shot alignment, ask WHICH side wins per field first.
+**✅ DECIDED: the 110 existing pairs stay as they are.** Asked, and the
+user chose to leave them — no backfill. They still disagree (73 temperature, 18 notes,
+14 budget, 4 name, 3 phone, 3 country, 1 email). A backfill would have to pick a winning side and would overwrite real work.
+Each field converges the first time somebody edits either side. Each field converges the first time somebody edits either side. If a one-shot
+alignment is ever asked for, ask WHICH side wins per field first.
 
 **No deploy**: this is DB-only, no app code changed. Boards already open in a
 browser show the old value until refreshed.
