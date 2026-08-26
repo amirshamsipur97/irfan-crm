@@ -97,14 +97,16 @@ body {
   background: #fff;
 }
 
-/* The row you last clicked stays lit on every board, and every other row
-   dims 10% behind it (state in components/crm/active-row.ts).
+/* The row you last clicked stays lit on every board (state in
+   components/crm/active-row.ts). Nothing else on the sheet changes — one
+   lit row is the whole affordance, so it has to carry itself: a pale wash
+   for the band, teal hairlines top and bottom, and a soft lift under it.
 
-   THE LIT ROW. Most board cells paint their OWN white ground, so a tint on
-   the row alone shows up under the pinned name block and nowhere else —
-   these rules put it on the cells too. The child combinator is the safety
-   rail: cells are direct children of the row, so an open editor, a chip or
-   a badge NESTED inside a cell keeps its own background. The group colour
+   THE WASH. Most board cells paint their OWN white ground, so a tint on the
+   row alone shows up under the pinned name block and nowhere else — these
+   rules put it on the cells too. The child combinator is the safety rail:
+   cells are direct children of the row, so an open editor, a chip or a
+   badge NESTED inside a cell keeps its own background. The group colour
    stripe carries an inline style, hence :not([style]); it is the one span
    that must keep its own colour. The name span also has a hover utility
    that would grey out the row you just clicked — an unlayered rule outranks
@@ -115,7 +117,7 @@ body {
 [data-row-active] > .bg-canvas,
 [data-row-active] .gutter-cover,
 [data-row-active] .gutter-cover > span:not([style]) {
-  background: var(--color-cyan-tint);
+  background: var(--color-cyan-soft);
 }
 [data-row-active] .gutter-cover::before {
   background: #fff;
@@ -127,24 +129,26 @@ body {
    owner chip and the green Move button all paint their own colours on
    purpose and must not be touched. */
 [data-row-active] button.size-full.bg-white {
-  background: var(--color-cyan-tint);
+  background: var(--color-cyan-soft);
 }
 
-/* THE DIMMED REST. A wash laid OVER the row, not a background swapped
-   under it — the cells each paint their own ground, and repainting ten
-   kinds of cell one shade darker would have to be redone for every new
-   cell type. inset:0 covers the pinned name block too, because that block
-   never leaves the row's own box however far the board scrolls sideways.
-   z-index 15 threads the needle: above the pinned cell (10), below the
-   group title (20) and the pinned header bar (30), so neither of those
-   greys out. pointer-events:none or the wash would eat every click.
-   filter/opacity were the other option and both create a containing block
-   that puts the pinned cell's sticky at risk. */
-[data-row-dim]::after {
+/* THE EDGE. Hairlines and lift are drawn on an overlay rather than on the
+   row's own box, because the row has no border of its own to restyle — its
+   lines belong to each cell — and an overlay draws ONE unbroken pair of
+   rules across the whole width, pinned name block included (inset:0 covers
+   it: that block never leaves the row's own box however far the board
+   scrolls sideways). z-index 15 threads the needle — above the pinned cell
+   (10), below the group title (20) and the pinned header bar (30), so
+   neither is crossed by the hairlines. pointer-events:none or the overlay
+   would eat every click. */
+[data-row-active]::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 15;
-  background: rgb(0 0 0 / 10%);
   pointer-events: none;
+  box-shadow:
+    inset 0 1px 0 0 var(--color-teal),
+    inset 0 -1px 0 0 var(--color-teal),
+    0 2px 8px -2px rgb(0 160 160 / 35%);
 }
