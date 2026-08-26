@@ -28,7 +28,7 @@ quote these numbers back.
 2. **Ask before anything destructive or permission-widening.** Two
    examples from 08-03 that were confirmed first: zeroing the boards, and
    opening group-delete to every role.
-3. `git log --oneline -5` — the tree must be clean and end at **`e2a3184`**
+3. `git log --oneline -5` — the tree must be clean and end at **`c3ae049`**
    (or later). `git status` must be empty.
 4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
    GitHub does NOT deploy. Push after every commit anyway (backup):
@@ -110,10 +110,10 @@ an unused destructure in ContactGroup).
    This proved both 08-26 changes on the real markup.
    **Delete the file before committing — it ships as a public route.**
 
-> Updated: **2026-08-26** — committed and pushed through `e2a3184`,
+> Updated: **2026-08-26** — committed and pushed through `c3ae049`,
 > all deployed, working tree clean.
 
-## SESSION 2026-08-26 — the row you click stays lit (commit `e2a3184`, no migration, DEPLOYED)
+## SESSION 2026-08-26 — the row you click stays lit (commits `e2a3184` + `c3ae049`, no migration, DEPLOYED)
 
 Asked for on every sheet: click a row, it stands out from the rest of the
 board until another row is clicked.
@@ -163,6 +163,34 @@ stripe still `rgb(87,155,252)`, the lane still white, the tint surviving a
 real hover, and a real click opening the phone editor white on a lit row.
 The same harness is what proved the sticky header pins with
 `gapAboveHead: 8` — the measurement that confirmed the band fix above.
+
+**FOLLOW-UP (commit `c3ae049`) — stronger, and the rest dims.** Asked for
+right after: a bit more colour on the lit row, and the rest of the sheet 10%
+darker behind it. Tint moved one step up the palette, `--color-cyan-soft` →
+`--color-cyan-tint` (#d1ecef). The dim is `[data-row-dim]::after`, a wash
+laid OVER each other row — `rgb(0 0 0 / 10%)`, `inset: 0`, `z-index: 15`,
+`pointer-events: none` — and every one of those is load-bearing:
+- **A wash, not a darker background.** Cells each paint their own ground, so
+  repainting ten kinds of cell one shade darker would have to be redone for
+  every new cell type. `inset: 0` also covers the pinned name block, which
+  never leaves the row's own box however far the board scrolls sideways.
+- **z-index 15** is above the pinned cell (10) and below the group title
+  (20) and the pinned header bar (30), so neither of those greys out.
+- **pointer-events: none** or the wash eats every click. Verified by
+  clicking a dimmed row and watching the highlight move to it.
+- **filter / opacity were rejected**: both create a containing block, which
+  puts the pinned cell's sticky at risk.
+- The hook adds `data-row-dim` only while something IS lit, so a board with
+  nothing selected looks exactly as it did.
+
+**And one hole the child combinator left.** A few cells hand their whole box
+to a white `<button>` (Status, Date, the option cells) one level below the
+cell, so the lit row came out punched through with white boxes. Rule added:
+`[data-row-active] button.size-full.bg-white`. Only a button that FILLS its
+cell qualifies — measured in the pane, the other painted descendants are the
+checkbox input, the orange owner chip and the green Move button, and all
+three must keep the colours they paint on purpose. **If a new cell type ever
+shows up white on a lit row, this is the pattern to extend.**
 
 **Boards (10):** all of them, same three lines each.
 
@@ -975,7 +1003,7 @@ newline, drawer section verified on BOTH boards, test note reverted.
 
 ## 📊 LIVE SYSTEM STATE — end of 2026-08-26 (CURRENT)
 
-**https://crm.irfaninvest.com** · code at `e2a3184` · everything deployed.
+**https://crm.irfaninvest.com** · code at `c3ae049` · everything deployed.
 
 **Team: 18 active.** 13 agents · CEOs shirdel.realestate.broker@ and
 kh.hamidiii@gmail.com · developers amiralishamsipur@gmail.com (the
