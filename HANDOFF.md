@@ -14,10 +14,10 @@ read the three sections above before touching anything.)
 
 ### 🔴 The system is LIVE — read this before your first command
 
-As of **2026-08-12** the CRM is in daily production use by **17 active
-members (12 agents, 2 CEOs, 3 developers)** entering real client data
-right now: **174 leads · 102 contacts · 17 offers · 1 accepted deal ·
-27 developer accounts**. It grows between sessions — re-count, never
+As of **2026-08-24** the CRM is in daily production use by **18 active
+members (13 agents, 2 CEOs, 3 developers)** entering real client data
+right now: **202 leads · 124 contacts · 18 offers · 1 accepted deal ·
+31 developer accounts**. It grows between sessions — re-count, never
 quote these numbers back.
 
 1. **Never wipe, reseed or "clean up" data.** Rows appear between your
@@ -28,7 +28,7 @@ quote these numbers back.
 2. **Ask before anything destructive or permission-widening.** Two
    examples from 08-03 that were confirmed first: zeroing the boards, and
    opening group-delete to every role.
-3. `git log --oneline -5` — the tree must be clean and end at **`f26d397`**
+3. `git log --oneline -5` — the tree must be clean and end at **`e400346`**
    (or later). `git status` must be empty.
 4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
    GitHub does NOT deploy. Push after every commit anyway (backup):
@@ -100,7 +100,7 @@ an unused destructure in ContactGroup).
    add-row search box shares the `border-teal-deep` substring, and
    typing into the wrong one writes to a REAL row.
 
-> Updated: **2026-08-12** — committed and pushed through `f26d397`,
+> Updated: **2026-08-24** — committed and pushed through `e400346`,
 > all deployed, working tree clean.
 
 ## SESSION 2026-08-22 — Leads: Export to Excel (commit `0394886`, no migration, DEPLOYED)
@@ -190,6 +190,41 @@ signed into. Instead:
 `.claude/launch.json` was missing from the checkout and is now committed —
 name `irfan-crm`, port 3070, exactly what HANDOFF has been telling every
 session to use.
+
+## SESSION 2026-08-24 — site check + mehdi sarraf's "missing" leads (no code, no migration)
+
+**A. "The site does not come up properly."** It did. Everything checked
+out: latest deployment Ready and aliased, /login renders fully in a real
+browser with zero console errors, every CSS/JS/font asset 200, Supabase
+ACTIVE_HEALTHY, auth health 200. The runtime log then gave it away —
+94×200 across every board and **four 404s on `/admin%E2%80%8F`**. That
+tail is a RIGHT-TO-LEFT MARK: copying a link out of Persian prose drags
+the invisible bidi character along and the browser makes it part of the
+path. Nothing to fix in the app; hand out URLs in a bare code block so
+no RLM can ride along. **Keep doing that when writing links in Persian.**
+
+**B. mehdi.sarraf@irfaninvest.com "invisible to admins".** Also not a
+bug. The account is active/approved/agent, and by impersonation an ADMIN
+could already see everything of his. He had simply entered his three
+clients STRAIGHT ONTO CONTACTS and created zero leads — so the Leads
+board, where the admins were looking, had nothing of his. Verified from
+four sides: 0 rows with him as lead creator (he is absent from the
+four-day creator breakdown), his 3 contacts fully visible to an admin,
+an impersonated INSERT as him succeeded (so no permission problem), and
+crm_audit_log holds no delete by him.
+- FIX APPLIED (additive, explicitly requested): one lead per contact,
+  each carrying his real data (name/phone/dial/country/gender/age/
+  budget/temperature), `lead_date` = the day he entered it, owner and
+  creator = him, and **`converted_contact_id` pointing at the existing
+  contact** with `moved_to_contacts` set — so the Leads board shows them
+  with the green "moved" check and NO duplicate client was created.
+  Guarded by `not exists (... where converted_contact_id = c.id)`, so
+  re-running it is a no-op. Imran Ahmed → C-0145, Mohamed Lamin Benras →
+  C-0164, Jafar Qais → C-0174.
+- ⚠️ ROOT CAUSE IS TRAINING, NOT CODE: an agent's Leads board is empty
+  until they create their own, which invites exactly this shortcut.
+  Expect it from other new agents; check
+  `crm_contacts` with no matching lead before assuming a permissions bug.
 
 ## SESSION 2026-08-12 — Round 4: Owner shows the FULL NAME (commit `d5f84f6`, no migration)
 
@@ -804,11 +839,11 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
-## 📊 LIVE SYSTEM STATE — end of 2026-08-12 (CURRENT)
+## 📊 LIVE SYSTEM STATE — end of 2026-08-24 (CURRENT)
 
 **https://crm.irfaninvest.com** · code at `f26d397` · everything deployed.
 
-**Team: 17 active.** 12 agents · CEOs shirdel.realestate.broker@ and
+**Team: 18 active.** 13 agents · CEOs shirdel.realestate.broker@ and
 kh.hamidiii@gmail.com · developers amiralishamsipur@gmail.com (the
 user's own **Google-only** login — no password on it, "Continue with
 Google"), korooshkhaleghi72@gmail.com and nastaran.sistani@ ·
