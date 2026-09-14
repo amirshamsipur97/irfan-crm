@@ -28,7 +28,7 @@ quote these numbers back.
 2. **Ask before anything destructive or permission-widening.** Two
    examples from 08-03 that were confirmed first: zeroing the boards, and
    opening group-delete to every role.
-3. `git log --oneline -5` — the tree must be clean and end at **`f807c67`**
+3. `git log --oneline -5` — the tree must be clean and end at **`97d6e65`**
    (or later). `git status` must be empty.
 4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
    GitHub does NOT deploy. Push after every commit anyway (backup):
@@ -110,9 +110,49 @@ an unused destructure in ContactGroup).
    This proved both 08-26 changes on the real markup.
    **Delete the file before committing — it ships as a public route.**
 
-> Updated: **2026-08-26** — committed and pushed through `f807c67`, plus
+> Updated: **2026-08-26** — committed and pushed through `97d6e65`, plus
 > the DB-only migration `crm_lead_contact_mirror`,
 > all deployed, working tree clean.
+
+## SESSION 2026-09-14 — dashboard bar charts: owner chart fits its card, bars sit on zero (commit `97d6e65`, no migration, DEPLOYED)
+
+Reported with a screenshot of **Open leads by owner**: columns spilling out of
+the card into Lost reasons, names wrapped four lines deep, bars dropping below
+the 0 gridline, a scale of 0 / 14 / 28 / 41 / 55.
+
+**Two separate faults, both in `components/crm/dashboard/widgets.tsx`.**
+
+1. **Wrong form.** A dozen people with long names ("Syed Nazeer Abbas Rizvi")
+   is a ranking. New `RankedBarsWidget`: horizontal bars sorted highest first,
+   name column 168px (truncated, full name + count on hover via HoverTip), bars
+   from one left baseline with the count at the tip, "Unassigned" in grey. No
+   axis, card grows with the team instead of cropping. Used only by the owner
+   card (`SalesDashboard.tsx`).
+2. **Broken geometry in `BarsWidget`, which three OTHER charts share**
+   (Accepted deal value by month, Open offers by close month, Open offers by
+   stage). Each bar measured its height against a flex column that also held
+   its value label and x-label, so a wrapping label pushed the bar past zero and
+   nothing matched the gridlines. Now: one fixed 200px plot box that ticks, goal
+   line and bars all measure against; value labels absolute above the bar in a
+   24px reserved band; x-labels in their own row, one line, truncated with
+   `title`. Ticks from new `niceScale()` (1/2/2.5/5 × 10ⁿ, top = first
+   multiple ≥ max). Bars 24px, 4px rounded top. **Past 6 bars only the tallest
+   carries a number** (a year of months was a wall of overlapping figures); every
+   bar shows its exact value on hover. Ticks are bare compact numbers — "150K OMR"
+   wrapped onto two lines in the 56px tick column.
+3. `MONTH_LABEL` in `app/(app)/crm/dashboard/page.tsx` is now "Jan 26", was
+   "January 2026", which truncated to "Janu…" under twelve bars.
+
+**✅ VERIFIED IN THE PANE** at 1440×900 via a throwaway `/preview-dash` route
+(deleted before commit) using the screenshot's exact names and counts in the
+real 12-column grid: overflow past the card edge **0px on all five cards**, bar
+bottom − plot bottom **0px**, ticks 0/50K/100K/150K each **16px tall (one
+line)**, **no clipped owner names**, month labels "Jan 26" fully visible, hover
+tooltip "sara zangeneh: 48 open leads" rendered, zero console errors. tsc and
+build clean; eslint still exactly **37 + 3** (the 4 problems in the touched
+files are the old Date.now / reassign / unused-var ones, none in new code).
+The real /crm/dashboard is behind auth and the manage-tier gate, so the live
+page itself was not rendered — same components, same props.
 
 ## SESSION 2026-08-26 — one client, one phone number (migration `crm_unique_phone_guard`, DB-ONLY, no deploy)
 
@@ -1235,7 +1275,7 @@ newline, drawer section verified on BOTH boards, test note reverted.
 
 ## 📊 LIVE SYSTEM STATE — end of 2026-08-26 (CURRENT)
 
-**https://crm.irfaninvest.com** · code at `f807c67` · everything deployed.
+**https://crm.irfaninvest.com** · code at `97d6e65` · everything deployed.
 
 **Team: 18 active.** 13 agents · CEOs shirdel.realestate.broker@ and
 kh.hamidiii@gmail.com · developers amiralishamsipur@gmail.com (the
