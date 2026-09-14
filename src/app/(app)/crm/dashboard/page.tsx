@@ -8,8 +8,10 @@ import {
 } from "@/components/crm/dashboard/SalesDashboard";
 import type { CrmActivityItem, CrmDeal, CrmDealStage, CrmLead, CrmUser, CrmViewing } from "@/lib/types";
 
+// "Jan 26", not "January 2026": a year of monthly bars shares one card, and
+// the long form truncated to "Janu…" under every bar
 const MONTH_LABEL = (d: Date) =>
-  d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
 
 export default async function SalesDashboardPage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient(), recordBoardVisit("dashboard")]);

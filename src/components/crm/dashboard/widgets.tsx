@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { money } from "@/components/crm/deals/deals-config";
+import { HoverTip } from "@/components/ui/HoverTip";
 
 export function compact(n: number): string {
   return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(n);
@@ -258,7 +259,32 @@ export function PieWidget({
   );
 }
 
-/** Vertical bar chart with y-gridlines, value labels and optional dashed goal line. */
+/**
+ * Round axis ticks: 0 / 20 / 40 / 60 instead of 0 / 13.8 / 27.6 / 41.4.
+ * The step snaps to 1, 2, 2.5 or 5 times a power of ten, and the top of the
+ * scale is the first multiple of that step at or above the data, so the tallest
+ * bar never runs off the plot and the axis never wastes half the card.
+ */
+export function niceScale(max: number, target = 4): { top: number; step: number } {
+  if (!(max > 0)) return { top: target, step: 1 };
+  const raw = max / target;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const norm = raw / mag;
+  const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10) * mag;
+  return { top: Math.ceil(max / step) * step, step };
+}
+
+/**
+ * Vertical bar chart with y-gridlines, value labels and optional dashed goal line.
+ *
+ * Geometry is the whole point of this component, and it used to be wrong:
+ * every bar measured its height against a column that ALSO held its value
+ * label and its x-label, so a label that wrapped onto two lines pushed the bar
+ * down past the "0" gridline and no bar matched the scale beside it. The plot
+ * is now one fixed box that gridlines, goal line and bars all measure against;
+ * value labels float above their bar inside a reserved band, and x-labels live
+ * in their own row below, one line each, truncated with the full text on hover.
+ */
 export function BarsWidget({
   bars,
   goal,
@@ -275,9 +301,17 @@ export function BarsWidget({
   format?: (n: number) => string;
 }) {
   const fmt = format ?? ((n: number) => money(Math.round(n), currency));
-  const max = Math.max(...bars.map((b) => b.value), goal ?? 0, 1);
-  const niceMax = max * 1.15;
-  const gridSteps = [0, 0.25, 0.5, 0.75, 1];
+  // on-plot text is compact so it fits a narrow slot; the tooltip keeps the exact figure
+  const short = format ?? ((n: number) => `${compact(n)} ${currency}`);
+  const tick = format ?? ((n: number) => compact(n));
+  const max = Math.max(...bars.map((b) => b.value), goal ?? 0, 0);
+  const { top, step } = niceScale(max);
+  const ticks = Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step);
+  const pct = (v: number) => `${Math.max(0, Math.min(1, v / top)) * 100}%`;
+  // a number over every bar only reads while there are few of them;
+  // past that, label the tallest and let the hover carry the rest
+  const peak = bars.reduce((best, b) => (b.value > best ? b.value : best), -Infinity);
+  const labelAll = bars.length <= 6;
 
   return (
     <div className="flex flex-1 gap-[8px] pt-[8px]">
@@ -286,51 +320,127 @@ export function BarsWidget({
           {yLabel}
         </span>
       )}
-      <div className="relative min-h-[220px] flex-1">
-        {gridSteps.map((g) => (
-          <div
-            key={g}
-            className="absolute inset-x-0 flex items-center gap-[8px]"
-            style={{ bottom: `${24 + g * (100 - 34)}%` }}
-          >
-            <span className="w-[60px] shrink-0 text-right font-sans text-[12px] leading-[16px] text-ink-muted">
-              {fmt(niceMax * g)}
-            </span>
-            <span className="h-px flex-1 bg-line-soft" />
-          </div>
-        ))}
-        {goal != null && (
-          <div
-            className="absolute left-[68px] right-0 z-10 border-t-2 border-dashed border-brand"
-            style={{ bottom: `${24 + (goal / niceMax) * (100 - 34)}%` }}
-          >
-            <span className="absolute -top-[20px] left-[8px] font-sans text-[12px] text-ink-muted">
-              Goal
-            </span>
-          </div>
-        )}
-        <div className="absolute inset-x-[68px] bottom-0 top-0 flex items-end justify-around gap-[24px] px-[16px]">
-          {bars.map((b) => (
-            <div key={b.label} className="flex h-full w-full max-w-[180px] flex-col items-center justify-end">
-              <span className="pb-[4px] font-sans text-[14px] font-semibold leading-[20px] text-ink">
-                {fmt(b.value)}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* 24px band above the plot is where the tallest bar's value label sits */}
+        <div className="relative mt-[24px] h-[200px]">
+          {ticks.map((t) => (
+            <div
+              key={t}
+              className="absolute inset-x-0 flex translate-y-1/2 items-center gap-[8px]"
+              style={{ bottom: pct(t) }}
+            >
+              {/* the axis names the measure; the currency on every tick only wrapped it */}
+              <span className="w-[56px] shrink-0 whitespace-nowrap text-right font-sans text-[12px] leading-[16px] text-ink-muted tabular-nums">
+                {tick(t)}
               </span>
-              <div
-                className="w-full rounded-t-[4px]"
-                style={{
-                  height: `${(b.value / niceMax) * (100 - 34)}%`,
-                  minHeight: 4,
-                  backgroundColor: b.color ?? "#579bfc",
-                }}
-              />
-              <span className="pt-[8px] font-sans text-[13px] leading-[18px] text-ink-muted">
-                {b.label}
+              <span className="h-px flex-1 bg-line-soft" />
+            </div>
+          ))}
+          {goal != null && goal > 0 && (
+            <div
+              className="absolute left-[64px] right-0 z-10 border-t-2 border-dashed border-brand"
+              style={{ bottom: pct(goal) }}
+            >
+              <span className="absolute -top-[20px] right-0 font-sans text-[12px] text-ink-muted">
+                Goal {short(goal)}
               </span>
             </div>
+          )}
+          <div className="absolute bottom-0 left-[64px] right-0 top-0 flex items-end">
+            {bars.map((b) => (
+              <HoverTip key={b.label} label={`${b.label}: ${fmt(b.value)}`}>
+                <span className="group/bar relative flex h-full min-w-0 flex-1 items-end justify-center">
+                  {(labelAll || b.value === peak) && b.value > 0 && (
+                    <span
+                      className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap pb-[4px] font-sans text-[12px] font-semibold leading-[16px] text-ink tabular-nums"
+                      style={{ bottom: pct(b.value) }}
+                    >
+                      {short(b.value)}
+                    </span>
+                  )}
+                  <span
+                    className="block w-full max-w-[24px] rounded-t-[4px] transition-opacity group-hover/bar:opacity-80"
+                    style={{
+                      height: b.value > 0 ? pct(b.value) : 0,
+                      minHeight: b.value > 0 ? 2 : 0,
+                      backgroundColor: b.color ?? "#579bfc",
+                    }}
+                  />
+                </span>
+              </HoverTip>
+            ))}
+          </div>
+        </div>
+        <div className="flex pl-[64px] pt-[8px]">
+          {bars.map((b) => (
+            <span
+              key={b.label}
+              title={b.label}
+              className="min-w-0 flex-1 truncate px-[2px] text-center font-sans text-[12px] leading-[16px] text-ink-muted"
+            >
+              {b.label}
+            </span>
           ))}
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Horizontal ranked bars for a count per person — "Open leads by owner".
+ *
+ * This used to be the vertical BarsWidget, and a vertical chart is the wrong
+ * form for it: people's names are long ("Syed Nazeer Abbas Rizvi") and there
+ * are a dozen of them, so every name wrapped onto three or four lines, the
+ * columns overflowed the card into the next widget, and the ranking the reader
+ * came for was hidden in chart order. Here the name has its own column,
+ * truncated with the full name on hover; rows are sorted highest first; every
+ * bar grows from one left baseline and carries its count at the tip, so no
+ * axis is needed and nothing depends on colour alone. The card grows with the
+ * number of owners instead of cropping them.
+ */
+export function RankedBarsWidget({
+  rows,
+  unit,
+}: {
+  rows: { label: string; value: number }[];
+  /** what one bar counts, for the hover text — e.g. "open leads" */
+  unit: string;
+}) {
+  const sorted = [...rows].sort((a, b) => b.value - a.value || a.label.localeCompare(b.label));
+  const max = Math.max(...sorted.map((r) => r.value), 1);
+
+  return (
+    <ul className="m-0 flex list-none flex-col gap-[6px] p-0 pt-[4px]" aria-label={`${unit} by owner`}>
+      {sorted.map((r) => {
+        // "Unassigned" is not a person — it reads as a gap to close, so it recedes
+        const muted = r.label === "Unassigned";
+        return (
+          <li key={r.label}>
+            <HoverTip label={`${r.label}: ${r.value} ${unit}`}>
+              <span className="grid grid-cols-[minmax(0,168px)_minmax(0,1fr)] items-center gap-[12px] rounded-[4px] px-[4px] py-[3px] transition-colors hover:bg-[var(--hover-ghost)]">
+                <span className="truncate font-sans text-[13px] leading-[18px] text-ink">{r.label}</span>
+                <span className="flex min-w-0 items-center gap-[8px] border-l border-line-soft">
+                  <span
+                    className="block h-[14px] shrink-0 rounded-r-[4px]"
+                    style={{
+                      // leave room at the right for the count label
+                      width: `calc((100% - 40px) * ${r.value / max})`,
+                      minWidth: r.value > 0 ? 3 : 0,
+                      backgroundColor: muted ? "#c4c4c4" : "#579bfc",
+                    }}
+                  />
+                  <span className="shrink-0 font-sans text-[13px] font-semibold leading-[18px] text-ink tabular-nums">
+                    {r.value}
+                  </span>
+                </span>
+              </span>
+            </HoverTip>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

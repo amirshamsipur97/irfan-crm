@@ -11,6 +11,7 @@ import type { CrmUser } from "@/lib/types";
 import {
   ActivityTrackerWidget,
   BarsWidget,
+  RankedBarsWidget,
   FunnelWidget,
   GaugeWidget,
   ListWidget,
@@ -203,7 +204,7 @@ export function SalesDashboard({
               </Widget>
               <Widget title="Open leads by owner" className="col-span-4">
                 {data.team.leadsByOwner.length > 0 ? (
-                  <BarsWidget bars={data.team.leadsByOwner} yLabel="Leads" format={(n) => `${Math.round(n)}`} />
+                  <RankedBarsWidget rows={data.team.leadsByOwner} unit="open leads" />
                 ) : (
                   <p className="py-[36px] text-center font-sans text-[13px] text-ink-muted">No open leads</p>
                 )}
