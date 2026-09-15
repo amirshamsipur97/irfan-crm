@@ -114,6 +114,57 @@ an unused destructure in ContactGroup).
 > the DB-only migration `crm_lead_contact_mirror`,
 > all deployed, working tree clean.
 
+## SESSION 2026-09-15 — system check; closed a public phone-lookup leak (migration `crm_revoke_public_definer_rpcs`, DB-ONLY, no deploy)
+
+"Check the system." Healthy everywhere except one real hole, which was mine.
+
+**Healthy:** tree clean, HEAD == origin/main (`d704ec5`); production
+`dpl_9B6rBWjEwepm43UA5oHZiEDNY83w` Ready on crm.irfaninvest.com; /login renders
+with zero console errors; runtime logs show real sessions opening all ten
+boards, the dashboard and /help, every response 200; Supabase ACTIVE_HEALTHY.
+Data, re-counted: 15 active members (10 agents · 1 CEO · 4 developers), 296
+leads, 200 contacts, 25 offers, 2 accepted deals, 61 leads created in the last
+7 days, last edit minutes before the check. Phone-guard and mirror triggers all
+4 enabled. Still open and unchanged: 4 leads with `group_id = null`, leaked
+password protection off, email dark.
+
+**🚨 THE HOLE: `crm_find_phone_owner` was callable by anyone.** It is SECURITY
+DEFINER (bypasses RLS) and Postgres grants EXECUTE to PUBLIC by default, so
+`/rest/v1/rpc/crm_find_phone_owner` answered **unauthenticated** callers holding
+the anon key that ships in the site JS. Proven, not inferred: called as `anon`
+with a real number and `p_kind = x` it returned **"Leads, owned by aylar
+homayoun"** — whether a person is a client, and which agent has them. Signed-in
+agents could do the same past per-agent visibility. It came in with the
+08-26 duplicate-phone guard. ⚠️ A first probe with `p_kind = lead` and a null
+id returned null and LOOKED safe; the lead branch filters `l.id <> null` to
+nothing. Always probe a definer function with arguments that reach every branch.
+`crm_recompute_downpayment_completed` was also public (writes crm_deals).
+
+**Fix:** `revoke execute ... from public, anon, authenticated` on both. Safe
+because their ONLY callers are SECURITY DEFINER trigger functions
+(`crm_guard_lead_phone`, `crm_guard_contact_phone`, `crm_parts_touch_completed`),
+which run as the owner. Neither is called from app code (grep confirmed).
+
+**✅ VERIFIED on the live grants, every write inside `begin … rollback`:** anon
+→ `42501 permission denied`; agent aylar typing another agent's number still gets
+`23505` with the usual message; the deal's own agent taking 1 OMR off a
+downpayment part still clears `downpayment_completed_at` (recompute ran). Advisor
+re-run: anon-callable definer functions 15 → 13, authenticated 26 → 24 — exactly
+these two gone.
+
+**Remaining advisor findings, deliberately untouched:** the 6 CRM trigger
+functions listed as "callable" (a `returns trigger` function cannot be invoked
+through RPC, Postgres refuses); `crm_can_register` / `crm_request_access` are the
+pre-login signup path and must stay anon; everything else in the report
+(website `leads` with RLS off, `analytics_*`, `call_attempts`,
+`ai_conversations`, `workspaces`, `login_user` / `signup_user`,
+`campaign_unified`) belongs to the other products sharing this Supabase
+project, not the CRM.
+
+**Rule for next time:** any new SECURITY DEFINER helper that is not meant to be
+an RPC gets `revoke execute ... from public, anon, authenticated` in the same
+migration.
+
 ## SESSION 2026-09-14 — dashboard bar charts: owner chart fits its card, bars sit on zero (commit `97d6e65`, no migration, DEPLOYED)
 
 Reported with a screenshot of **Open leads by owner**: columns spilling out of
