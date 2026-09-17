@@ -28,7 +28,7 @@ quote these numbers back.
 2. **Ask before anything destructive or permission-widening.** Two
    examples from 08-03 that were confirmed first: zeroing the boards, and
    opening group-delete to every role.
-3. `git log --oneline -5` — the tree must be clean and end at **`97d6e65`**
+3. `git log --oneline -5` — the tree must be clean and end at **`06d11ed`**
    (or later). `git status` must be empty.
 4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
    GitHub does NOT deploy. Push after every commit anyway (backup):
@@ -110,9 +110,84 @@ an unused destructure in ContactGroup).
    This proved both 08-26 changes on the real markup.
    **Delete the file before committing — it ships as a public route.**
 
-> Updated: **2026-08-26** — committed and pushed through `97d6e65`, plus
+> Updated: **2026-08-26** — committed and pushed through `06d11ed`, plus
 > the DB-only migration `crm_lead_contact_mirror`,
 > all deployed, working tree clean.
+
+## SESSION 2026-09-17 — Lead history + reminders that ring (migration `crm_lead_history_and_reminders` + commit `06d11ed`, DEPLOYED)
+
+Ask: a log like each offer's trail but for the LEAD, to follow a client from
+the first point, with data entered along the way, and a reminder for the next
+call that notifies. "Build it without bugs."
+
+**What it is.** A "Lead history" section in the Lead drawer (after Details)
+and in the Contact drawer (after Demand/Documents). One line, oldest first,
+interleaving:
+- **milestones, derived, never stored** — Lead created (by, source) · Assigned
+  to X (only when > 60 s after creation; self-assignment is noise) · First
+  response · Moved to contacts (C-code) · Added to contacts (a contact with no
+  source lead) · Offer N created / accepted / downpayment completed / invoice
+  sent. Offer N uses the same by-creation numbering as the drawer.
+- **entries people type** — call / meeting / email / viewing / document / note;
+  date, duration, reminder, attachment. Same card and composer as the offer
+  trail.
+
+**⚠️ One story across the move.** An entry hangs on the lead OR the contact
+(`num_nonnulls(lead_id, contact_id) = 1`), and BOTH drawers load both sides
+(`listLeadHistory`: a lead brings its converted contact; a contact brings every
+lead with `converted_contact_id = it`). Deals come by `contact_id` FK only.
+
+**Database (applied, verified live):** `crm_lead_history` — same constraints
+as `crm_offer_tracking` (types, duration 1..1440, note 1..4000), `created_by`
+FK ON DELETE SET NULL (so deleting a member is never blocked by it), cascade
+from lead/contact. RLS: read = whatever lead/contact you can see; write =
+manager, or owner/creator of the parent, author must be yourself; update/delete
+= manager, author, or parent owner/creator. `crm_lead_history_rearm` clears
+`reminder_sent_at` when `remind_at` moves.
+
+**Reminders:** `crm_send_due_reminders()` on **pg_cron `crm-reminders` EVERY
+MINUTE**. Notifies the entry's author (fallback: the owner) with type
+`followup` → it lands in the bell's Follow-ups tab, title "Reminder: call
+<client>", body = the note, link to the lead/contact drawer. Once (stamps
+`reminder_sent_at`, `for update skip locked`), never for reminders > 2 days
+overdue. **It also sends `crm_offer_tracking` reminders** — that table had
+`remind_at` since August and nothing ever sent it (new column
+`reminder_sent_at`; the one existing reminder is from 31 Aug, outside the
+window, so it stayed silent).
+
+**Proven, before applying, in a rolled-back transaction as agent aylar** (13
+checks): own lead + own contact writes ok; another agent's lead → 42501; two
+parents → 23514; forged `created_by` → 42501; reads 2 across lead+contact; job
+sends 1, skips the 3-day-old one, never repeats; offer-trail reminder sent with
+a `/crm/contacts?contact=` link; rescheduling re-arms; deleting the lead
+deletes its history. ⚠️ The first run of that test lied: picking "another
+agent's lead" with a SELECT inside the agent session returned 0 rows under
+RLS, the INSERT inserted nothing and read as "allowed". Pick targets as the
+privileged role first (the old impersonation gotcha, again).
+
+**Code:**
+- `components/crm/follow-ups/trail.tsx` — TRAIL_TYPES, TypeNode, EntryCard,
+  TrailMilestone, TrailComposer, shared by BOTH trails (tracking-section was
+  refactored onto it). Composer order: preflight/validation → upload → save; a
+  save the server refuses REMOVES the file it just uploaded (it used to be
+  orphaned). Delete now asks first on both trails (the convention).
+- `follow-ups/history-timeline.ts` — pure buildMilestones + mergeTimeline;
+  14 unit checks run with `node --experimental-strip-types` in the scratchpad
+  (caught a real bug: a missing creator rendered the detail "null · name").
+- `follow-ups/lead-history-section.tsx` — the section; loading derived from a
+  scope key, not setState-in-effect.
+- `app/(app)/crm/history-actions.ts` — list/add/toggle/delete, server-side
+  validation mirrors the constraints, RLS 42501 → PERMISSION_ERROR.
+- ContactsBoard opens a contact from `?contact=<id>` (derived, like Leads).
+
+**✅ Pane-verified** with a throwaway `/preview-history` route (deleted before
+commit) on the real components + fixtures: timeline order/details; empty note
+refused; a call with 12 min + reminder saved and shown last; refused save
+toasts and keeps the form open; cancel closes; delete confirms then removes;
+offer trail unchanged. PostgREST shape of the list query (`or=` + `author`
+embed on the new table) reached RLS (not a 400), so the relationship is known.
+tsc + build clean; eslint exactly 37 + 3. **Not exercised with a real signed-in
+session** — the DB half was proven by impersonation instead.
 
 ## SESSION 2026-09-17 — "next follow up" notifies the owner (migration `crm_followup_reminders` + commit `dde77d6`, DEPLOYED)
 
