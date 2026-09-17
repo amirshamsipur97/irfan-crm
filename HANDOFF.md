@@ -114,6 +114,49 @@ an unused destructure in ContactGroup).
 > the DB-only migration `crm_lead_contact_mirror`,
 > all deployed, working tree clean.
 
+## SESSION 2026-09-17 — "next follow up" notifies the owner (migration `crm_followup_reminders` + commit `dde77d6`, DEPLOYED)
+
+Ask: when a "next follow up" date is set, the lead's owner must get a
+notification in the system.
+
+**What that column is:** a DATE custom column the team made on 16 Aug —
+`crm_custom_columns` key `date_msvpim4j`, value in `crm_leads.custom`. The
+built-in `crm_leads.next_followup_at` is unused (0 rows) and was left alone.
+
+**Database (migration applied, verified live):**
+- `crm_notify_followup(lead_id)` — one notification to the OWNER when the date
+  is today or up to 2 days late; title "follow up today: <lead>" or
+  "follow-up overdue: <lead>", body "Follow-up date: 17 Sep 2026", link
+  `/crm/leads?lead=<id>`, level `notice` (the level CHECK allows only
+  info/notice/critical). **Deduped on (owner, lead, body)**: re-saving or
+  re-running adds nothing; a changed date or a new owner notifies again.
+- `crm_notify_due_followups()` — the morning sweep. **pg_cron job
+  `crm-followup-reminders`, `0 4 * * *` UTC = 08:00 Asia/Muscat.** The 2-day
+  window is deliberate: it catches a weekend or a date typed in after the run,
+  and never fires a backlog of old dates on the day this shipped.
+- trigger `crm_leads_followup_notify` AFTER INSERT OR UPDATE OF custom,
+  owner_id — a date set to today/just past notifies at once instead of waiting
+  a day. ⚠️ It does NOT go through `crm_notify`, on purpose: that helper skips
+  when actor = recipient, and owners set their own follow-ups.
+- the column is found by LABEL (`crm_followup_key()`: leads, type date, label
+  like "%follow%"), so recreating the column keeps it working.
+- EXECUTE revoked from public/anon/authenticated on all five helpers.
+- Proven in a rolled-back transaction: owner sets today → 1 notification with the
+  right title/link/body; re-save + job → still 1; future date → none.
+
+**App (`dde77d6`):** `followup` in `NotificationType`, a calendar icon in the
+bell and a "Follow-ups" tab; the Leads board opens the lead drawer from
+`?lead=<id>` — derived from `useSearchParams`, not copied into state by an
+effect (a second reminder clicked while already on the board still opens;
+closing remembers the link). tsc, build clean; eslint still 37 + 3.
+
+**State at ship:** 13 leads due in the window, 4 with future dates, 0 follow-up
+notifications yet — today's 08:00 run had already passed when this landed, so
+those 13 get theirs at tomorrow's run (any dated exactly 2 days ago drop out of
+the window then). Not force-run: it sends real notifications to 13 people, so
+the user was asked first. Not verified in the browser: the bell and drawer are
+behind auth.
+
 ## SESSION 2026-09-17 — why counts disagree, and the cleanup (migration `crm_leads_clear_moved_when_contact_gone` APPLIED; data fix BLOCKED, awaiting the user)
 
 Started from "aylar has 23 leads moved to contacts but Contacts shows 20".
