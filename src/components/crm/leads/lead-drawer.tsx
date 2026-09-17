@@ -105,6 +105,8 @@ export function LeadDrawer({
   const [history, setHistory] = useState<CrmLeadStageHistory[]>([]);
   const [activities, setActivities] = useState<CrmActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  // the contact's own status once the lead was moved (undefined = never moved)
+  const [contactStatus, setContactStatus] = useState<string | null | undefined>(undefined);
   const [interestPick, setInterestPick] = useState("");
 
   const stage = stages.find((s) => s.id === lead.stage_id);
@@ -114,6 +116,7 @@ export function LeadDrawer({
 
   const reload = async () => {
     const data = await getLeadRelations(lead.id);
+    setContactStatus(data.contactStatus);
     setInterests(data.interests);
     setHistory(data.history);
     setActivities(data.activities);
@@ -217,9 +220,14 @@ export function LeadDrawer({
               "—"
             )}
           </DetailRow>
-          <DetailRow label="Status">
+          <DetailRow label="Lead status">
             <TemperaturePill value={lead.temperature} />
           </DetailRow>
+          {contactStatus !== undefined && (
+            <DetailRow label="Contact status">
+              <TemperaturePill value={contactStatus} />
+            </DetailRow>
+          )}
           <DetailRow label="Gender">{genderLabel(lead.gender)}</DetailRow>
           <DetailRow label="Age">{ageLabel(lead.age)}</DetailRow>
           <DetailRow label="Company">{lead.company ?? "—"}</DetailRow>

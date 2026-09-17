@@ -55,6 +55,9 @@ export interface DashboardData {
   forecastGoal: number;
   forecastByStage: { label: string; color: string; value: number }[];
   activityEvents: { owner: string; type: string; at: string }[];
+  /** lead status and contact status, counted separately (the client's pulse per stage) */
+  leadPulse: { label: string; color: string; count: number }[];
+  contactPulse: { label: string; color: string; count: number }[];
 }
 
 function HeaderButton({ children }: { children: React.ReactNode }) {
@@ -214,6 +217,21 @@ export function SalesDashboard({
               </Widget>
             </>
           )}
+
+          <Widget title="Lead status (pulse at the lead stage)" className="col-span-6 min-h-[300px]">
+            {data.leadPulse.length > 0 ? (
+              <PieWidget segments={data.leadPulse} showCount />
+            ) : (
+              <p className="py-[48px] text-center font-sans text-[14px] text-ink-muted">No leads yet</p>
+            )}
+          </Widget>
+          <Widget title="Contact status (pulse at the contact stage)" className="col-span-6 min-h-[300px]">
+            {data.contactPulse.length > 0 ? (
+              <PieWidget segments={data.contactPulse} showCount />
+            ) : (
+              <p className="py-[48px] text-center font-sans text-[14px] text-ink-muted">No contacts yet</p>
+            )}
+          </Widget>
 
           <Widget title="Annual Target (accepted deals)" className="col-span-5 min-h-[320px]">
             <GaugeWidget actual={data.annual.actual} target={data.annual.target} />

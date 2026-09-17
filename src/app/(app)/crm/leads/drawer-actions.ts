@@ -24,8 +24,21 @@ export async function getLeadRelations(leadId: string) {
       .order("changed_at", { ascending: false })
       .limit(15)
       .returns<CrmLeadStageHistory[]>(),
-    supabase.from("crm_leads").select("name").eq("id", leadId).maybeSingle<{ name: string }>(),
+    supabase
+      .from("crm_leads")
+      .select("name, converted_contact_id")
+      .eq("id", leadId)
+      .maybeSingle<{ name: string; converted_contact_id: string | null }>(),
   ]);
+
+  // the contact's own status, shown beside the lead's (measured separately)
+  const { data: contactRow } = lead?.converted_contact_id
+    ? await supabase
+        .from("crm_contacts")
+        .select("temperature")
+        .eq("id", lead.converted_contact_id)
+        .maybeSingle<{ temperature: string | null }>()
+    : { data: null };
 
   const { data: activities } = lead
     ? await supabase
@@ -49,6 +62,8 @@ export async function getLeadRelations(leadId: string) {
     })),
     history: history ?? [],
     activities: activities ?? [],
+    /** undefined = the lead was never moved to contacts */
+    contactStatus: lead?.converted_contact_id ? contactRow?.temperature ?? null : undefined,
   };
 }
 

@@ -93,11 +93,14 @@ export function ContactDrawer({
   const [floorPlans, setFloorPlans] = useState<CrmOfferFloorPlan[]>([]);
   const [planUploading, setPlanUploading] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // the status this client had as a lead, shown beside the contact's own
+  const [leadStatus, setLeadStatus] = useState<{ fromLead: boolean; value: string | null }>({ fromLead: false, value: null });
 
   // silent after the first load, so a doc upload or follow-up refreshes the
   // activity feed without blanking the whole lower half of the drawer
   const load = async () => {
     const data = await getContactRelations(contact.id);
+    setLeadStatus({ fromLead: data.fromLead, value: data.leadStatus });
     setDeals(data.deals as DrawerDeal[]);
     setActivities(data.activities);
     setFloorPlans(data.floorPlans);
@@ -262,9 +265,14 @@ export function ContactDrawer({
               "—"
             )}
           </DetailRow>
-          <DetailRow label="Status">
+          <DetailRow label="Contact status">
             <TemperaturePill value={contact.temperature} />
           </DetailRow>
+          {leadStatus.fromLead && (
+            <DetailRow label="Lead status">
+              <TemperaturePill value={leadStatus.value} />
+            </DetailRow>
+          )}
           <DetailRow label="Gender">{genderLabel(contact.gender)}</DetailRow>
           <DetailRow label="Age">{ageLabel(contact.age)}</DetailRow>
           <DetailRow label="Account">{contact.account_name ?? "—"}</DetailRow>

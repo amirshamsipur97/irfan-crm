@@ -79,7 +79,7 @@ function customValue(
 const BASE_COLUMNS: XlsxColumn[] = [
   { header: "Lead", width: 32 },
   { header: "Group", width: 20 },
-  { header: "Status", width: 12 },
+  { header: "Lead status", width: 12 },
   { header: "Owner", width: 24 },
   { header: "First name", width: 18 },
   { header: "Last name", width: 18 },

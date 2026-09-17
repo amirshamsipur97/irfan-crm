@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
 import { canManageBoards } from "@/lib/permissions";
 import { recordBoardVisit } from "@/lib/visits";
+import { TEMPERATURE_OPTIONS } from "@/lib/person-fields";
 import {
   SalesDashboard,
   type DashboardData,
@@ -16,7 +17,7 @@ const MONTH_LABEL = (d: Date) =>
 export default async function SalesDashboardPage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient(), recordBoardVisit("dashboard")]);
 
-  const [{ data: deals }, { data: stages }, { data: activities }, { data: users }, { data: settings }, { data: leads }, { data: viewings }, { data: reg }, { data: parts }] =
+  const [{ data: deals }, { data: stages }, { data: activities }, { data: users }, { data: settings }, { data: leads }, { data: viewings }, { data: reg }, { data: parts }, { data: contactStatuses }] =
     await Promise.all([
       supabase.from("crm_deals").select("*").returns<CrmDeal[]>(),
       supabase.from("crm_deal_stages").select("*").order("position").returns<CrmDealStage[]>(),
@@ -35,6 +36,8 @@ export default async function SalesDashboardPage() {
         .from("crm_deal_downpayments")
         .select("deal_id, amount, paid_at")
         .returns<{ deal_id: string; amount: number; paid_at: string }[]>(),
+      // contact status is measured on its own (not the lead's), for the pulse chart
+      supabase.from("crm_contacts").select("temperature").returns<{ temperature: string | null }[]>(),
     ]);
 
   const allDeals = deals ?? [];
@@ -243,6 +246,19 @@ export default async function SalesDashboardPage() {
     };
   }
 
+  // the client's pulse, measured separately at each stage (same colours as the boards)
+  const pulse = (values: (string | null)[]) => {
+    const rows = TEMPERATURE_OPTIONS.map((t) => ({
+      label: t.label,
+      color: t.color,
+      count: values.filter((v) => v === t.key).length,
+    }));
+    const unset = values.filter((v) => !v || !TEMPERATURE_OPTIONS.some((t) => t.key === v)).length;
+    return [...rows, { label: "Not set", color: "#e6e9ef", count: unset }].filter((r) => r.count > 0);
+  };
+  const leadPulse = pulse((leads ?? []).map((l) => l.temperature));
+  const contactPulse = pulse((contactStatuses ?? []).map((c) => c.temperature));
+
   const data: DashboardData = {
     myWork: { overdue, quiet, viewings: upcomingViewings },
     team,
@@ -261,6 +277,8 @@ export default async function SalesDashboardPage() {
     forecastGoal: setting("forecast_goal", 120000),
     forecastByStage,
     activityEvents,
+    leadPulse,
+    contactPulse,
   };
 
   return <SalesDashboard profile={profile} data={data} currency={reg?.default_currency ?? "OMR"} />;

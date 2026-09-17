@@ -31,7 +31,7 @@ export const BOARD_COLUMNS: {
   // contacts (asked 2026-09-17, for every member). The pipeline-stage column
   // that used to hold this name was dropped on request; crm_leads.stage_id
   // still drives the drawer's stage journey and the lead score.
-  { key: "temperature", label: "Status", w: 130 },
+  { key: "temperature", label: "Lead status", w: 130 },
   { key: "contact", label: "Move to contact", w: 181 },
 ];
 

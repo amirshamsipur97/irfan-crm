@@ -201,7 +201,7 @@ export function FollowUpPopup({
               <Row label="Country">
                 {details.country ? `${countryFlag(details.country) ?? ""} ${details.country}` : "—"}
               </Row>
-              <Row label="Status">
+              <Row label={details.kind === "lead" ? "Lead status" : "Contact status"}>
                 <TemperaturePill value={details.temperature} />
               </Row>
               <Row label="Source">{details.source ? sourceLabel(details.source) : "—"}</Row>

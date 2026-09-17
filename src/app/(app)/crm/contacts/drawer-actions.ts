@@ -67,6 +67,14 @@ export async function getContactRelations(contactId: string) {
         .returns<{ id: string; name: string; doc_type: string | null; created_at: string }[]>(),
     ]);
 
+  // the lead(s) this contact came from, newest first, for their own status
+  const { data: sourceLeads } = await supabase
+    .from("crm_leads")
+    .select("temperature, converted_at")
+    .eq("converted_contact_id", contactId)
+    .order("converted_at", { ascending: false })
+    .returns<{ temperature: string | null; converted_at: string | null }[]>();
+
   // merge FK matches + display-name matches (Phase 1 keeps FK as truth, names as cache)
   const seen = new Set<string>();
   const deals: JoinedDeal[] = [];
@@ -136,5 +144,8 @@ export async function getContactRelations(contactId: string) {
     })),
     activities: feed.slice(0, 15),
     floorPlans: floorPlans ?? [],
+    /** the status the client had as a LEAD (measured separately); null when it never was one */
+    leadStatus: (sourceLeads ?? [])[0]?.temperature ?? null,
+    fromLead: (sourceLeads ?? []).length > 0,
   };
 }

@@ -210,8 +210,11 @@ export function StatWidget({ value, currency = "OMR" }: { value: number; currenc
 /** Pie chart with side legend. */
 export function PieWidget({
   segments,
+  showCount = false,
 }: {
   segments: { label: string; color: string; count: number }[];
+  /** legend reads "Warm: 50 (15.9%)" instead of "Warm: 15.9%" */
+  showCount?: boolean;
 }) {
   const total = segments.reduce((s, x) => s + x.count, 0) || 1;
   let acc = 0;
@@ -250,7 +253,7 @@ export function PieWidget({
           <span key={a.label} className="flex items-center gap-[8px]">
             <span className="size-[12px] rounded-full" style={{ backgroundColor: a.color }} />
             <span className="font-sans text-[14px] leading-[20px] text-ink">
-              {a.label}: {a.pct}%
+              {a.label}: {showCount ? `${a.count} (${a.pct}%)` : `${a.pct}%`}
             </span>
           </span>
         ))}

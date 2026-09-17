@@ -331,7 +331,7 @@ export function LeadsBoard({
     },
     { key: "country", label: "Country", get: (r) => r.country },
     { key: "gender", label: "Gender", get: (r) => r.gender, format: (v) => genderLabel(String(v ?? "")), color: (v) => GENDER_OPTIONS.find((g) => g.key === v)?.color },
-    { key: "temperature", label: "Status", get: (r) => r.temperature, format: (v) => temperatureLabel(String(v ?? "")), color: (v) => TEMPERATURE_OPTIONS.find((t) => t.key === v)?.color },
+    { key: "temperature", label: "Lead status", get: (r) => r.temperature, format: (v) => temperatureLabel(String(v ?? "")), color: (v) => TEMPERATURE_OPTIONS.find((t) => t.key === v)?.color },
     // Blank = still an open lead; the chip mirrors the Move-to-contact ✓
     { key: "converted", label: "Moved to contact", get: (r) => (r.converted_contact_id ? "yes" : null), format: () => "Moved ✓", color: () => "#00c875" },
   ];

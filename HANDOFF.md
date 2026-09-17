@@ -142,6 +142,27 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — Lead status and Contact status are SEPARATE (migration `crm_separate_lead_and_contact_status` + this commit, DEPLOYED)
+
+Ask: measure the client's pulse at each stage separately: the lead's status and
+the contact's status must not share a value, and show separately in the side
+panel, filters and reports.
+
+- **Database:** `temperature` removed from both mirror functions and both
+  mirror trigger WHEN lists (a lead edit no longer changes its contact's status
+  and vice versa; every other mirrored field still mirrors, verified), and from
+  `crm_convert_lead` (a NEW contact starts with no status; a matched existing
+  contact keeps its own). Verified rolled back: lead cold→void left the contact
+  cold; converting a pending lead made a contact with status NULL. Existing
+  values were left as they are (contacts that inherited a lead's status keep it).
+- **App:** columns "Lead status" (Leads) and "Contact status" (Contacts, 140px);
+  quick-filter labels match; Excel header "Lead status". Lead drawer shows
+  Lead status + Contact status (when moved, `getLeadRelations().contactStatus`);
+  contact drawer shows Contact status + Lead status (from the source lead,
+  `getContactRelations().leadStatus/fromLead`); offer/deal drawer and the
+  follow-up popup label theirs. Sales Dashboard: two pies, "Lead status" and
+  "Contact status", counts + % incl. "Not set" (`PieWidget showCount`).
+
 ## SESSION 2026-09-17 — Status: cold / pending / warm / void, no None, right before Move to contact (migration `crm_temperature_void_and_status_position` + this commit, DEPLOYED)
 
 - `TEMPERATURE_OPTIONS` (one list, used by Leads + Contacts cells, filters,
