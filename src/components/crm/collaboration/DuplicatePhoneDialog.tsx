@@ -112,10 +112,10 @@ function DuplicatePhoneDialog({
           ) : sent ? (
             <div className="rounded-[10px] border border-[#00c875]/40 bg-[#00c875]/8 px-[14px] py-[12px]">
               <p className="m-0 font-sans text-[14px] font-medium text-ink">
-                {sent === "already" ? "You already have a request for this client." : `Request sent to ${info.ownerName}.`}
+                {sent === "already" ? "You already have a request for this client." : "Request sent for management review."}
               </p>
               <p className="m-0 pt-[2px] font-sans text-[12.5px] text-ink-muted">
-                You will be notified when they answer. Track it on the{" "}
+                Once management approves it, {info.ownerName} can accept or decline. You are notified at each step. Track it on the{" "}
                 <Link href="/crm/collaboration" onClick={onClose} className="text-link hover:underline">
                   Collaboration
                 </Link>{" "}
@@ -125,7 +125,7 @@ function DuplicatePhoneDialog({
           ) : !asking ? (
             <div className="flex flex-wrap items-center justify-between gap-[10px]">
               <p className="m-0 font-sans text-[13px] leading-[19px] text-ink-muted">
-                Working with this client too? Ask {info.ownerName} for a joint collaboration.
+                Working with this client too? Ask for a joint collaboration: management reviews it first, then {info.ownerName} decides.
               </p>
               <button
                 type="button"

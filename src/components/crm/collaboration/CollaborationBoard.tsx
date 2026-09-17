@@ -11,6 +11,7 @@ import {
   cancelCollaboration,
   listCollaborationData,
   respondCollaboration,
+  reviewCollaboration,
   type CollaborationRow,
   type DuplicateAttemptRow,
   type SharedClient,
@@ -22,7 +23,8 @@ import type { CrmUser } from "@/lib/types";
 type TabKey = "incoming" | "mine" | "shared" | "all" | "duplicates";
 
 const STATUS: Record<CollaborationRow["status"], { label: string; color: string }> = {
-  pending: { label: "Pending", color: "#fdab3d" },
+  awaiting_admin: { label: "Awaiting admin", color: "#a25ddc" },
+  pending: { label: "Awaiting owner", color: "#fdab3d" },
   accepted: { label: "Accepted", color: "#00c875" },
   declined: { label: "Declined", color: "#e2445c" },
   cancelled: { label: "Withdrawn", color: "#c4c4c4" },
@@ -31,7 +33,7 @@ const STATUS: Record<CollaborationRow["status"], { label: string; color: string 
 function StatusChip({ status }: { status: CollaborationRow["status"] }) {
   const s = STATUS[status];
   return (
-    <span className="inline-flex h-[22px] w-fit items-center justify-self-start rounded-[11px] px-[10px] font-sans text-[12px] text-white" style={{ backgroundColor: s.color }}>
+    <span className="inline-flex h-[22px] w-fit items-center justify-self-start whitespace-nowrap rounded-[11px] px-[10px] font-sans text-[12px] text-white" style={{ backgroundColor: s.color }}>
       {s.label}
     </span>
   );
@@ -75,8 +77,11 @@ function RequestRow({
   onAnswer: (accept: boolean) => void;
   onWithdraw: () => void;
 }) {
+  // step 1 belongs to the admins, step 2 to the owner only
+  const adminStep = as === "admin" && c.status === "awaiting_admin";
+  const ownerStep = as === "owner" && c.status === "pending";
   return (
-    <div className="grid grid-cols-[minmax(170px,1.3fr)_minmax(140px,1fr)_minmax(140px,1fr)_100px_250px] items-center gap-[12px] border-b border-line px-[14px] py-[10px] last:border-b-0">
+    <div className="grid grid-cols-[minmax(170px,1.3fr)_minmax(140px,1fr)_minmax(140px,1fr)_120px_250px] items-center gap-[12px] border-b border-line px-[14px] py-[10px] last:border-b-0">
       <div className="min-w-0">
         <Link href={clientHref(c.entity_table, c.entity_id)} className="block truncate font-sans text-[14px] text-link hover:underline">
           {c.entity_name ?? "Client"}
@@ -96,25 +101,25 @@ function RequestRow({
         >
           Details
         </button>
-        {c.status === "pending" && (as === "owner" || as === "admin") && (
+        {(adminStep || ownerStep) && (
           <>
             <button
               type="button"
               onClick={() => onAnswer(false)}
               className="h-[30px] rounded-[4px] border border-line-strong px-[10px] font-sans text-[13px] text-ink transition-colors hover:bg-[#ffe9ec]"
             >
-              Decline
+              {adminStep ? "Reject" : "Decline"}
             </button>
             <button
               type="button"
               onClick={() => onAnswer(true)}
-              className="h-[30px] rounded-[4px] bg-teal-deep px-[12px] font-sans text-[13px] text-white transition-colors hover:bg-[#006e87]"
+              className="h-[30px] whitespace-nowrap rounded-[4px] bg-teal-deep px-[12px] font-sans text-[13px] text-white transition-colors hover:bg-[#006e87]"
             >
-              Accept
+              {adminStep ? "Approve" : "Accept"}
             </button>
           </>
         )}
-        {c.status === "pending" && as === "requester" && (
+        {(c.status === "pending" || c.status === "awaiting_admin") && as === "requester" && (
           <button
             type="button"
             onClick={onWithdraw}
@@ -160,14 +165,15 @@ export function CollaborationBoard({
   useRealtimeTable("crm_collaborations", reloadSoon);
   useRealtimeTable("crm_phone_duplicate_attempts", reloadSoon, isAdmin);
 
-  const incoming = data.collaborations.filter((c) => c.owner_id === profile.id);
+  // the owner's side starts only after an admin approved the request
+  const incoming = data.collaborations.filter((c) => c.owner_id === profile.id && c.admin_decision === "approved");
   const mine = data.collaborations.filter((c) => c.requester_id === profile.id);
   const involves = (c: CollaborationRow) => !person || c.requester_id === person || c.owner_id === person;
   const all = data.collaborations.filter(involves);
   const attempts = data.attempts.filter((a) => !person || a.attempted_by === person || a.existing_owner_id === person);
 
   const pendingIncoming = incoming.filter((c) => c.status === "pending").length;
-  const pendingAll = data.collaborations.filter((c) => c.status === "pending").length;
+  const pendingAll = data.collaborations.filter((c) => c.status === "awaiting_admin").length;
 
   const tabs: { key: TabKey; label: string; count?: number }[] = [
     ...(isAdmin
@@ -290,7 +296,7 @@ export function CollaborationBoard({
 
           {tab === "duplicates" && (
             <div className="rounded-[10px] border border-line bg-white">
-              <div className="grid grid-cols-[130px_minmax(150px,1fr)_140px_minmax(170px,1.2fr)_minmax(150px,1fr)_110px] gap-[12px] border-b border-line bg-canvas/50 px-[14px] py-[8px] font-sans text-[12px] font-medium text-ink-muted">
+              <div className="grid grid-cols-[130px_minmax(150px,1fr)_140px_minmax(170px,1.2fr)_minmax(150px,1fr)_120px] gap-[12px] border-b border-line bg-canvas/50 px-[14px] py-[8px] font-sans text-[12px] font-medium text-ink-muted">
                 <span>When</span>
                 <span>Entered by</span>
                 <span>Number</span>
@@ -304,7 +310,7 @@ export function CollaborationBoard({
                 attempts.map((a) => {
                   const collab = a.collaboration_id ? data.collaborations.find((c) => c.id === a.collaboration_id) : undefined;
                   return (
-                    <div key={a.id} className="grid grid-cols-[130px_minmax(150px,1fr)_140px_minmax(170px,1.2fr)_minmax(150px,1fr)_110px] items-center gap-[12px] border-b border-line px-[14px] py-[8px] last:border-b-0">
+                    <div key={a.id} className="grid grid-cols-[130px_minmax(150px,1fr)_140px_minmax(170px,1.2fr)_minmax(150px,1fr)_120px] items-center gap-[12px] border-b border-line px-[14px] py-[8px] last:border-b-0">
                       <span className="font-sans text-[12.5px] text-ink-muted">{activityTime(a.created_at)}</span>
                       <Person userById={userById} id={a.attempted_by} />
                       <span className="font-sans text-[13px] tabular-nums text-ink">{a.phone}</span>
@@ -353,7 +359,14 @@ export function CollaborationBoard({
               <p className="m-0 pt-[8px] font-['Brush_Script_MT','Segoe_Script',cursive] text-[22px] text-ink">{viewing.signature_name}</p>
               <p className="m-0 font-sans text-[11.5px] text-ink-muted">Signed {activityTime(viewing.signed_at)}</p>
             </div>
-            {viewing.responded_at && (
+            {viewing.admin_reviewed_at && (
+              <p className="m-0 mt-[10px] font-sans text-[12.5px] text-ink">
+                Management {viewing.admin_decision === "approved" ? "approved" : "rejected"} it · {nameOf(viewing.admin_reviewed_by)} ·{" "}
+                {activityTime(viewing.admin_reviewed_at)}
+                {viewing.admin_note ? `: “${viewing.admin_note}”` : ""}
+              </p>
+            )}
+            {viewing.responded_at && viewing.status !== "cancelled" && viewing.admin_decision === "approved" && (
               <p className="m-0 mt-[10px] font-sans text-[12.5px] text-ink">
                 {STATUS[viewing.status].label} by {nameOf(viewing.responded_by)} · {activityTime(viewing.responded_at)}
                 {viewing.response_note ? `: “${viewing.response_note}”` : ""}
@@ -372,6 +385,8 @@ export function CollaborationBoard({
         <AnswerDialog
           row={answering.row}
           accept={answering.accept}
+          review={answering.row.status === "awaiting_admin"}
+          ownerName={nameOf(answering.row.owner_id)}
           requesterName={nameOf(answering.row.requester_id)}
           onClose={() => setAnswering(null)}
           onDone={(message, tone) => {
@@ -389,12 +404,17 @@ export function CollaborationBoard({
 function AnswerDialog({
   row,
   accept,
+  review,
+  ownerName,
   requesterName,
   onClose,
   onDone,
 }: {
   row: CollaborationRow;
   accept: boolean;
+  /** step 1: an admin approving/rejecting, not the owner answering */
+  review: boolean;
+  ownerName: string;
   requesterName: string;
   onClose: () => void;
   onDone: (message: string, tone?: "success" | "alert") => void;
@@ -403,21 +423,34 @@ function AnswerDialog({
   const [saving, setSaving] = useState(false);
   const submit = async () => {
     setSaving(true);
-    const result = await respondCollaboration(row.id, accept, note);
+    const result = review
+      ? await reviewCollaboration(row.id, accept, note)
+      : await respondCollaboration(row.id, accept, note);
     setSaving(false);
     if (result.error) onDone(result.error, "alert");
+    else if (review) onDone(accept ? `Approved and sent to ${ownerName}` : "Request rejected");
     else onDone(accept ? `Collaboration with ${requesterName} accepted` : "Request declined");
   };
   return (
     <div className="fixed inset-0 z-[96] flex items-center justify-center bg-black/30 p-[16px]" role="dialog" aria-modal="true">
       <div className="w-[420px] max-w-full rounded-[10px] bg-white p-[22px] shadow-[0px_15px_50px_rgba(0,0,0,0.3)]">
         <h3 className="m-0 font-display text-[18px] font-medium text-ink">
-          {accept ? "Accept collaboration?" : "Decline this request?"}
+          {review
+            ? accept
+              ? `Approve and send to ${ownerName}?`
+              : "Reject this request?"
+            : accept
+              ? "Accept collaboration?"
+              : "Decline this request?"}
         </h3>
         <p className="m-0 mt-[6px] font-sans text-[13px] leading-[19px] text-ink-muted">
-          {accept
-            ? `${requesterName} will work ${row.entity_name ?? "this client"} with you and can see the client's contact details. Management is notified.`
-            : `${requesterName} is told the request was declined. Management is notified.`}
+          {review
+            ? accept
+              ? `${ownerName} gets the request for ${row.entity_name ?? "this client"} and decides to accept or decline. ${requesterName} is told it was approved.`
+              : `The request stops here. ${requesterName} is told management did not approve it; ${ownerName} never sees it.`
+            : accept
+              ? `${requesterName} will work ${row.entity_name ?? "this client"} with you and can see the client's contact details. Management is notified.`
+              : `${requesterName} is told the request was declined. Management is notified.`}
         </p>
         <textarea
           value={note}
@@ -439,7 +472,7 @@ function AnswerDialog({
               accept ? "bg-teal-deep" : "bg-alert"
             }`}
           >
-            {saving ? "Saving…" : accept ? "Accept" : "Decline"}
+            {saving ? "Saving…" : review ? (accept ? "Approve" : "Reject") : accept ? "Accept" : "Decline"}
           </button>
         </div>
       </div>

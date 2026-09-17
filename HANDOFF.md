@@ -142,6 +142,32 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — Collaboration needs ADMIN approval before the owner sees it (migration `crm_collaboration_admin_review` + this commit, DEPLOYED)
+
+Ask: the second member's request is first approved by an admin; only then does
+the owner get the accept/decline panel.
+
+- Status flow: `awaiting_admin` (default) → admin approves → `pending` (owner's
+  turn) → `accepted` / `declined`; admin rejects → `declined` with
+  `admin_decision='rejected'` (the owner never sees it). New columns
+  `admin_decision`, `admin_reviewed_by/at`, `admin_note`.
+- RLS: the owner only sees a request once `admin_decision = 'approved'`.
+- `crm_request_collaboration` now notifies ADMINS only.
+  `crm_review_collaboration(id, approve, note)` (developer/ceo) → approve:
+  notifies owner + requester (+ admins); reject: notifies requester (+ admins).
+  `crm_respond_collaboration` is owner-only and only for approved pending
+  requests. Withdraw works in both waiting states.
+- The one live request (arshia beigi → babak chehrazi on "amir") was moved
+  back to `awaiting_admin`.
+- Proven rolled back: owner sees 0 rows and cannot answer before review, a
+  non-admin cannot review, developer approves, owner sees it and accepts; the
+  notification trail is right at each step.
+- UI: chips "Awaiting admin" (purple) / "Awaiting owner"; All requests →
+  Reject / Approve (confirm names the owner); Requests to me lists only approved
+  requests → Decline / Accept; details show the management decision; sidebar
+  badge = owner's pending + (admins) awaiting review; the duplicate popup says
+  management reviews first.
+
 ## SESSION 2026-09-17 — Collaboration: duplicate phone numbers → signed joint-collaboration requests (migration `crm_collaboration` + this commit, DEPLOYED)
 
 Ask: a "Collaboration" item in the left menu. When a member enters a phone

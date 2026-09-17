@@ -22,7 +22,12 @@ export type CollaborationRow = {
   agreement_version: string;
   signature_name: string;
   signed_at: string;
-  status: "pending" | "accepted" | "declined" | "cancelled";
+  /** awaiting_admin → (admin approves) pending → (owner) accepted / declined */
+  status: "awaiting_admin" | "pending" | "accepted" | "declined" | "cancelled";
+  admin_decision: "approved" | "rejected" | null;
+  admin_reviewed_by: string | null;
+  admin_reviewed_at: string | null;
+  admin_note: string | null;
   responded_by: string | null;
   responded_at: string | null;
   response_note: string | null;
@@ -129,6 +134,15 @@ export async function respondCollaboration(id: string, accept: boolean, note: st
   return d.error ? { error: d.error } : {};
 }
 
+/** Step 1 (developer / CEO): approve and forward to the owner, or reject. */
+export async function reviewCollaboration(id: string, approve: boolean, note: string): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("crm_review_collaboration", { p_id: id, p_approve: approve, p_note: note });
+  if (error) return { error: error.message };
+  const d = (data ?? {}) as { error?: string };
+  return d.error ? { error: d.error } : {};
+}
+
 export async function cancelCollaboration(id: string): Promise<{ error?: string }> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("crm_cancel_collaboration", { p_id: id });
@@ -162,7 +176,7 @@ export async function listCollaborationData(): Promise<{
   return { collaborations: collaborations ?? [], attempts: attempts ?? [], shared: (shared as SharedClient[]) ?? [] };
 }
 
-/** Sidebar badge: requests waiting for an answer (to me; every pending one for admins). */
+/** Sidebar badge: requests waiting on me (owner: approved + pending; admin: awaiting review). */
 export async function countPendingCollaborations(): Promise<number> {
   const supabase = await createClient();
   const {
@@ -175,8 +189,12 @@ export async function countPendingCollaborations(): Promise<number> {
     .eq("id", user.id)
     .maybeSingle<{ role: string; is_active: boolean }>();
   if (!me?.is_active) return 0;
-  let q = supabase.from("crm_collaborations").select("id", { count: "exact", head: true }).eq("status", "pending");
-  if (!["developer", "ceo"].includes(me.role)) q = q.eq("owner_id", user.id);
-  const { count } = await q;
-  return count ?? 0;
+  const base = () => supabase.from("crm_collaborations").select("id", { count: "exact", head: true });
+  const [{ count: mine }, admin] = await Promise.all([
+    base().eq("status", "pending").eq("owner_id", user.id),
+    ["developer", "ceo"].includes(me.role)
+      ? base().eq("status", "awaiting_admin")
+      : Promise.resolve({ count: 0 }),
+  ]);
+  return (mine ?? 0) + (admin.count ?? 0);
 }
