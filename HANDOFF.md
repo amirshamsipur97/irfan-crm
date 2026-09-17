@@ -142,6 +142,39 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — "next follow up" ⇄ Lead history reminder, one thing (migrations `crm_followup_history_sync` + `crm_followup_history_sync_new_after_done`, DEPLOYED)
+
+Ask: a reminder set in the drawer's Lead history must show in the Leads
+"next follow up" column, and a date set in the column must show in the
+history, both ways, no bugs. (The user also confirmed follow-up notifications
+go to the lead OWNER only; a developer who sets one on an agent's lead does
+not get it.)
+
+**Model:** `crm_lead_history.followup_source` ('table' | 'history' | null),
+partial UNIQUE index → at most ONE linked entry per lead.
+- column set → linked entry's `remind_at` (bare day = 08:00 Muscat), or a new
+  auto note "Next follow up: 20 Sep 2026, 03:30 PM" (source 'table');
+- column cleared → linked entry ticked done (never deleted);
+- column set while the linked entry is a DONE logged note → that note keeps its
+  time and is unlinked; a new 'table' entry is made;
+- drawer: new lead entry with a reminder → becomes the linked one ('history'),
+  the one it replaces is unlinked + ticked done, the column takes its time;
+- tick done → column cleared; untick → column restored; delete linked → cleared.
+Triggers `crm_leads_followup_history` (crm_leads) and
+`crm_lead_history_followup` (crm_lead_history), both guarded by
+`pg_trigger_depth() > 1` so they never bounce. `crm_send_due_reminders` now
+SKIPS linked entries (`followup_source is null`): the linked reminder rings
+once, to the owner, through `crm_notify_followup`. All 8 paths + the
+no-double-notification case proven in rolled-back transactions.
+
+**App:** `getLeadCustom` action; LeadsBoard bumps `historyTick` after a saved
+custom edit (open history re-reads) and re-reads the lead's `custom` after a
+history reminder change (so the next cell edit does not write a stale custom
+back over the synced value). EntryCard shows a "next follow up" chip on the
+linked entry. Contacts entries are NOT linked (contacts' Follow Up column has
+no sync and no notification). Existing follow-up dates were NOT backfilled
+into history; an entry appears the next time the date is edited.
+
 ## SESSION 2026-09-17 — date picker: a picked TIME is kept, and a timed follow-up rings at its time (migration `crm_followup_with_time` + this commit, DEPLOYED)
 
 Bug (user, screenshot of the "next follow up" picker): the clock opened a

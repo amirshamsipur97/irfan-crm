@@ -331,6 +331,12 @@ export interface CrmLeadHistory {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  /**
+   * Set on the ONE entry that is the lead's "next follow up" (the Leads column):
+   * 'table' = written by the column, 'history' = a logged reminder. Kept in sync
+   * both ways by database triggers.
+   */
+  followup_source?: "table" | "history" | null;
   author?: { full_name: string | null; avatar_url: string | null } | null;
 }
 

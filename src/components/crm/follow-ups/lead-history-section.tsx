@@ -111,11 +111,17 @@ export function LeadHistorySection({
   contactId,
   onToast,
   onChanged,
+  refreshKey = 0,
+  onFollowupChange,
 }: {
   leadId?: string;
   contactId?: string;
   onToast?: (message: string, tone?: "success" | "alert") => void;
   onChanged?: () => void;
+  /** bump to re-read the history (e.g. the "next follow up" cell was edited) */
+  refreshKey?: number;
+  /** a reminder changed here, so the lead's "next follow up" column may have too */
+  onFollowupChange?: () => void;
 }) {
   const scopeKey = `${leadId ?? ""}|${contactId ?? ""}`;
   const [loaded, setLoaded] = useState<{ key: string; data: LeadHistoryData } | null>(null);
@@ -131,7 +137,17 @@ export function LeadHistorySection({
     return () => {
       alive = false;
     };
-  }, [leadId, contactId]);
+  }, [leadId, contactId, refreshKey]);
+
+  /**
+   * After a reminder change the database may have touched OTHER entries too
+   * (a replaced follow-up is ticked off) and the lead's column: re-read both.
+   */
+  const resync = async () => {
+    const fresh = await listLeadHistory({ leadId, contactId });
+    setLoaded({ key: `${leadId ?? ""}|${contactId ?? ""}`, data: fresh });
+    onFollowupChange?.();
+  };
 
   // a result for a different lead/contact is not this one's — show loading until it arrives
   const data = loaded && loaded.key === scopeKey ? loaded.data : null;
@@ -162,6 +178,7 @@ export function LeadHistorySection({
       onToast?.(result.error, "alert");
       return;
     }
+    if (entry.followup_source) await resync();
     onChanged?.();
   };
 
@@ -172,7 +189,9 @@ export function LeadHistorySection({
     if (result.error) {
       setEntries((rows) => rows.map((r) => (r.id === entry.id ? { ...r, reminder_done: !next } : r)));
       onToast?.(result.error, "alert");
+      return;
     }
+    if (entry.followup_source) await resync();
   };
 
   const openFile = async (entry: CrmLeadHistory) => {
@@ -240,6 +259,7 @@ export function LeadHistorySection({
                   onDelete={() => askDelete(item.entry)}
                   onToggleReminder={() => toggleReminder(item.entry)}
                   onOpenFile={() => openFile(item.entry)}
+                  isNextFollowUp={Boolean(item.entry.followup_source)}
                 />
               )
             )}
@@ -260,6 +280,8 @@ export function LeadHistorySection({
               if (result.error || !result.entry) return { error: result.error ?? "could not save this entry" };
               const saved = result.entry;
               setEntries((rows) => [...rows, saved]);
+              // a lead reminder becomes the lead's next follow up
+              if (leadId && saved.remind_at) await resync();
               return {};
             }}
             onDone={() => {

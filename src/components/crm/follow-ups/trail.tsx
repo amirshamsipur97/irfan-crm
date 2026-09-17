@@ -168,11 +168,14 @@ export function EntryCard({
   onDelete,
   onToggleReminder,
   onOpenFile,
+  isNextFollowUp = false,
 }: {
   entry: TrailEntry;
   onDelete: () => void;
   onToggleReminder: () => void;
   onOpenFile: () => void;
+  /** this reminder is the one shown in the Leads "next follow up" column */
+  isNextFollowUp?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const long = entry.note.length > LONG_NOTE;
@@ -247,6 +250,14 @@ export function EntryCard({
                 >
                   ⏰ {reminderLabel(entry.remind_at)}
                 </button>
+              )}
+              {entry.remind_at && isNextFollowUp && !entry.reminder_done && (
+                <span
+                  title="Shown in the Leads table as next follow up"
+                  className="rounded-[10px] bg-teal-deep/10 px-[8px] py-[2px] font-sans text-[11.5px] leading-[16px] text-teal-deep"
+                >
+                  next follow up
+                </span>
               )}
               {entry.storage_path && (
                 <button

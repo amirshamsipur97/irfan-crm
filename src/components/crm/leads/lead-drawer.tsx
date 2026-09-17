@@ -80,6 +80,8 @@ export function LeadDrawer({
   onClose,
   onToast,
   onConvert,
+  historyRefreshKey,
+  onFollowupChange,
 }: {
   lead: CrmLead;
   profile: CrmUser;
@@ -89,6 +91,9 @@ export function LeadDrawer({
   onClose: () => void;
   onToast: (message: string, tone?: "success" | "alert") => void;
   onConvert: (leadId: string) => void;
+  /** bumped by the board after a cell edit that may have moved the follow-up */
+  historyRefreshKey?: number;
+  onFollowupChange?: () => void;
 }) {
   const [composerOpen, setComposerOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -225,7 +230,13 @@ export function LeadDrawer({
           </DetailRow>
 
           {/* the client's whole story, from the moment the lead came in */}
-          <LeadHistorySection leadId={lead.id} onToast={onToast} onChanged={reload} />
+          <LeadHistorySection
+            leadId={lead.id}
+            onToast={onToast}
+            onChanged={reload}
+            refreshKey={historyRefreshKey}
+            onFollowupChange={onFollowupChange}
+          />
 
           {/* score breakdown */}
           <SectionTitle>Score breakdown</SectionTitle>

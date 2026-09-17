@@ -183,3 +183,18 @@ export async function deleteLeadHistoryEntry(entryId: string, storagePath: strin
   if (storagePath) await supabase.storage.from(BUCKET).remove([storagePath]);
   return {};
 }
+
+/**
+ * The lead's custom fields as the database has them now — a Lead history
+ * reminder rewrites the "next follow up" column through a trigger, and the
+ * board must pick that up before its next cell edit writes custom back.
+ */
+export async function getLeadCustom(leadId: string): Promise<Record<string, unknown> | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("crm_leads")
+    .select("custom")
+    .eq("id", leadId)
+    .maybeSingle<{ custom: Record<string, unknown> | null }>();
+  return data ? data.custom ?? {} : null;
+}

@@ -20,6 +20,7 @@ import type { CrmLead, CrmLeadGroup, CrmStage, CrmUnit, CrmUser } from "@/lib/ty
 import { BoardHeader } from "./BoardHeader";
 import { LeadGroup } from "./LeadGroup";
 import { LeadDrawer } from "./lead-drawer";
+import { getLeadCustom } from "@/app/(app)/crm/history-actions";
 import { BOARD_COLUMNS, GROUP_COLORS, sourceColor, sourceLabel } from "./board-config";
 import { todayLocalDateString } from "@/components/crm/activities/activities-config";
 import { useColumnOrder } from "@/components/crm/column-order";
@@ -121,6 +122,15 @@ export function LeadsBoard({
   const patchLead = (leadId: string, patch: Partial<CrmLead>) =>
     setLocalLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, ...patch } : l)));
 
+  // "next follow up" and the Lead history reminder are kept in sync by the
+  // database: a saved custom edit re-reads the open history, and a history
+  // reminder change pulls the lead's custom back into the row
+  const [historyTick, setHistoryTick] = useState(0);
+  const refreshLeadCustom = async (leadId: string) => {
+    const custom = await getLeadCustom(leadId);
+    if (custom) patchLead(leadId, { custom } as Partial<CrmLead>);
+  };
+
   /** cell edits: optimistic patch, awaited persist, rollback + toast on refusal */
   const editLead = async (leadId: string, patch: Partial<CrmLead>) => {
     const prevLead = localLeads.find((l) => l.id === leadId);
@@ -136,6 +146,7 @@ export function LeadsBoard({
       save: updateLead,
       setToast,
     });
+    if (saved && "custom" in patch) setHistoryTick((t) => t + 1);
     if (saved && ("email" in patch || "phone" in patch)) {
       const next = { ...prevLead, ...patch } as CrmLead;
       const dup = await findDuplicateContact(
@@ -513,6 +524,8 @@ export function LeadsBoard({
             }}
             onToast={(message, tone) => setToast({ message, tone })}
             onConvert={handleMoveToContacts}
+            historyRefreshKey={historyTick}
+            onFollowupChange={() => refreshLeadCustom(openLead.id)}
           />
         );
       })()}
