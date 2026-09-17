@@ -1,6 +1,19 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+
+/**
+ * A collaboration decision changes rows on the boards (the number placed, the
+ * Shared / Rejected marks) through the database. The boards are client-cached
+ * for 30s (next.config staleTimes), so without this the member who just answered
+ * went back to a stale Leads page with no "Shared" chip.
+ */
+function refreshBoards() {
+  revalidatePath("/crm/leads");
+  revalidatePath("/crm/contacts");
+  revalidatePath("/crm/collaboration");
+}
 
 /** What the duplicate-phone popup needs after the guard refused a save. */
 export type DuplicatePhoneInfo = {
@@ -129,6 +142,7 @@ export async function requestCollaboration(input: {
     p_requester_share: input.requesterShare,
   });
   if (error) return { error: error.message };
+  refreshBoards();
   const d = (data ?? {}) as { error?: string; already?: boolean };
   return d.error ? { error: d.error } : { already: d.already };
 }
@@ -137,6 +151,7 @@ export async function respondCollaboration(id: string, accept: boolean, note: st
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("crm_respond_collaboration", { p_id: id, p_accept: accept, p_note: note });
   if (error) return { error: error.message };
+  refreshBoards();
   const d = (data ?? {}) as { error?: string };
   return d.error ? { error: d.error } : {};
 }
@@ -156,6 +171,7 @@ export async function reviewCollaboration(
     p_requester_share: approve ? requesterShare ?? null : null,
   });
   if (error) return { error: error.message };
+  refreshBoards();
   const d = (data ?? {}) as { error?: string };
   return d.error ? { error: d.error } : {};
 }
@@ -164,6 +180,7 @@ export async function cancelCollaboration(id: string): Promise<{ error?: string 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("crm_cancel_collaboration", { p_id: id });
   if (error) return { error: error.message };
+  refreshBoards();
   const d = (data ?? {}) as { error?: string };
   return d.error ? { error: d.error } : {};
 }

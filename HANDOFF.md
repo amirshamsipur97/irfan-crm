@@ -142,6 +142,21 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — "Shared" chip missing on the OWNER's board (this commit + migration `crm_collaboration_shared_on_converted_rows`, DEPLOYED)
+
+Report: only the second member's number showed "Shared". DB check: both rows
+of the accepted collaboration "mohamad" (babak chehrazi's lead 01095f1d… and
+arshia beigi's lead ad630d93…) DO carry `shared_collaboration_id`. Cause: the
+boards are client-cached 30s (`next.config` staleTimes.dynamic = 30) and the
+collaboration server actions never revalidated, so the member who accepted
+went back to a stale Leads page. Fix: `refreshBoards()` (revalidatePath
+/crm/leads, /crm/contacts, /crm/collaboration) after request / review /
+respond / cancel. Also: acceptance now marks the owner's converted contact (or
+a contact's source lead) shared too.
+Note: the earlier accepted request "amir" (accepted 11:56, before number
+placement existed) has no owner lead any more and no number on arshia's row;
+nothing was placed for it.
+
 ## SESSION 2026-09-17 — Collaboration: admin sets the split, rejecting needs a reason, rejected number marked on the requester's row (migration `crm_collaboration_admin_split_and_reject_reason` + this commit, DEPLOYED)
 
 - `crm_collaborations.proposed_share` (what the requester asked; backfilled).
