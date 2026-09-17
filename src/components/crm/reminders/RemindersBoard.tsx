@@ -95,7 +95,10 @@ export function RemindersBoard({
   const [composerOpen, setComposerOpen] = useState(false);
   // the reminder whose popup is open (report + next reminder)
   const [working, setWorking] = useState<ReminderRow | null>(null);
-  const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert" } | null>(null);
+  const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert"; undo?: () => void } | null>(null);
+  // a reminder ticked here stays in its group (crossed out) until the page is
+  // opened again, instead of vanishing into the collapsed Done group
+  const [stay, setStay] = useState<Record<string, Bucket>>({});
   const { pending: toDelete, ask: askDelete, close: closeDelete } = useConfirm<ReminderRow>();
   // edits in flight: a realtime echo must not overwrite an optimistic row mid-save
   const busy = useRef(0);
@@ -134,15 +137,35 @@ export function RemindersBoard({
   const patchRow = (row: ReminderRow, patch: Partial<ReminderRow>) =>
     setRows((prev) => prev.map((r) => (same(r, row) ? { ...r, ...patch } : r)));
 
-  const toggleDone = (row: ReminderRow) =>
+  const rowKey = (row: ReminderRow) => `${row.source}-${row.id}`;
+
+  const setDone = (row: ReminderRow, done: boolean) =>
     run(
-      () => patchRow(row, { reminder_done: !row.reminder_done }),
-      () => patchRow(row, { reminder_done: row.reminder_done }),
+      () => patchRow(row, { reminder_done: done }),
+      () => patchRow(row, { reminder_done: !done }),
       () =>
         row.source === "offer"
-          ? setTrackingReminderDone(row.id, !row.reminder_done)
-          : setLeadHistoryReminderDone(row.id, !row.reminder_done)
+          ? setTrackingReminderDone(row.id, done)
+          : setLeadHistoryReminderDone(row.id, done)
     );
+
+  const toggleDone = (row: ReminderRow) => {
+    const key = rowKey(row);
+    if (!row.reminder_done) {
+      const from = stay[key] ?? bucketOf(row, todayLocalDateString());
+      setStay((s) => ({ ...s, [key]: from }));
+      setDone(row, true);
+      setToast({
+        message: row.followup_source ? "Marked done. It is no longer the client's next follow up." : "Marked done.",
+        undo: () => {
+          setToast(null);
+          setDone(row, false);
+        },
+      });
+    } else {
+      setDone(row, false);
+    }
+  };
 
   const moveTime = (row: ReminderRow, iso: string | null) => {
     if (!iso) return;
@@ -174,12 +197,12 @@ export function RemindersBoard({
     return r.note.toLowerCase().includes(q) || (client?.name.toLowerCase().includes(q) ?? false);
   });
   const grouped = BUCKETS.map((b) => {
-    const list = visible.filter((r) => bucketOf(r, today) === b.key);
+    const list = visible.filter((r) => (stay[rowKey(r)] ?? bucketOf(r, today)) === b.key);
     // done: most recent first; everything else: soonest first
     if (b.key === "done") list.reverse();
     return { ...b, list };
   });
-  const openCount = grouped.filter((g) => g.key !== "done").reduce((n, g) => n + g.list.length, 0);
+  const openCount = visible.filter((r) => !r.reminder_done).length;
 
   const tableW = 6 + COLS.task + COLS.client + COLS.owner + COLS.due + COLS.by + 40;
 
@@ -314,11 +337,13 @@ export function RemindersBoard({
                             className={`${CELL} min-w-0 gap-[10px] px-[10px] transition-colors group-hover/row:bg-canvas`}
                             style={{ width: COLS.task }}
                           >
-                            <Checkbox
-                              label={row.reminder_done ? "Mark as not done" : "Mark as done"}
-                              checked={row.reminder_done}
-                              onChange={() => toggleDone(row)}
-                            />
+                            <span className="flex" title={row.reminder_done ? "Mark as not done" : "Mark as done"}>
+                              <Checkbox
+                                label={row.reminder_done ? "Mark as not done" : "Mark as done"}
+                                checked={row.reminder_done}
+                                onChange={() => toggleDone(row)}
+                              />
+                            </span>
                             <button
                               type="button"
                               onClick={() => setWorking(row)}
@@ -434,7 +459,9 @@ export function RemindersBoard({
           onToast={(message, tone) => setToast({ message, tone })}
         />
       )}
-      {toast && <SuccessToast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} />}
+      {toast && (
+        <SuccessToast message={toast.message} tone={toast.tone} onUndo={toast.undo} onClose={() => setToast(null)} />
+      )}
     </Surface>
   );
 }

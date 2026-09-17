@@ -142,6 +142,17 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — To-do list: ticking no longer looks like deleting (this commit, no migration, DEPLOYED)
+
+Report: "the square next to a name deletes it". Nothing was deleted (DB: all 5
+reminders ticked that day still exist, `reminder_done = true`); a ticked row
+jumped into the COLLAPSED Done group and vanished from view.
+Fix: a row ticked on the page stays in its group, crossed out (`stay` map
+source+id → bucket, for this page visit), and a toast says "Marked done" (+
+"It is no longer the client's next follow up." when linked) with **Undo**. The
+open count counts not-done rows. The ✕ delete already asks first (verified:
+confirm shown, Cancel keeps the row). Checkbox has a "Mark as done" tooltip.
+
 ## SESSION 2026-09-17 — To-do list popup: client box, report, next reminder (this commit, no migration, DEPLOYED)
 
 Ask: clicking a person on the To-do list opens the drawer's info box as a
