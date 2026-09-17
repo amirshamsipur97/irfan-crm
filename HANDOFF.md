@@ -114,6 +114,53 @@ an unused destructure in ContactGroup).
 > the DB-only migration `crm_lead_contact_mirror`,
 > all deployed, working tree clean.
 
+## SESSION 2026-09-17 — why counts disagree, and the cleanup (migration `crm_leads_clear_moved_when_contact_gone` APPLIED; data fix BLOCKED, awaiting the user)
+
+Started from "aylar has 23 leads moved to contacts but Contacts shows 20".
+
+**Cause, proven from the audit log:** deleting a contact runs
+`ON DELETE SET NULL` on `crm_leads.converted_contact_id`, but the green
+"moved" check (`custom.moved_to_contacts`) and `converted_at` stayed. The Leads
+board counts the check, the Contacts board counts contacts, the dashboard counts
+`converted_contact_id` — three different numbers. aylar: 23 checks → 19 live
+contacts (she deleted majid 09-06, matin reazaei + ramie 09-13, samir adwan
+09-15) + 1 contact she typed straight onto Contacts (C-0252 samir adwan) = 20.
+**Nothing was hidden by RLS; every deletion was by the lead's own agent.**
+
+**Whole-CRM audit (read-only), 09-17:** 307 leads · 211 contacts · 35 offers.
+- 🔴 **39 leads with a stale check** — 34 sara zangeneh (contacts she deleted on
+  08-05), 4 aylar, 1 mehdi mehrjooy (Ammar Elyas, 08-12). "Mohammed Ahmed"
+  (sara) has no audit row but no contact either.
+- 🔴 **4 leads with `group_id = null`** (mehdi mehrjooy, 08-11: Anil Jha, Dr Said
+  Ghorbanali Ansari, Mike ×2) — on no board for anyone.
+- 🟡 1 offer "New Offer" (sara, 08-18) with no client · 1 contact C-0113 "Amir"
+  with no owner (admins see it, agents do not) · 5 phone numbers on 12 leads
+  from before the 08-26 guard · C-0141 Omer Ahmed has two leads (fine, same
+  person). All judgement calls — reported, untouched.
+- ✅ 0 linked-without-check, 0 contacts/offers without a group, 0 wrong deal
+  stamps, 0 rows owned by a removed member.
+
+**✅ ROOT CAUSE FIXED (migration applied):** `crm_leads_clear_moved` — a BEFORE
+UPDATE OF converted_contact_id trigger; the referential SET NULL runs as an
+UPDATE, so from now on deleting a contact clears the lead's check and
+`converted_at` in the same statement. Proven first in a rolled-back
+transaction on a real pair (link=null, check gone, converted_at null). EXECUTE
+revoked from public/anon/authenticated per the 09-15 rule.
+
+**⛔ DATA FIX NOT APPLIED — the permission classifier refused the bulk UPDATE
+("Modify Shared Resources"), so the user must approve or run it.** The existing
+39 + 4 rows are still wrong until then. Backup of every value it touches:
+`backups/crm-cleanup-2026-09-17.json`. The statement (one transaction, guarded,
+idempotent, touches no phone so the phone guard stays quiet — it only fires on a
+`normalized_phone` change; the mirror trigger needs a mirrored column change, so
+nothing is pushed onto C-0252):
+1. relink lead `ab6c4af3…` (samir adwan) → C-0252, keep its check — 1 row;
+2. clear `converted_at` + `moved_to_contacts` on every other lead with no
+   contact — 38 rows (those leads reappear as open on the Leads board, which is
+   what the dashboard already counts them as);
+3. `group_id` → first lead group ("New Leads") where null/missing — 4 rows.
+Expected result `relinked 1 · stale_checks_cleared 38 · leads_given_a_group 4`.
+
 ## SESSION 2026-09-15 — system check; closed a public phone-lookup leak (migration `crm_revoke_public_definer_rpcs`, DB-ONLY, no deploy)
 
 "Check the system." Healthy everywhere except one real hole, which was mine.
