@@ -54,6 +54,15 @@ function boardChip(link: string | null): string | null {
 }
 
 const TYPE_STYLE: Record<NotificationType, { bg: string; glyph: React.ReactNode }> = {
+  followup: {
+    bg: "#fdab3d",
+    glyph: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2.5" y="3.5" width="11" height="10" rx="1.5" />
+        <path d="M2.5 6.5h11M5.5 2v3M10.5 2v3M6 10l1.5 1.5L10.5 8.5" />
+      </svg>
+    ),
+  },
   assigned: {
     bg: "#00a0a0",
     glyph: (
@@ -119,6 +128,7 @@ function rowText(n: CrmNotification) {
 const TABS = [
   { key: "all", label: "All" },
   { key: "assigned", label: "Assigned to me" },
+  { key: "followup", label: "Follow-ups" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];

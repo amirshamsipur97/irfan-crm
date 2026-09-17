@@ -9,6 +9,7 @@ import {
 } from "@/app/(app)/crm/custom-columns-actions";
 
 import { useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Surface } from "@/components/shell/AppChrome";
@@ -77,6 +78,13 @@ export function LeadsBoard({
   const [search, setSearch] = useState("");
   const [personFilter, setPersonFilter] = useState<string | null>(null);
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
+  // a follow-up reminder links to /crm/leads?lead=<id>, which opens that lead.
+  // Derived rather than copied into state by an effect, so a second reminder
+  // clicked while this board is already open still works; closing the drawer
+  // remembers the link it came from so it does not spring back open.
+  const linkedLeadId = useSearchParams().get("lead");
+  const [dismissedLink, setDismissedLink] = useState<string | null>(null);
+  const activeLeadId = openLeadId ?? (linkedLeadId && linkedLeadId !== dismissedLink ? linkedLeadId : null);
 
   const [localColumns, setLocalColumns] = useServerState(customColumns);
   const columnDrag = useColumnOrder({ boardKey: "leads", columns: BOARD_COLUMNS, savedOrder: columnOrder });
@@ -489,8 +497,8 @@ export function LeadsBoard({
           }}
         />
       )}
-      {openLeadId && (() => {
-        const openLead = localLeads.find((l) => l.id === openLeadId);
+      {activeLeadId && (() => {
+        const openLead = localLeads.find((l) => l.id === activeLeadId);
         if (!openLead) return null;
         return (
           <LeadDrawer
@@ -499,7 +507,10 @@ export function LeadsBoard({
             stages={stages}
             users={users}
             units={units}
-            onClose={() => setOpenLeadId(null)}
+            onClose={() => {
+              setOpenLeadId(null);
+              setDismissedLink(linkedLeadId);
+            }}
             onToast={(message, tone) => setToast({ message, tone })}
             onConvert={handleMoveToContacts}
           />

@@ -651,7 +651,9 @@ export type NotificationType =
   | "reservation"
   | "offer"
   | "role"
-  | "message";
+  | "message"
+  /** the lead's "next follow up" date has come round (see crm_notify_followup) */
+  | "followup";
 
 export interface CrmNotification {
   id: string;
