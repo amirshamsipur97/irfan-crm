@@ -29,6 +29,7 @@ import {
 } from "@/app/(app)/crm/reminders/actions";
 import { useDebounced, useRealtimeTable } from "@/lib/use-realtime";
 import { canManageBoards } from "@/lib/permissions";
+import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 import { ReminderPopup } from "./reminder-popup";
 import type { CrmUser } from "@/lib/types";
 
@@ -83,8 +84,12 @@ export function RemindersBoard({
   users: CrmUser[];
 }) {
   const [rows, setRows] = useState(initialReminders);
-  // an agent's list is their own follow-ups; managers and developers start on the whole team
-  const [scope, setScope] = useState<"mine" | "all">(canManageBoards(profile.role) ? "all" : "mine");
+  // an agent's list is only ever their own follow-ups (no scope switch, no
+  // filter); managers and developers start on the whole team and can filter it
+  const isManager = canManageBoards(profile.role);
+  const [scopeChoice, setScope] = useState<"mine" | "all">(isManager ? "all" : "mine");
+  const scope = isManager ? scopeChoice : "mine";
+  const qf = useQuickFilters();
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Record<Bucket, boolean>>({
     overdue: false,
@@ -190,10 +195,19 @@ export function RemindersBoard({
 
   const today = todayLocalDateString();
   const q = search.trim().toLowerCase();
-  const visible = rows.filter((r) => {
+  const inScope = rows.filter((r) => {
     const client = clientOf(r);
-    if (scope === "mine" && r.created_by !== profile.id && client?.owner !== profile.id) return false;
+    return scope === "all" || r.created_by === profile.id || client?.owner === profile.id;
+  });
+  const userName = (id: string) => userById.get(id)?.full_name || "—";
+  const filterDims: QuickFilterDim<ReminderRow>[] = [
+    { key: "owner", label: "Agent (owner)", get: (r) => clientOf(r)?.owner, format: userName },
+    { key: "by", label: "Set by", get: (r) => r.created_by, format: userName },
+    { key: "kind", label: "Client type", get: (r) => clientOf(r)?.kind },
+  ];
+  const visible = (isManager ? applyQuickFilters(inScope, filterDims, qf.state) : inScope).filter((r) => {
     if (!q) return true;
+    const client = clientOf(r);
     return r.note.toLowerCase().includes(q) || (client?.name.toLowerCase().includes(q) ?? false);
   });
   const grouped = BUCKETS.map((b) => {
@@ -220,9 +234,24 @@ export function RemindersBoard({
           showImport={false}
           searchValue={search}
           onSearch={setSearch}
+          showFilter={isManager}
+          quickFilters={
+            isManager
+              ? {
+                  dims: filterDims,
+                  rows: inScope,
+                  state: qf.state,
+                  onToggle: qf.toggle,
+                  onClear: qf.clear,
+                  visible: visible.length,
+                  noun: "reminders",
+                }
+              : undefined
+          }
         />
 
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-[12px] pb-[12px] pl-[40px] pr-[30px]">
+          {isManager ? (
           <div className="flex h-[32px] items-center rounded-[6px] border border-line-strong p-[2px]" role="tablist">
             {(
               [
@@ -244,6 +273,9 @@ export function RemindersBoard({
               </button>
             ))}
           </div>
+          ) : (
+            <span className="font-sans text-[14px] font-medium text-ink">My reminders</span>
+          )}
           <span className="font-sans text-[13px] text-ink-muted">
             {openCount} open {openCount === 1 ? "reminder" : "reminders"} · next follow ups from the Leads and
             Contacts tables, their side panels and offer Lead tracking

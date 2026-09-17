@@ -88,6 +88,7 @@ export function BoardHeader({
   searchValue,
   onSearch,
   quickFilters,
+  showFilter = true,
 }: {
   profile: CrmUser;
   title: string;
@@ -112,6 +113,8 @@ export function BoardHeader({
   onPersonFilter?: (ownerId: string | null) => void;
   /** when provided, the Filter button opens the Monday-style quick-filters panel */
   quickFilters?: QuickFiltersProp;
+  /** false hides the Filter button (a view with nothing to filter, e.g. an agent's own to-do list) */
+  showFilter?: boolean;
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -281,6 +284,7 @@ export function BoardHeader({
               </button>
             )}
           </span>
+          {showFilter && (
           <span ref={filterRef} className="relative pr-[6px]">
             <button
               type="button"
@@ -317,6 +321,7 @@ export function BoardHeader({
               )}
             </button>
           </span>
+          )}
         </div>
         <button
           type="button"

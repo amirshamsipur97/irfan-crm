@@ -142,6 +142,16 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — To-do list filter by agent, for managers only (this commit, no migration, DEPLOYED)
+
+- Manage roles (`canManageBoards`): the Filter button opens the standard quick
+  filters panel with **Agent (owner)** (the client's owner), **Set by**, and
+  **Client type** (Lead / Contact / Offer), plus the My / Everyone switch.
+- Agents: no Filter button and no switch; the page is their own list only
+  (a "My reminders" label). `BoardHeader` gained `showFilter` (default true).
+- Verified on a throwaway page as developer (panel lists agents with counts)
+  and as an agent (no Filter, no switch, only their own row).
+
 ## SESSION 2026-09-17 — To-do list count badge in the sidebar (this commit, no migration, DEPLOYED)
 
 - Right-aligned teal pill on the "To-do list" item (20px high, tabular-nums,
