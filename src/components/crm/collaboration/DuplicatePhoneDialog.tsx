@@ -5,13 +5,29 @@ import { useEffect, useState } from "react";
 import { DUPLICATE_PHONE_EVENT } from "@/components/crm/persist";
 import { requestCollaboration, type DuplicatePhoneInfo } from "@/app/(app)/crm/collaboration/actions";
 
-/** The terms a member signs when asking to work a client together (version v1). */
-export const COLLABORATION_TERMS = [
-  "The member who registered this client first stays the owner of the client.",
-  "Both of us may follow up with the client once the owner accepts, and we coordinate every contact so the client hears one voice.",
-  "Commission on any deal with this client is shared as decided by management.",
-  "This request, my signature and the owner's answer are recorded and visible to management.",
-];
+/**
+ * The terms a member signs when asking to work a client together.
+ * v2 (current) names the commission split; v1 requests left it to management.
+ */
+export function collaborationTerms(opts: {
+  version: string;
+  ownerName: string;
+  requesterName: string;
+  requesterShare: number;
+}): string[] {
+  const split =
+    opts.version === "v1"
+      ? "Commission on any deal with this client is shared as decided by management."
+      : `Commission on any deal with this client is split ${100 - opts.requesterShare}% to ${opts.ownerName} (owner) and ${opts.requesterShare}% to ${opts.requesterName}.`;
+  return [
+    "The member who registered this client first stays the owner of the client.",
+    "Both of us may follow up with the client once management approves and the owner accepts, and we coordinate every contact so the client hears one voice.",
+    split,
+    "This request, my signature, management's review and the owner's answer are recorded and visible to management.",
+  ];
+}
+
+const SHARE_PRESETS = [50, 60, 70] as const;
 
 /**
  * App-wide: listens for a board save that hit the duplicate-phone guard. The
@@ -45,6 +61,8 @@ function DuplicatePhoneDialog({
   const [message, setMessage] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [signature, setSignature] = useState("");
+  // the requester's proposed share: 50/50 by default, they may ask for more (up to 90)
+  const [share, setShare] = useState(50);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState<null | "sent" | "already">(null);
@@ -66,7 +84,7 @@ function DuplicatePhoneDialog({
     if (!canSend) return;
     setSaving(true);
     setError(null);
-    const result = await requestCollaboration({ attemptId: info.attemptId, message, signature, agreed });
+    const result = await requestCollaboration({ attemptId: info.attemptId, message, signature, agreed, requesterShare: share });
     setSaving(false);
     if (result.error) {
       setError(result.error);
@@ -147,10 +165,54 @@ function DuplicatePhoneDialog({
                 className="w-full resize-none rounded-[6px] border border-line-strong px-[10px] py-[8px] font-sans text-[13px] leading-[19px] text-ink outline-none placeholder:text-ink-muted focus:border-teal-deep"
               />
 
+              {/* commission split: 50/50 unless the requester proposes more */}
+              <div className="mt-[10px] rounded-[8px] border border-line px-[12px] py-[10px]">
+                <div className="flex items-center justify-between gap-[8px]">
+                  <p className="m-0 font-sans text-[12.5px] font-semibold text-ink">Commission split</p>
+                  <div className="flex rounded-[6px] border border-line-strong p-[2px]" role="radiogroup" aria-label="Split presets">
+                    {SHARE_PRESETS.map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        role="radio"
+                        aria-checked={share === p}
+                        onClick={() => setShare(p)}
+                        className={`h-[24px] rounded-[4px] px-[8px] font-sans text-[12px] tabular-nums transition-colors ${
+                          share === p ? "bg-teal-deep text-white" : "text-ink hover:bg-[var(--hover-ghost)]"
+                        }`}
+                      >
+                        {100 - p}/{p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <input
+                  type="range"
+                  min={50}
+                  max={90}
+                  step={5}
+                  value={share}
+                  onChange={(e) => setShare(Number(e.target.value))}
+                  aria-label="Your proposed share"
+                  className="mt-[10px] w-full accent-[#00718a]"
+                />
+                <div className="mt-[4px] flex overflow-hidden rounded-[6px] font-sans text-[12px] font-medium tabular-nums text-white">
+                  <span className="flex h-[26px] items-center justify-center bg-[#579bfc] transition-all" style={{ width: `${100 - share}%` }}>
+                    {info.ownerName} {100 - share}%
+                  </span>
+                  <span className="flex h-[26px] items-center justify-center bg-[#00718a] transition-all" style={{ width: `${share}%` }}>
+                    You {share}%
+                  </span>
+                </div>
+                <p className="m-0 pt-[6px] font-sans text-[11.5px] leading-[16px] text-ink-muted">
+                  Default is 50/50. You can propose a larger share for yourself; management and {info.ownerName} decide whether to accept it.
+                </p>
+              </div>
+
               <div className="mt-[10px] rounded-[8px] border border-line bg-canvas/50 px-[12px] py-[10px]">
                 <p className="m-0 pb-[6px] font-sans text-[12.5px] font-semibold text-ink">Collaboration agreement</p>
                 <ol className="m-0 list-decimal space-y-[3px] pl-[18px] font-sans text-[12.5px] leading-[18px] text-ink">
-                  {COLLABORATION_TERMS.map((t) => (
+                  {collaborationTerms({ version: "v2", ownerName: info.ownerName, requesterName: fullName || "me", requesterShare: share }).map((t) => (
                     <li key={t}>{t}</li>
                   ))}
                 </ol>

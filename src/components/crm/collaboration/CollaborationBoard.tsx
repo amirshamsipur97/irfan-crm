@@ -16,7 +16,7 @@ import {
   type DuplicateAttemptRow,
   type SharedClient,
 } from "@/app/(app)/crm/collaboration/actions";
-import { COLLABORATION_TERMS } from "./DuplicatePhoneDialog";
+import { collaborationTerms } from "./DuplicatePhoneDialog";
 import { useDebounced, useRealtimeTable } from "@/lib/use-realtime";
 import type { CrmUser } from "@/lib/types";
 
@@ -88,6 +88,9 @@ function RequestRow({
         </Link>
         <p className="m-0 truncate font-sans text-[12px] text-ink-muted">
           {c.entity_table === "crm_leads" ? "Lead" : "Contact"} · {c.phone} · {activityTime(c.created_at)}
+          {c.agreement_version !== "v1" && (
+            <span className="font-medium text-ink"> · split {100 - c.requester_share}/{c.requester_share}</span>
+          )}
         </p>
       </div>
       <Person userById={userById} id={c.requester_id} label="from" />
@@ -352,7 +355,12 @@ export function CollaborationBoard({
             <div className="mt-[12px] rounded-[8px] border border-line px-[12px] py-[10px]">
               <p className="m-0 pb-[4px] font-sans text-[12px] font-semibold text-ink">Agreement ({viewing.agreement_version})</p>
               <ol className="m-0 list-decimal space-y-[2px] pl-[18px] font-sans text-[12px] leading-[17px] text-ink-muted">
-                {COLLABORATION_TERMS.map((t) => (
+                {collaborationTerms({
+                  version: viewing.agreement_version,
+                  ownerName: nameOf(viewing.owner_id),
+                  requesterName: nameOf(viewing.requester_id),
+                  requesterShare: viewing.requester_share,
+                }).map((t) => (
                   <li key={t}>{t}</li>
                 ))}
               </ol>
@@ -446,10 +454,10 @@ function AnswerDialog({
         <p className="m-0 mt-[6px] font-sans text-[13px] leading-[19px] text-ink-muted">
           {review
             ? accept
-              ? `${ownerName} gets the request for ${row.entity_name ?? "this client"} and decides to accept or decline. ${requesterName} is told it was approved.`
+              ? `${ownerName} gets the request for ${row.entity_name ?? "this client"} (split ${100 - row.requester_share}% ${ownerName} / ${row.requester_share}% ${requesterName}) and decides to accept or decline. ${requesterName} is told it was approved.`
               : `The request stops here. ${requesterName} is told management did not approve it; ${ownerName} never sees it.`
             : accept
-              ? `${requesterName} will work ${row.entity_name ?? "this client"} with you and can see the client's contact details. Management is notified.`
+              ? `${requesterName} will work ${row.entity_name ?? "this client"} with you and can see the client's contact details. Commission split: you ${100 - row.requester_share}% / ${requesterName} ${row.requester_share}%. Management is notified.`
               : `${requesterName} is told the request was declined. Management is notified.`}
         </p>
         <textarea

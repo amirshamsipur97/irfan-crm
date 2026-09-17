@@ -22,6 +22,8 @@ export type CollaborationRow = {
   agreement_version: string;
   signature_name: string;
   signed_at: string;
+  /** the requester's proposed commission share (%); the owner gets 100 minus it */
+  requester_share: number;
   /** awaiting_admin → (admin approves) pending → (owner) accepted / declined */
   status: "awaiting_admin" | "pending" | "accepted" | "declined" | "cancelled";
   admin_decision: "approved" | "rejected" | null;
@@ -113,6 +115,8 @@ export async function requestCollaboration(input: {
   message: string;
   signature: string;
   agreed: boolean;
+  /** 50 (default, 50/50) up to 90 */
+  requesterShare: number;
 }): Promise<{ error?: string; already?: boolean }> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("crm_request_collaboration", {
@@ -120,6 +124,7 @@ export async function requestCollaboration(input: {
     p_message: input.message,
     p_signature: input.signature,
     p_agreed: input.agreed,
+    p_requester_share: input.requesterShare,
   });
   if (error) return { error: error.message };
   const d = (data ?? {}) as { error?: string; already?: boolean };
