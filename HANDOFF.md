@@ -142,6 +142,31 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — Collaboration: admin sets the split, rejecting needs a reason, rejected number marked on the requester's row (migration `crm_collaboration_admin_split_and_reject_reason` + this commit, DEPLOYED)
+
+- `crm_collaborations.proposed_share` (what the requester asked; backfilled).
+  `crm_review_collaboration(id, approve, note, p_requester_share int default
+  null)` (old 3-arg dropped): approving may set the final split (1–99, UI
+  10–90); rejecting REQUIRES a reason (≥3 chars) → both requester AND owner are
+  notified with "Reason: …".
+- RLS: the owner now sees a request once `admin_decision is not null`
+  (approved or rejected), so both agents read the reason.
+- `crm_leads/crm_contacts.collab_rejected_id` set on the requester's row by
+  `crm_mark_collaboration_rejected` (admin reject or owner decline); cleared by
+  BEFORE UPDATE trigger `crm_*_clear_collab_rejected` when phone/country_code
+  change. The number stays only with the owner.
+- Proven rolled back: reject without reason refused; with reason → mehdi's row
+  marked, sara reads admin_note, both get "Reason: …"; editing the phone clears
+  the mark; approving at 40 stores "40 proposed 70".
+- UI: rows show a "Split 30/70 (asked …)" pill and a red "Rejected by
+  management: <reason>" / "Declined by the owner: <reason>" line; owner's
+  Requests to me lists rejected ones too; Approve dialog has a split slider
+  starting at the requester's ask with "Reset to what <name> asked"; Reject
+  dialog needs a reason before the button enables; Details shows asked vs set.
+  PhoneCell `collabRejected`: empty cell reads "Number rejected for joint
+  collaboration", a cell with its own number shows a red "Rejected" chip
+  (tooltip explains). Realtime handlers also carry `collab_rejected_id`.
+
 ## SESSION 2026-09-17 — Accepted collaboration places the number on the requester's row + "Shared" chip (migrations `crm_collaboration_place_phone_on_accept`, `crm_collaboration_place_phone_legacy_attempts` + this commit, DEPLOYED)
 
 Ask: the second member's number is not saved (the guard refuses it); once the

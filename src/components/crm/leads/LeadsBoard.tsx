@@ -153,6 +153,7 @@ export function LeadsBoard({
         phone?: string | null;
         country_code?: string | null;
         shared_collaboration_id?: string | null;
+        collab_rejected_id?: string | null;
       };
       if (!next.id) return;
       // an accepted collaboration places the number and marks the row shared
@@ -163,8 +164,14 @@ export function LeadsBoard({
           prev.map((r) =>
             r.id === next.id &&
             ((r.shared_collaboration_id ?? null) !== (next.shared_collaboration_id ?? null) ||
-              (r.shared_collaboration_id == null && next.shared_collaboration_id != null))
-              ? { ...r, phone: next.phone ?? null, country_code: next.country_code ?? null, shared_collaboration_id: next.shared_collaboration_id ?? null }
+              (r.collab_rejected_id ?? null) !== (next.collab_rejected_id ?? null))
+              ? {
+                  ...r,
+                  phone: next.phone ?? null,
+                  country_code: next.country_code ?? null,
+                  shared_collaboration_id: next.shared_collaboration_id ?? null,
+                  collab_rejected_id: next.collab_rejected_id ?? null,
+                }
               : r
           )
         );

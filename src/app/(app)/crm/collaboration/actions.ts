@@ -24,6 +24,8 @@ export type CollaborationRow = {
   signed_at: string;
   /** the requester's proposed commission share (%); the owner gets 100 minus it */
   requester_share: number;
+  /** what the requester asked for; differs from requester_share when management changed it */
+  proposed_share: number | null;
   /** awaiting_admin → (admin approves) pending → (owner) accepted / declined */
   status: "awaiting_admin" | "pending" | "accepted" | "declined" | "cancelled";
   admin_decision: "approved" | "rejected" | null;
@@ -140,9 +142,19 @@ export async function respondCollaboration(id: string, accept: boolean, note: st
 }
 
 /** Step 1 (developer / CEO): approve and forward to the owner, or reject. */
-export async function reviewCollaboration(id: string, approve: boolean, note: string): Promise<{ error?: string }> {
+export async function reviewCollaboration(
+  id: string,
+  approve: boolean,
+  note: string,
+  requesterShare?: number
+): Promise<{ error?: string }> {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("crm_review_collaboration", { p_id: id, p_approve: approve, p_note: note });
+  const { data, error } = await supabase.rpc("crm_review_collaboration", {
+    p_id: id,
+    p_approve: approve,
+    p_note: note,
+    p_requester_share: approve ? requesterShare ?? null : null,
+  });
   if (error) return { error: error.message };
   const d = (data ?? {}) as { error?: string };
   return d.error ? { error: d.error } : {};

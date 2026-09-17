@@ -66,6 +66,7 @@ function RequestRow({
   c,
   as,
   userById,
+  nameOf,
   onView,
   onAnswer,
   onWithdraw,
@@ -73,6 +74,7 @@ function RequestRow({
   c: CollaborationRow;
   as: "owner" | "requester" | "admin";
   userById: UserMap;
+  nameOf: (id: string | null) => string;
   onView: () => void;
   onAnswer: (accept: boolean) => void;
   onWithdraw: () => void;
@@ -88,10 +90,26 @@ function RequestRow({
         </Link>
         <p className="m-0 truncate font-sans text-[12px] text-ink-muted">
           {c.entity_table === "crm_leads" ? "Lead" : "Contact"} · {c.phone} · {activityTime(c.created_at)}
-          {c.agreement_version !== "v1" && (
-            <span className="font-medium text-ink"> · split {100 - c.requester_share}/{c.requester_share}</span>
-          )}
         </p>
+        {c.agreement_version !== "v1" && (
+          <p className="m-0 pt-[3px]">
+            <span
+              title={`${nameOf(c.owner_id)} ${100 - c.requester_share}% · ${nameOf(c.requester_id)} ${c.requester_share}%`}
+              className="inline-flex h-[20px] items-center gap-[4px] rounded-[10px] bg-canvas px-[8px] font-sans text-[11.5px] font-medium tabular-nums text-ink"
+            >
+              Split {100 - c.requester_share}/{c.requester_share}
+              {c.proposed_share != null && c.proposed_share !== c.requester_share && (
+                <span className="font-normal text-ink-muted">(asked {100 - c.proposed_share}/{c.proposed_share})</span>
+              )}
+            </span>
+          </p>
+        )}
+        {c.status === "declined" && (c.admin_decision === "rejected" ? c.admin_note : c.response_note) && (
+          <p className="m-0 pt-[3px] font-sans text-[12px] leading-[17px] text-alert">
+            {c.admin_decision === "rejected" ? "Rejected by management" : "Declined by the owner"}:{" "}
+            <span className="text-ink">{c.admin_decision === "rejected" ? c.admin_note : c.response_note}</span>
+          </p>
+        )}
       </div>
       <Person userById={userById} id={c.requester_id} label="from" />
       <Person userById={userById} id={c.owner_id} label="owner" />
@@ -169,7 +187,8 @@ export function CollaborationBoard({
   useRealtimeTable("crm_phone_duplicate_attempts", reloadSoon, isAdmin);
 
   // the owner's side starts only after an admin approved the request
-  const incoming = data.collaborations.filter((c) => c.owner_id === profile.id && c.admin_decision === "approved");
+  // the owner's side starts once management reviewed it (approved, or rejected with a reason)
+  const incoming = data.collaborations.filter((c) => c.owner_id === profile.id && c.admin_decision != null);
   const mine = data.collaborations.filter((c) => c.requester_id === profile.id);
   const involves = (c: CollaborationRow) => !person || c.requester_id === person || c.owner_id === person;
   const all = data.collaborations.filter(involves);
@@ -207,6 +226,7 @@ export function CollaborationBoard({
             c={c}
             as={as}
             userById={userById}
+            nameOf={nameOf}
             onView={() => setViewing(c)}
             onAnswer={(accept) => setAnswering({ row: c, accept })}
             onWithdraw={() => withdraw(c)}
@@ -366,6 +386,12 @@ export function CollaborationBoard({
               </ol>
               <p className="m-0 pt-[8px] font-['Brush_Script_MT','Segoe_Script',cursive] text-[22px] text-ink">{viewing.signature_name}</p>
               <p className="m-0 font-sans text-[11.5px] text-ink-muted">Signed {activityTime(viewing.signed_at)}</p>
+              {viewing.proposed_share != null && viewing.proposed_share !== viewing.requester_share && (
+                <p className="m-0 pt-[4px] font-sans text-[12px] text-ink">
+                  Split changed by management: asked {100 - viewing.proposed_share}/{viewing.proposed_share}, set to{" "}
+                  {100 - viewing.requester_share}/{viewing.requester_share}.
+                </p>
+              )}
             </div>
             {viewing.admin_reviewed_at && (
               <p className="m-0 mt-[10px] font-sans text-[12.5px] text-ink">
@@ -429,10 +455,16 @@ function AnswerDialog({
 }) {
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  // management sets the final split when approving (starts at the requester's proposal)
+  const [share, setShare] = useState(row.requester_share);
+  const proposed = row.proposed_share ?? row.requester_share;
+  const reasonRequired = review && !accept;
+  const canSubmit = !saving && (!reasonRequired || note.trim().length >= 3);
   const submit = async () => {
+    if (!canSubmit) return;
     setSaving(true);
     const result = review
-      ? await reviewCollaboration(row.id, accept, note)
+      ? await reviewCollaboration(row.id, accept, note, accept ? share : undefined)
       : await respondCollaboration(row.id, accept, note);
     setSaving(false);
     if (result.error) onDone(result.error, "alert");
@@ -441,7 +473,7 @@ function AnswerDialog({
   };
   return (
     <div className="fixed inset-0 z-[96] flex items-center justify-center bg-black/30 p-[16px]" role="dialog" aria-modal="true">
-      <div className="w-[420px] max-w-full rounded-[10px] bg-white p-[22px] shadow-[0px_15px_50px_rgba(0,0,0,0.3)]">
+      <div className="w-[460px] max-w-full rounded-[10px] bg-white p-[22px] shadow-[0px_15px_50px_rgba(0,0,0,0.3)]">
         <h3 className="m-0 font-display text-[18px] font-medium text-ink">
           {review
             ? accept
@@ -454,19 +486,63 @@ function AnswerDialog({
         <p className="m-0 mt-[6px] font-sans text-[13px] leading-[19px] text-ink-muted">
           {review
             ? accept
-              ? `${ownerName} gets the request for ${row.entity_name ?? "this client"} (split ${100 - row.requester_share}% ${ownerName} / ${row.requester_share}% ${requesterName}) and decides to accept or decline. ${requesterName} is told it was approved.`
-              : `The request stops here. ${requesterName} is told management did not approve it; ${ownerName} never sees it.`
+              ? `${ownerName} gets the request for ${row.entity_name ?? "this client"} with the split below and decides to accept or decline. ${requesterName} is told it was approved.`
+              : `The request stops here. Both ${requesterName} and ${ownerName} see your reason on their Collaboration page, and the number stays with ${ownerName} only.`
             : accept
               ? `${requesterName} will work ${row.entity_name ?? "this client"} with you and can see the client's contact details. Commission split: you ${100 - row.requester_share}% / ${requesterName} ${row.requester_share}%. Management is notified.`
               : `${requesterName} is told the request was declined. Management is notified.`}
         </p>
+        {review && accept && (
+          <div className="mt-[12px] rounded-[8px] border border-line px-[12px] py-[10px]">
+            <div className="flex items-baseline justify-between gap-[8px]">
+              <p className="m-0 font-sans text-[12.5px] font-semibold text-ink">Commission split</p>
+              <p className="m-0 font-sans text-[11.5px] text-ink-muted">
+                {requesterName} asked {100 - proposed}/{proposed}
+              </p>
+            </div>
+            <input
+              type="range"
+              min={10}
+              max={90}
+              step={5}
+              value={share}
+              onChange={(e) => setShare(Number(e.target.value))}
+              aria-label={`${requesterName}'s share`}
+              className="mt-[10px] w-full accent-[#00718a]"
+            />
+            <div className="mt-[4px] flex overflow-hidden rounded-[6px] font-sans text-[12px] font-medium tabular-nums text-white">
+              <span className="flex h-[26px] min-w-0 items-center justify-center truncate bg-[#579bfc] px-[4px]" style={{ width: `${100 - share}%` }}>
+                {ownerName} {100 - share}%
+              </span>
+              <span className="flex h-[26px] min-w-0 items-center justify-center truncate bg-[#00718a] px-[4px]" style={{ width: `${share}%` }}>
+                {requesterName} {share}%
+              </span>
+            </div>
+            {share !== proposed && (
+              <button
+                type="button"
+                onClick={() => setShare(proposed)}
+                className="mt-[6px] font-sans text-[12px] text-link hover:underline"
+              >
+                Reset to what {requesterName} asked
+              </button>
+            )}
+          </div>
+        )}
+        {reasonRequired && (
+          <label className="mt-[12px] block font-sans text-[12px] text-ink-muted">
+            Reason for rejecting (required, shown to both agents)
+          </label>
+        )}
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={3}
           maxLength={2000}
-          placeholder="Note (optional)"
-          className="mt-[10px] w-full resize-none rounded-[6px] border border-line-strong px-[10px] py-[8px] font-sans text-[13px] text-ink outline-none focus:border-teal-deep"
+          placeholder={reasonRequired ? "Why is this request rejected?" : "Note (optional)"}
+          className={`mt-[6px] w-full resize-none rounded-[6px] border px-[10px] py-[8px] font-sans text-[13px] text-ink outline-none focus:border-teal-deep ${
+            reasonRequired && note.trim().length < 3 ? "border-alert/60" : "border-line-strong"
+          }`}
         />
         <div className="mt-[14px] flex justify-end gap-[8px]">
           <button type="button" onClick={onClose} className="h-[32px] rounded-[4px] px-[12px] font-sans text-[14px] text-ink hover:bg-[var(--hover-ghost)]">
@@ -474,7 +550,7 @@ function AnswerDialog({
           </button>
           <button
             type="button"
-            disabled={saving}
+            disabled={!canSubmit}
             onClick={submit}
             className={`h-[32px] rounded-[4px] px-[14px] font-sans text-[14px] text-white transition-opacity hover:opacity-90 disabled:opacity-50 ${
               accept ? "bg-teal-deep" : "bg-alert"

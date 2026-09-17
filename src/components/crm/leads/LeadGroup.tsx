@@ -435,6 +435,7 @@ export function LeadGroup({
                             phone={lead.phone}
                             countryCode={lead.country_code}
                             shared={Boolean(lead.shared_collaboration_id)}
+                            collabRejected={Boolean(lead.collab_rejected_id)}
                             onSave={(phone, code) =>
                               onPatchLead(lead.id, { phone, country_code: code })
                             }

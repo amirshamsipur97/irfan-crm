@@ -88,6 +88,8 @@ export interface CrmLead {
   temperature: string | null;
   /** set when this client is worked jointly (an accepted collaboration) */
   shared_collaboration_id?: string | null;
+  /** set on the requester's row when the number they entered was rejected for collaboration */
+  collab_rejected_id?: string | null;
   email: string | null;
   company: string | null;
   title: string | null;
@@ -207,6 +209,8 @@ export interface CrmContact {
   temperature: string | null;
   /** set when this client is worked jointly (an accepted collaboration) */
   shared_collaboration_id?: string | null;
+  /** set on the requester's row when the number they entered was rejected for collaboration */
+  collab_rejected_id?: string | null;
   name: string;
   email: string | null;
   email_label: string | null;

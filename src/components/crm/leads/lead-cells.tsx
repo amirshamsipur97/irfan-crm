@@ -147,11 +147,14 @@ export function PhoneCell({
   countryCode,
   onSave,
   shared = false,
+  collabRejected = false,
 }: {
   phone: string | null;
   countryCode: string | null;
   /** an accepted collaboration: the number is shared with another member */
   shared?: boolean;
+  /** the number this member entered was rejected for joint collaboration */
+  collabRejected?: boolean;
   /** country code and number are stored separately, never as one string */
   onSave: (phone: string | null, countryCode: string | null) => void;
 }) {
@@ -176,6 +179,16 @@ export function PhoneCell({
 
   return (
     <span className="group/cell relative flex size-full items-center justify-center gap-[4px] px-[8px]">
+      {collabRejected && (
+        <span
+          title="The number you entered was rejected for joint collaboration. See the reason on the Collaboration page. Entering a different number clears this."
+          className={`shrink-0 rounded-[9px] bg-[#e2445c]/12 px-[6px] py-[1px] font-sans text-[10.5px] font-medium leading-[14px] text-[#c23b53] ${
+            phone ? "" : "pointer-events-none absolute inset-x-[6px] top-1/2 -translate-y-1/2 truncate text-center"
+          }`}
+        >
+          {phone ? "Rejected" : "Number rejected for joint collaboration"}
+        </span>
+      )}
       {phone ? (
         <>
           {shared && (

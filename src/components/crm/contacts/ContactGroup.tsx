@@ -382,6 +382,7 @@ export function ContactGroup({
                             phone={contact.phone}
                             countryCode={contact.country_code}
                             shared={Boolean(contact.shared_collaboration_id)}
+                            collabRejected={Boolean(contact.collab_rejected_id)}
                             onSave={(phone, code) =>
                               onPatchContact(contact.id, { phone, country_code: code })
                             }
