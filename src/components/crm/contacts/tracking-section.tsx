@@ -12,6 +12,7 @@ import {
   setReminderDone,
   trackingFileUrl,
 } from "@/app/(app)/crm/contacts/tracking-actions";
+import { useDebounced, useRealtimeTable } from "@/lib/use-realtime";
 import type { CrmDeal, CrmOfferTracking } from "@/lib/types";
 
 /**
@@ -25,11 +26,14 @@ export function TrackingSection({
   offers,
   onToast,
   onChanged,
+  onFollowupChange,
 }: {
   offers: CrmDeal[];
   onToast?: (message: string, tone?: "success" | "alert") => void;
   /** fired after an entry is added/removed, so the drawer's feed refreshes */
   onChanged?: () => void;
+  /** an offer reminder is the contact's next follow up: its column may have moved */
+  onFollowupChange?: () => void;
 }) {
   const [entries, setEntries] = useState<CrmOfferTracking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +62,18 @@ export function TrackingSection({
     };
   }, [idsKey]);
 
+  // the trail follows changes made anywhere (Reminders page, the Follow Up
+  // column, another member): re-read when a change touches one of these offers
+  const reloadSoon = useDebounced(async () => {
+    setEntries(await listTracking(idsKey ? idsKey.split(",") : []));
+  }, 300);
+  useRealtimeTable("crm_offer_tracking", (payload) => {
+    const row = payload.new as { deal_id?: string };
+    const gone = payload.old as { id?: string };
+    const ids = idsKey ? idsKey.split(",") : [];
+    if ((row?.deal_id && ids.includes(row.deal_id)) || (gone?.id && entries.some((e) => e.id === gone.id))) reloadSoon();
+  });
+
   const remove = async (entry: CrmOfferTracking) => {
     const prev = entries;
     setEntries((rows) => rows.filter((r) => r.id !== entry.id));
@@ -67,6 +83,7 @@ export function TrackingSection({
       onToast?.(result.error, "alert");
       return;
     }
+    if (entry.followup_source) onFollowupChange?.();
     onChanged?.();
   };
 
@@ -77,7 +94,9 @@ export function TrackingSection({
     if (result.error) {
       setEntries((rows) => rows.map((r) => (r.id === entry.id ? { ...r, reminder_done: !next } : r)));
       onToast?.(result.error, "alert");
+      return;
     }
+    if (entry.followup_source) onFollowupChange?.();
   };
 
   const openFile = async (entry: CrmOfferTracking) => {
@@ -160,6 +179,7 @@ export function TrackingSection({
                     onDelete={() => askDelete(entry)}
                     onToggleReminder={() => toggleReminder(entry)}
                     onOpenFile={() => openFile(entry)}
+                    isNextFollowUp={Boolean(entry.followup_source)}
                   />
                 ))}
               </div>
@@ -173,6 +193,11 @@ export function TrackingSection({
                     const result = await addTrackingEntry({ dealId: offer.id, ...values });
                     if (result.error || !result.entry) return { error: result.error ?? "could not save the follow-up" };
                     setEntries((prev) => [...prev, result.entry as CrmOfferTracking]);
+                    if (values.remindAt) {
+                      // it became the contact's next follow up (and replaced any earlier one)
+                      reloadSoon();
+                      onFollowupChange?.();
+                    }
                     return {};
                   }}
                   onDone={() => {

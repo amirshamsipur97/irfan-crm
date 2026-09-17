@@ -438,7 +438,12 @@ export function ContactDrawer({
               ))}
 
               {/* per-offer follow-up trails */}
-              <TrackingSection offers={deals} onToast={onToast} onChanged={load} />
+              <TrackingSection
+                offers={deals}
+                onToast={onToast}
+                onChanged={load}
+                onFollowupChange={onFollowupChange}
+              />
             </>
           )}
         </div>

@@ -17,6 +17,11 @@ import {
   setLeadHistoryReminderDone,
 } from "@/app/(app)/crm/history-actions";
 import {
+  deleteTrackingEntry,
+  setReminderDone as setTrackingReminderDone,
+  setTrackingReminderTime,
+} from "@/app/(app)/crm/contacts/tracking-actions";
+import {
   listReminders,
   searchReminderClients,
   setReminderTime,
@@ -54,7 +59,7 @@ function clientOf(row: ReminderRow) {
   if (row.lead) return { kind: "Lead", name: row.lead.name, href: `/crm/leads?lead=${row.lead.id}`, owner: row.lead.owner_id };
   if (row.contact)
     return {
-      kind: "Contact",
+      kind: row.source === "offer" ? "Offer" : "Contact",
       name: row.contact.code ? `${row.contact.name} · ${row.contact.code}` : row.contact.name,
       href: `/crm/contacts?contact=${row.contact.id}`,
       owner: row.contact.owner_id,
@@ -102,6 +107,7 @@ export function RemindersBoard({
   const reloadSoon = useDebounced(reload, 250);
 
   useRealtimeTable("crm_lead_history", reloadSoon);
+  useRealtimeTable("crm_offer_tracking", reloadSoon);
   // a renamed lead or a new owner changes what a row shows
   useRealtimeTable("crm_leads", (payload) => {
     const id = (payload.new as { id?: string })?.id;
@@ -121,31 +127,39 @@ export function RemindersBoard({
     reloadSoon();
   };
 
-  const patchRow = (id: string, patch: Partial<ReminderRow>) =>
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  // ids are only unique per table: a row is its source + id
+  const same = (a: ReminderRow, b: ReminderRow) => a.id === b.id && a.source === b.source;
+  const patchRow = (row: ReminderRow, patch: Partial<ReminderRow>) =>
+    setRows((prev) => prev.map((r) => (same(r, row) ? { ...r, ...patch } : r)));
 
   const toggleDone = (row: ReminderRow) =>
     run(
-      () => patchRow(row.id, { reminder_done: !row.reminder_done }),
-      () => patchRow(row.id, { reminder_done: row.reminder_done }),
-      () => setLeadHistoryReminderDone(row.id, !row.reminder_done)
+      () => patchRow(row, { reminder_done: !row.reminder_done }),
+      () => patchRow(row, { reminder_done: row.reminder_done }),
+      () =>
+        row.source === "offer"
+          ? setTrackingReminderDone(row.id, !row.reminder_done)
+          : setLeadHistoryReminderDone(row.id, !row.reminder_done)
     );
 
   const moveTime = (row: ReminderRow, iso: string | null) => {
     if (!iso) return;
     run(
-      () => patchRow(row.id, { remind_at: iso, reminder_done: false }),
-      () => patchRow(row.id, { remind_at: row.remind_at, reminder_done: row.reminder_done }),
-      () => setReminderTime(row.id, iso)
+      () => patchRow(row, { remind_at: iso, reminder_done: false }),
+      () => patchRow(row, { remind_at: row.remind_at, reminder_done: row.reminder_done }),
+      () => (row.source === "offer" ? setTrackingReminderTime(row.id, iso) : setReminderTime(row.id, iso))
     );
   };
 
   const remove = (row: ReminderRow) => {
     const before = rows;
     run(
-      () => setRows((prev) => prev.filter((r) => r.id !== row.id)),
+      () => setRows((prev) => prev.filter((r) => !same(r, row))),
       () => setRows(before),
-      () => deleteLeadHistoryEntry(row.id, row.storage_path)
+      () =>
+        row.source === "offer"
+          ? deleteTrackingEntry(row.id, row.storage_path)
+          : deleteLeadHistoryEntry(row.id, row.storage_path)
     );
   };
 
@@ -207,7 +221,7 @@ export function RemindersBoard({
           </div>
           <span className="font-sans text-[13px] text-ink-muted">
             {openCount} open {openCount === 1 ? "reminder" : "reminders"} · next follow ups from the Leads and
-            Contacts tables and their side panels
+            Contacts tables, their side panels and offer Lead tracking
           </span>
         </div>
 
@@ -292,7 +306,7 @@ export function RemindersBoard({
                       const owner = client?.owner ? userById.get(client.owner) : undefined;
                       const author = row.created_by ? userById.get(row.created_by) : undefined;
                       return (
-                        <div key={row.id} className="group/row flex items-stretch" style={{ height: ROW_H }}>
+                        <div key={`${row.source}-${row.id}`} className="group/row flex items-stretch" style={{ height: ROW_H }}>
                           <span className="w-[6px] shrink-0" style={{ backgroundColor: group.color }} />
                           <span
                             className={`${CELL} min-w-0 gap-[10px] px-[10px] transition-colors group-hover/row:bg-canvas`}
@@ -304,13 +318,14 @@ export function RemindersBoard({
                               onChange={() => toggleDone(row)}
                             />
                             <span
-                              title={row.note}
+                              title={row.offer ? `${row.offer.label}: ${row.note}` : row.note}
                               className={`min-w-0 flex-1 truncate font-sans text-[14px] leading-[20px] ${
                                 row.reminder_done ? "text-ink-muted line-through" : "text-ink"
                               }`}
                             >
                               {row.note}
                             </span>
+
                             {row.followup_source && !row.reminder_done && (
                               <span
                                 title="Shown in the Leads table as next follow up"
@@ -328,7 +343,7 @@ export function RemindersBoard({
                                 </span>
                                 <Link
                                   href={client.href}
-                                  title={`Open ${client.name}`}
+                                  title={row.offer ? `${row.offer.label} (open ${client.name})` : `Open ${client.name}`}
                                   className="min-w-0 truncate font-sans text-[14px] leading-[20px] text-link hover:underline"
                                 >
                                   {client.name}
@@ -391,7 +406,11 @@ export function RemindersBoard({
       {toDelete && (
         <ConfirmDialog
           title="Delete this reminder?"
-          message="The entry is removed from the client's Lead history for everyone, attachment included. This can't be undone."
+          message={
+            toDelete.source === "offer"
+              ? "The entry is removed from this offer's Lead tracking trail for everyone, attachment included. This can't be undone."
+              : "The entry is removed from the client's Lead history for everyone, attachment included. This can't be undone."
+          }
           confirmLabel="Delete"
           onCancel={closeDelete}
           onConfirm={() => {

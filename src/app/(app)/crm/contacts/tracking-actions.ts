@@ -90,6 +90,20 @@ export async function setReminderDone(entryId: string, done: boolean) {
   return {};
 }
 
+/** Move an offer-trail reminder to a new time (re-arms it). */
+export async function setTrackingReminderTime(entryId: string, remindAt: string) {
+  if (Number.isNaN(new Date(remindAt).getTime())) return { error: "That reminder time is not a valid date." };
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("crm_offer_tracking")
+    .update({ remind_at: remindAt, reminder_done: false }, { count: "exact" })
+    .eq("id", entryId);
+  if (error) return { error: error.message };
+  if (!count) return { error: PERMISSION_ERROR };
+  revalidatePath(BOARD_PATH);
+  return {};
+}
+
 export async function deleteTrackingEntry(entryId: string, storagePath: string | null) {
   const supabase = await createClient();
   const { error, count } = await supabase

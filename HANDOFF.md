@@ -142,6 +142,36 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — Offer Lead tracking joins the reminder system (migration `crm_offer_tracking_followup_sync` + this commit, DEPLOYED)
+
+Ask: connect Offers (the contact drawer's "Lead tracking, one trail per offer")
+to the reminder system.
+
+- `crm_offer_tracking.followup_source`. A reminder logged on an offer becomes
+  the CONTACT's next follow up (Follow Up column + drawer field), and it is the
+  contact's ONE linked entry across BOTH tables: helper
+  `crm_unlink_contact_followups(contact, keep_history, keep_offer)` ticks off
+  and unlinks whatever it replaces (history or another offer entry).
+  `crm_set_contact_followup(contact, at)` writes/clears the column.
+- Trigger `crm_offer_tracking_followup` (insert/update of remind_at,
+  reminder_done/delete, depth-guarded); `crm_contacts_followup_to_history` now
+  finds a linked offer entry too (moves its time; if it is done, unlinks and
+  makes a new 'table' history entry); `crm_history_followup_to_lead` unlinks
+  linked offer entries when a contact history reminder is added. New
+  `crm_offer_tracking_rearm` (a moved time rings again). `crm_send_due_reminders`
+  skips linked offer entries (the contact owner is notified once via the
+  follow-up path). `crm_offer_tracking` added to `supabase_realtime`.
+- Proven rolled back: offer reminder → column; column → offer time; tick →
+  cleared; set after done → new table entry; second offer reminder replaces;
+  delete → cleared.
+- App: Reminders page lists offer-trail reminders (`source: 'offer'`, client
+  kind "Offer", tooltip names the offer; tick/time/delete go to
+  tracking-actions incl. new `setTrackingReminderTime`; row key = source+id);
+  TrackingSection listens on realtime, shows the "next follow up" chip and
+  refreshes the contact row via the drawer's `onFollowupChange`.
+- The one pre-existing offer reminder was left unlinked (it would have
+  overwritten a contact's current Follow Up); it still shows on the page.
+
 ## SESSION 2026-09-17 — Reminders page fed by every existing follow-up (migration `crm_followup_backfill_history` + this commit, DEPLOYED)
 
 The page showed 0: the sync only linked follow-ups changed AFTER it shipped.

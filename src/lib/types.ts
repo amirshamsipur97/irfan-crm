@@ -302,6 +302,8 @@ export interface CrmOfferTracking {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  /** 'history' on the ONE reminder that is the contact's next follow up (synced by triggers) */
+  followup_source?: "table" | "history" | null;
   /** joined author, for the avatar + name on the timeline card */
   author?: { full_name: string | null; avatar_url: string | null } | null;
 }
