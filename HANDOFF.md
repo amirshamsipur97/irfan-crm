@@ -12,12 +12,37 @@
 (The keyword is **CRM-LOAD**. Everything needed to resume is in this file;
 read the three sections above before touching anything.)
 
+### ▶️ Where the next session starts (written 2026-09-17)
+
+1. **Two things are waiting on the USER, ask about them first:**
+   - **the 43-row consistency cleanup** — 39 leads still show a green
+     "moved" check with no contact behind it, and 4 leads have no group so
+     no board shows them. The exact statement, the expected result
+     (`relinked 1 · stale_checks_cleared 38 · leads_given_a_group 4`) and the
+     backup (`backups/crm-cleanup-2026-09-17.json`) are in the 09-17
+     "why counts disagree" entry. The permission classifier refused to run it
+     ("Modify Shared Resources"); it needs the user's yes or their own run.
+   - three judgement calls from the same audit: offer "New Offer" (sara, no
+     client), contact C-0113 "Amir" with no owner, 5 phone numbers duplicated
+     on 12 leads from before the 08-26 guard.
+2. **Check the reminders really rang**, the first morning after 09-17:
+   `select type, title, created_at from crm_notifications where type =
+   'followup' order by created_at desc limit 20;` and
+   `select * from cron.job_run_details d join cron.job j using (jobid) where
+   j.jobname in ('crm-followup-reminders','crm-reminders') order by start_time desc
+   limit 10;`. On 09-17, 13 leads were due and 0 notifications had gone out
+   yet (the 08:00 run had passed before the feature landed).
+3. **Lead history has never been used by a signed-in person yet**
+   (0 entries at ship). The first real entry is the real end-to-end test: an
+   entry with a reminder two minutes out should appear in the author's bell
+   within a minute of its time.
+
 ### 🔴 The system is LIVE — read this before your first command
 
-As of **2026-08-24** the CRM is in daily production use by **18 active
-members (13 agents, 2 CEOs, 3 developers)** entering real client data
-right now: **202 leads · 124 contacts · 18 offers · 1 accepted deal ·
-31 developer accounts**. It grows between sessions — re-count, never
+As of **2026-09-17** the CRM is in daily production use by **15 active
+members (10 agents, 1 CEO, 4 developers)** entering real client data
+right now: **307 leads · 213 contacts · 33 offers · 1 accepted deal ·
+38 developer accounts**. It grows between sessions — re-count, never
 quote these numbers back.
 
 1. **Never wipe, reseed or "clean up" data.** Rows appear between your
@@ -28,7 +53,7 @@ quote these numbers back.
 2. **Ask before anything destructive or permission-widening.** Two
    examples from 08-03 that were confirmed first: zeroing the boards, and
    opening group-delete to every role.
-3. `git log --oneline -5` — the tree must be clean and end at **`06d11ed`**
+3. `git log --oneline -5` — the tree must be clean and end at **`e121141`**
    (or later). `git status` must be empty.
 4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
    GitHub does NOT deploy. Push after every commit anyway (backup):
@@ -36,15 +61,19 @@ quote these numbers back.
    stay private**: this file and the git history contain plaintext
    passwords.
 5. **Verify in the browser before saying it works.** `preview_start` with
-   launch name `irfan-crm` (port 3070), then `/preview` auto-login. That
-   account (`preview@irfancrm.local`, developer) is kept **DEACTIVATED** —
-   re-activate it via SQL with the privilege-guard trigger disabled, and
-   set it back to inactive when you are done. Every session this rule was
-   followed; keep it.
+   launch name `irfan-crm` (port 3070). ⚠️ **The `/preview` auto-login no
+   longer works:** `preview@irfancrm.local` is deactivated and the SQL that
+   re-activates it is REFUSED by the permission classifier since 08-26. What
+   works instead, every time since: a throwaway client page under
+   `src/app/preview-*/page.tsx` (public because `PUBLIC_PATHS` matches
+   `startsWith("/preview")`) rendering the REAL component with fixtures —
+   recipe item 5 in "Testing in the Browser pane". Delete it before committing.
+   Prove the database half by impersonation inside `begin … rollback`
+   (pick targets as the privileged role BEFORE `set local role`).
 6. **Roles change between sessions.** Re-read `crm_users` at the start
    instead of trusting any roster written here.
 
-### Health baseline (measured at close of 2026-08-12)
+### Health baseline (re-measured 2026-09-17, unchanged since 2026-08-12)
 
 `npx tsc --noEmit` → clean. `npx next build` → clean.
 `npx eslint src` → **37 errors + 3 warnings, all pre-existing and all
@@ -110,9 +139,8 @@ an unused destructure in ContactGroup).
    This proved both 08-26 changes on the real markup.
    **Delete the file before committing — it ships as a public route.**
 
-> Updated: **2026-08-26** — committed and pushed through `06d11ed`, plus
-> the DB-only migration `crm_lead_contact_mirror`,
-> all deployed, working tree clean.
+> Updated: **2026-09-17** — committed and pushed through `e121141`, every
+> migration applied, all deployed, working tree clean.
 
 ## SESSION 2026-09-17 — Lead history + reminders that ring (migration `crm_lead_history_and_reminders` + commit `06d11ed`, DEPLOYED)
 
@@ -1489,7 +1517,54 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
-## 📊 LIVE SYSTEM STATE — end of 2026-08-26 (CURRENT)
+## 📊 LIVE SYSTEM STATE — end of 2026-09-17 (CURRENT)
+
+**https://crm.irfaninvest.com** · code at `06d11ed` (+ HANDOFF commits) ·
+production `dpl_FgGjHP4PLdhunPLPPhPy9tgdYPDE` · everything deployed.
+
+**Team: 15 active** — 10 agents · 1 CEO · 4 developers (the user's own login
+is amiralishamsipur@gmail.com, Google-only). The roster moves; re-read
+`crm_users`.
+
+**Real data, re-counted 2026-09-17:** 307 leads · 213 contacts · 33 offers ·
+1 accepted deal · 38 developer accounts · 0 Lead history entries (shipped
+that day) · 0 follow-up notifications sent yet.
+
+**Scheduled jobs (pg_cron IS installed — use it for anything periodic):**
+| job | when (UTC) | does |
+|---|---|---|
+| `crm-reminders` | every minute | Lead history + offer-trail reminders → bell |
+| `crm-followup-reminders` | 04:00 (08:00 Muscat) | "next follow up" dates → owner's bell |
+| `crm-rescore-leads` | 02:00 | rescoring |
+| `crm-expire-reservations` | :15 hourly | reservation expiry |
+
+**Shipped 08-26 → 09-17** (entries above, newest first): Lead history on
+both drawers with reminders that ring (+ offer-trail reminders finally sent) ·
+"next follow up" date notifies the owner · stale "moved" check now cleared
+automatically when a contact is deleted · public phone→agent lookup leak
+closed (definer RPCs revoked) · dashboard bar charts fixed (owner chart →
+ranked horizontal) · offer numbering stable per client · lead↔contact field
+mirror · duplicate-phone guard · sticky column headers · lit row on click ·
+single row tick.
+
+**Rules learned in this stretch (keep them):**
+- every new SECURITY DEFINER helper that is not an RPC gets
+  `revoke execute ... from public, anon, authenticated` in the same migration;
+- probe a definer function with arguments that reach EVERY branch;
+- a bulk UPDATE on live rows can be refused by the permission classifier —
+  leave the exact statement + backup in HANDOFF and ask the user;
+- notifications to a person who acted themselves must NOT go through
+  `crm_notify` (it skips self-actions).
+
+**Known open items**
+1. ⛔ **43-row cleanup awaiting the user** (see "Where the next session starts").
+2. **Email is still dark** — no RESEND_API_KEY / verified domain, no Zoho SMTP;
+   temp passwords show on screen only, every "Send email" returns 503.
+3. Auth "leaked password protection" still off (Supabase dashboard toggle).
+4. Column drag is wired on Leads, Contacts, Offers only (7 boards to go).
+5. Export to Excel is wired on Leads only.
+
+## 📊 LIVE SYSTEM STATE — end of 2026-08-26 (superseded)
 
 **https://crm.irfaninvest.com** · code at `97d6e65` · everything deployed.
 
