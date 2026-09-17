@@ -349,7 +349,13 @@ export function TrailComposer({
   onDone,
   onCancel,
   onToast,
+  reminderLabel = "Reminder (optional)",
+  saveLabel = "Add",
+  notePlaceholder = "What happened? Called the client, sent the brochure, agreed to meet…",
 }: {
+  reminderLabel?: string;
+  saveLabel?: string;
+  notePlaceholder?: string;
   /** bucket folder for an attachment, e.g. `tracking/<dealId>` */
   uploadFolder: string;
   /** a message here stops the save before anything is uploaded */
@@ -477,7 +483,7 @@ export function TrailComposer({
           </label>
         )}
         <label className="flex flex-col gap-[2px]">
-          <span className="font-sans text-[11px] text-ink-muted">Reminder (optional)</span>
+          <span className="font-sans text-[11px] text-ink-muted">{reminderLabel}</span>
           <input
             type="datetime-local"
             value={remind}
@@ -493,7 +499,7 @@ export function TrailComposer({
         onChange={(e) => setNote(e.target.value)}
         rows={3}
         maxLength={4000}
-        placeholder="What happened? Called the client, sent the brochure, agreed to meet…"
+        placeholder={notePlaceholder}
         className="mt-[6px] w-full resize-none rounded-[4px] border border-line-strong px-[8px] py-[6px] font-sans text-[13px] leading-[19px] text-ink outline-none placeholder:text-ink-muted focus:border-teal-deep"
       />
 
@@ -521,7 +527,7 @@ export function TrailComposer({
             onClick={submit}
             className="h-[30px] rounded-[4px] bg-teal-deep px-[12px] font-sans text-[12.5px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {saving ? "Saving…" : "Add"}
+            {saving ? "Saving…" : saveLabel}
           </button>
         </span>
       </div>

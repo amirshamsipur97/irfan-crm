@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { Surface } from "@/components/shell/AppChrome";
 import { Icon } from "@/components/ui/Icon";
@@ -30,6 +29,7 @@ import {
 } from "@/app/(app)/crm/reminders/actions";
 import { useDebounced, useRealtimeTable } from "@/lib/use-realtime";
 import { canManageBoards } from "@/lib/permissions";
+import { ReminderPopup } from "./reminder-popup";
 import type { CrmUser } from "@/lib/types";
 
 type Bucket = "overdue" | "today" | "upcoming" | "done";
@@ -93,6 +93,8 @@ export function RemindersBoard({
     done: true,
   });
   const [composerOpen, setComposerOpen] = useState(false);
+  // the reminder whose popup is open (report + next reminder)
+  const [working, setWorking] = useState<ReminderRow | null>(null);
   const [toast, setToast] = useState<{ message: string; tone?: "success" | "alert" } | null>(null);
   const { pending: toDelete, ask: askDelete, close: closeDelete } = useConfirm<ReminderRow>();
   // edits in flight: a realtime echo must not overwrite an optimistic row mid-save
@@ -317,14 +319,16 @@ export function RemindersBoard({
                               checked={row.reminder_done}
                               onChange={() => toggleDone(row)}
                             />
-                            <span
-                              title={row.offer ? `${row.offer.label}: ${row.note}` : row.note}
-                              className={`min-w-0 flex-1 truncate font-sans text-[14px] leading-[20px] ${
+                            <button
+                              type="button"
+                              onClick={() => setWorking(row)}
+                              title={`${row.offer ? `${row.offer.label}: ` : ""}${row.note} (open to report)`}
+                              className={`min-w-0 flex-1 truncate text-left font-sans text-[14px] leading-[20px] hover:underline ${
                                 row.reminder_done ? "text-ink-muted line-through" : "text-ink"
                               }`}
                             >
                               {row.note}
-                            </span>
+                            </button>
 
                             {row.followup_source && !row.reminder_done && (
                               <span
@@ -341,13 +345,14 @@ export function RemindersBoard({
                                 <span className="shrink-0 rounded-[4px] bg-canvas px-[5px] font-sans text-[11px] leading-[16px] text-ink-muted">
                                   {client.kind}
                                 </span>
-                                <Link
-                                  href={client.href}
-                                  title={row.offer ? `${row.offer.label} (open ${client.name})` : `Open ${client.name}`}
-                                  className="min-w-0 truncate font-sans text-[14px] leading-[20px] text-link hover:underline"
+                                <button
+                                  type="button"
+                                  onClick={() => setWorking(row)}
+                                  title={row.offer ? `${row.offer.label}: ${client.name}` : client.name}
+                                  className="min-w-0 truncate text-left font-sans text-[14px] leading-[20px] text-link hover:underline"
                                 >
                                   {client.name}
-                                </Link>
+                                </button>
                               </>
                             ) : (
                               <span className="font-sans text-[13px] text-ink-muted">—</span>
@@ -418,6 +423,15 @@ export function RemindersBoard({
             closeDelete();
             remove(row);
           }}
+        />
+      )}
+      {working && (
+        <ReminderPopup
+          row={working}
+          users={users}
+          onClose={() => setWorking(null)}
+          onSaved={reloadSoon}
+          onToast={(message, tone) => setToast({ message, tone })}
         />
       )}
       {toast && <SuccessToast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} />}

@@ -122,3 +122,83 @@ export async function setReminderTime(entryId: string, remindAt: string): Promis
   if (!count) return { error: PERMISSION_ERROR };
   return {};
 }
+
+export type ReminderClientDetails = {
+  kind: "lead" | "contact";
+  id: string;
+  name: string;
+  code: string | null;
+  phone: string | null;
+  country_code: string | null;
+  email: string | null;
+  country: string | null;
+  temperature: string | null;
+  source: string | null;
+  budget: number | null;
+  preferred_area: string | null;
+  owner_id: string | null;
+  recent: { id: string; entry_type: string; entry_date: string; note: string; created_at: string }[];
+};
+
+/**
+ * What the To-do list popup shows about a client: the drawer's key details
+ * and the latest few entries of its trail (Lead history, or the offer's
+ * Lead tracking for an offer reminder). Read through the caller's session.
+ */
+export async function getReminderClient(input: {
+  leadId: string | null;
+  contactId: string | null;
+  dealId: string | null;
+}): Promise<ReminderClientDetails | null> {
+  const supabase = await createClient();
+  type Recent = ReminderClientDetails["recent"];
+  const RECENT = "id, entry_type, entry_date, note, created_at";
+
+  if (input.leadId) {
+    const [{ data: lead }, { data: recent }] = await Promise.all([
+      supabase
+        .from("crm_leads")
+        .select("id, name, phone, country_code, email, country, temperature, source, budget, owner_id")
+        .eq("id", input.leadId)
+        .maybeSingle(),
+      supabase
+        .from("crm_lead_history")
+        .select(RECENT)
+        .eq("lead_id", input.leadId)
+        .order("created_at", { ascending: false })
+        .limit(4)
+        .returns<Recent>(),
+    ]);
+    if (!lead) return null;
+    return { kind: "lead", code: null, preferred_area: null, ...lead, recent: recent ?? [] } as ReminderClientDetails;
+  }
+
+  if (input.contactId) {
+    const [{ data: contact }, { data: recent }] = await Promise.all([
+      supabase
+        .from("crm_contacts")
+        .select("id, name, code, phone, country_code, email, country, temperature, lead_source, budget, preferred_area, owner_id")
+        .eq("id", input.contactId)
+        .maybeSingle(),
+      input.dealId
+        ? supabase
+            .from("crm_offer_tracking")
+            .select(RECENT)
+            .eq("deal_id", input.dealId)
+            .order("created_at", { ascending: false })
+            .limit(4)
+            .returns<Recent>()
+        : supabase
+            .from("crm_lead_history")
+            .select(RECENT)
+            .eq("contact_id", input.contactId)
+            .order("created_at", { ascending: false })
+            .limit(4)
+            .returns<Recent>(),
+    ]);
+    if (!contact) return null;
+    const { lead_source, ...rest } = contact as typeof contact & { lead_source: string | null };
+    return { kind: "contact", source: lead_source, ...rest, recent: recent ?? [] } as ReminderClientDetails;
+  }
+  return null;
+}

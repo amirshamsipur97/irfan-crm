@@ -142,6 +142,27 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — To-do list popup: client box, report, next reminder (this commit, no migration, DEPLOYED)
+
+Ask: clicking a person on the To-do list opens the drawer's info box as a
+popup; the agent writes the report of what they did, it is saved in the
+client's side panel too, and the next reminder can be set right there.
+
+- `reminders/reminder-popup.tsx` (`ReminderPopup`), opened by clicking the task
+  text or the client name (the name no longer navigates; "Open full profile →"
+  inside the popup does). Shows the reminder being worked (note, due, overdue),
+  a Client box (owner, phone tel:, email mailto:, country, status, source,
+  budget, area) and the latest 4 trail entries, via new action
+  `getReminderClient({leadId, contactId, dealId})` (caller's session / RLS).
+- Report = the shared `TrailComposer` (now takes `reminderLabel`, `saveLabel`,
+  `notePlaceholder`): "Next reminder (optional)", "Save report & mark done".
+  Save writes to the client's own trail (lead/contact Lead history, or the
+  offer's Lead tracking for an offer reminder), then ticks the worked reminder
+  off. A next reminder becomes the client's next follow up through the
+  existing triggers (the worked one is already replaced; ticking it again is a
+  no-op on an unlinked row).
+- Not verified signed in (preview only shows the layout).
+
 ## SESSION 2026-09-17 — "To-do list" rename + notification check (migration `crm_realtime_notifications` + this commit, DEPLOYED)
 
 - Sidebar item and page title renamed Reminders → **To-do list** (route stays
