@@ -2,6 +2,9 @@
 
 import type { Dispatch, SetStateAction } from "react";
 
+/** fired with a DuplicatePhoneInfo when a save hits the duplicate-phone guard */
+export const DUPLICATE_PHONE_EVENT = "crm:duplicate-phone";
+
 export type BoardToast = {
   message: string;
   tone?: "success" | "alert";
@@ -39,7 +42,7 @@ export async function applyRowEdit<T extends { id: string }>(opts: {
   /** the row as it was before the edit — the source of the rollback values */
   prev: T | undefined;
   setRows: Dispatch<SetStateAction<T[]>>;
-  save: (id: string, patch: Record<string, unknown>) => Promise<{ error?: string }>;
+  save: (id: string, patch: Record<string, unknown>) => Promise<{ error?: string; duplicate?: unknown }>;
   setToast: (toast: BoardToast) => void;
   /** background writes (e.g. activity logging) skip the confirmation toast */
   silent?: boolean;
@@ -65,7 +68,12 @@ export async function applyRowEdit<T extends { id: string }>(opts: {
   const result = await save(id, patch as Record<string, unknown>);
   if (result?.error) {
     if (previous) merge(previous);
-    setToast({ message: result.error, tone: "alert" });
+    if (result.duplicate && typeof window !== "undefined") {
+      // someone else holds this phone: the app-wide Collaboration popup takes over
+      window.dispatchEvent(new CustomEvent(DUPLICATE_PHONE_EVENT, { detail: result.duplicate }));
+    } else {
+      setToast({ message: result.error, tone: "alert" });
+    }
     return false;
   }
 

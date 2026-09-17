@@ -72,6 +72,7 @@ export const ICONS = {
   navActivities: "/figma/ws_imgVariant46.svg",
   navDashboard: "/figma/ws_imgVariant47.svg",
   navReminders: "/figma/ws_navReminders.svg",
+  navCollaboration: "/figma/ws_navCollaboration.svg",
   syncCheck: "/figma/ws_imgVariant48.svg",
   syncChevron: "/figma/ws_imgVector.svg",
   syncClose: "/figma/ws_imgVariant49.svg",

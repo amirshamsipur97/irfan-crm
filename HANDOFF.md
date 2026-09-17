@@ -142,6 +142,58 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — Collaboration: duplicate phone numbers → signed joint-collaboration requests (migration `crm_collaboration` + this commit, DEPLOYED)
+
+Ask: a "Collaboration" item in the left menu. When a member enters a phone
+another member already registered, a popup (not just the toast) says who holds
+it, and lets them sign an agreement and send a collaboration request to that
+first registrant, who gets a notification and answers. Developers/CEO are told
+about EVERY duplicate-number entry (requested or not) and every request, and
+can follow both people.
+
+**Database** (all writes through definer RPCs; tables are read-only via RLS):
+- `crm_phone_duplicate_attempts` (who, board, row, normalized phone, existing
+  table/id/name/owner, collaboration_id). RLS: own rows or `crm_is_admin()`.
+- `crm_collaborations` (entity, phone, owner = first registrant, requester,
+  message, agreement_version 'v1', signature_name, signed_at, status
+  pending/accepted/declined/cancelled, responded_by/at, response_note). RLS:
+  requester, owner or admin.
+- `crm_report_duplicate_phone(board,row_id,cc,phone)`: same match rules as
+  `crm_find_phone_owner`, logs the attempt, alerts admins
+  (`crm_notify_admins`: active developer + ceo, type `collaboration`, max one
+  alert per member+client per 10 min), returns attempt id, board label, owner
+  name, is_own. Only owner NAME + board is returned (what the guard message
+  already says).
+- `crm_request_collaboration(attempt, message, signature, agreed)` (must be the
+  attempter, agreed, signature ≥3 chars; dedupes pending/accepted) → notifies
+  owner + admins. `crm_respond_collaboration(id, accept, note)` (owner or
+  admin, pending only) → notifies requester + admins.
+  `crm_cancel_collaboration(id)` (requester). `crm_collaboration_clients()`:
+  accepted collaborations' client basics for the parties/admins.
+- Both tables in `supabase_realtime`. Whole flow proven rolled back with real
+  users (mehdi sarraf → sara zangeneh's lead: guard refused, attempt logged, 5
+  admins alerted, owner notified, sara accepted, mehdi sees the client).
+
+**App:**
+- `updateLead` / `updateContact`: on the guard error (23505 + "already
+  registered") call `duplicateFromGuardError` → return `{error, duplicate}`.
+  `applyRowEdit` rolls back and dispatches `crm:duplicate-phone` instead of the
+  toast; `DuplicatePhoneHost` (mounted once in AppChrome) opens
+  `DuplicatePhoneDialog`: who holds it, "management notified", Request
+  collaboration → message, agreement (4 terms, `COLLABORATION_TERMS`), agree
+  checkbox, typed-name signature (script font) + date, "Sign & send request".
+- `/crm/collaboration` (`CollaborationBoard`): agents: Requests to me
+  (Accept/Decline with note), My requests (Withdraw), Shared clients (accepted:
+  phone/email/status). Developer+CEO also: All requests and Duplicate numbers
+  (every attempt, entered by, number, existing client, owner, collaboration
+  status), filter by Member (either side). Details dialog shows message,
+  agreement, signature and answer. Realtime.
+- Sidebar "Collaboration" (icon `navCollaboration`) under To-do list with a
+  purple badge = pending requests to me (all pending for developer/ceo).
+  Bell: type `collaboration` (purple) + "Collaboration" tab.
+- ⚠️ Accepting does NOT change row permissions on the boards (RLS untouched):
+  the collaborator sees the client on "Shared clients" only.
+
 ## SESSION 2026-09-17 — Lead status and Contact status are SEPARATE (migration `crm_separate_lead_and_contact_status` + this commit, DEPLOYED)
 
 Ask: measure the client's pulse at each stage separately: the lead's status and

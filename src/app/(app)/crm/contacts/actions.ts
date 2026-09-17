@@ -1,5 +1,6 @@
 "use server";
 
+import { duplicateFromGuardError } from "@/app/(app)/crm/collaboration/actions";
 import { revalidatePath } from "next/cache";
 import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
@@ -74,7 +75,12 @@ export async function updateContact(contactId: string, patch: Record<string, unk
     .from("crm_contacts")
     .update(Object.fromEntries(entries), { count: "exact" })
     .eq("id", contactId);
-  if (error) return { error: error.message };
+  if (error) {
+    // the duplicate-phone guard: log the attempt (admins are told) and let the
+    // board open the collaboration popup instead of a bare error toast
+    const duplicate = await duplicateFromGuardError("contacts", contactId, patch, error);
+    return duplicate ? { error: error.message, duplicate } : { error: error.message };
+  }
   if (!count) return { error: PERMISSION_ERROR };
   revalidatePath(BOARD_PATH);
   return {};

@@ -709,7 +709,9 @@ export type NotificationType =
   | "role"
   | "message"
   /** the lead's "next follow up" date has come round (see crm_notify_followup) */
-  | "followup";
+  | "followup"
+  /** duplicate phone numbers and joint-collaboration requests (see crm_report_duplicate_phone) */
+  | "collaboration";
 
 export interface CrmNotification {
   id: string;

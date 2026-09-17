@@ -12,9 +12,11 @@ import type { IconName } from "@/lib/figma-icons";
 import { canAnimate } from "@/lib/motion";
 import type { CrmRole } from "@/lib/types";
 import { countTodoReminders } from "@/app/(app)/crm/reminders/actions";
+import { countPendingCollaborations } from "@/app/(app)/crm/collaboration/actions";
 import { useDebounced, useRealtimeTable } from "@/lib/use-realtime";
 
 const TODO_HREF = "/crm/reminders";
+const COLLAB_HREF = "/crm/collaboration";
 
 /**
  * Today + Upcoming count for the To-do list item. Re-counted on any reminder
@@ -41,6 +43,26 @@ function useTodoCount() {
   return count;
 }
 
+/** Pending collaboration requests waiting for an answer (mine; all for admins). */
+function useCollabCount() {
+  const [count, setCount] = useState<number | null>(null);
+  const refresh = useDebounced(async () => {
+    try {
+      setCount(await countPendingCollaborations());
+    } catch {
+      // keep the last value
+    }
+  }, 400);
+  useEffect(() => {
+    refresh();
+    const t = setInterval(refresh, 120_000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useRealtimeTable("crm_collaborations", refresh);
+  return count;
+}
+
 type NavItem = { label: string; icon: IconName; href: string };
 
 /**
@@ -53,6 +75,8 @@ export const PRIMARY_NAV: NavItem[] = [
   // the day's to-do list: every Lead history reminder, synced with the
   // Leads "next follow up" column and each client's drawer
   { label: "To-do list", icon: "navReminders", href: "/crm/reminders" },
+  // duplicate phone numbers → joint-collaboration requests (admins see all)
+  { label: "Collaboration", icon: "navCollaboration", href: "/crm/collaboration" },
   { label: "Leads", icon: "navLeads", href: "/crm/leads" },
   { label: "Contacts", icon: "navContacts", href: "/crm/contacts" },
   // Offers = every proposal priced against a contact's demand; an accepted
@@ -81,6 +105,7 @@ export function WorkspaceSidebar(_props: { role?: CrmRole }) {
   const pathname = usePathname();
   const rootRef = useRef<HTMLElement>(null);
   const todoCount = useTodoCount();
+  const collabCount = useCollabCount();
 
   const renderItem = (item: NavItem) => {
     const active =
@@ -97,18 +122,25 @@ export function WorkspaceSidebar(_props: { role?: CrmRole }) {
           <span className="truncate font-sans text-[14px] leading-[20px] text-ink">
             {item.label}
           </span>
-          {item.href === TODO_HREF ? (
+          {item.href === TODO_HREF || item.href === COLLAB_HREF ? (
             <span className="ml-auto flex shrink-0 items-center gap-[6px]">
               <LinkSpinner className="" />
-              {todoCount != null && todoCount > 0 && (
-                <span
-                  aria-label={`${todoCount} due today or upcoming`}
-                  title={`${todoCount} due today or upcoming`}
-                  className="flex h-[20px] min-w-[20px] items-center justify-center rounded-[10px] bg-teal-deep px-[6px] font-sans text-[12px] font-medium leading-none tabular-nums text-white"
-                >
-                  {todoCount > 99 ? "99+" : todoCount}
-                </span>
-              )}
+              {(() => {
+                const n = item.href === TODO_HREF ? todoCount : collabCount;
+                const tip = item.href === TODO_HREF ? "due today or upcoming" : "collaboration requests waiting";
+                if (n == null || n <= 0) return null;
+                return (
+                  <span
+                    aria-label={`${n} ${tip}`}
+                    title={`${n} ${tip}`}
+                    className={`flex h-[20px] min-w-[20px] items-center justify-center rounded-[10px] px-[6px] font-sans text-[12px] font-medium leading-none tabular-nums text-white ${
+                      item.href === TODO_HREF ? "bg-teal-deep" : "bg-[#a25ddc]"
+                    }`}
+                  >
+                    {n > 99 ? "99+" : n}
+                  </span>
+                );
+              })()}
             </span>
           ) : (
             <LinkSpinner />

@@ -51,11 +51,23 @@ function boardChip(link: string | null): string | null {
     units: "Units",
     viewings: "Viewings",
     emails: "Emails",
+    collaboration: "Collaboration",
+    reminders: "To-do list",
   };
   return names[seg] ?? null;
 }
 
 const TYPE_STYLE: Record<NotificationType, { bg: string; glyph: React.ReactNode }> = {
+  collaboration: {
+    bg: "#a25ddc",
+    glyph: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="5.5" cy="5.5" r="2.2" />
+        <circle cx="10.8" cy="6.2" r="1.9" />
+        <path d="M1.8 13c.6-2 2-3.1 3.7-3.1s3.1 1.1 3.7 3.1M9.4 10.2c.5-.2.9-.3 1.4-.3 1.5 0 2.7.9 3.3 2.6" />
+      </svg>
+    ),
+  },
   followup: {
     bg: "#fdab3d",
     glyph: (
@@ -131,6 +143,7 @@ const TABS = [
   { key: "all", label: "All" },
   { key: "assigned", label: "Assigned to me" },
   { key: "followup", label: "Follow-ups" },
+  { key: "collaboration", label: "Collaboration" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];

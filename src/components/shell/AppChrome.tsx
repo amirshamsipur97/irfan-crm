@@ -3,6 +3,7 @@
 import { TopBar } from "./TopBar";
 import { IconRail } from "./IconRail";
 import type { CrmUser } from "@/lib/types";
+import { DuplicatePhoneHost } from "@/components/crm/collaboration/DuplicatePhoneDialog";
 
 /**
  * Global application chrome per the design:
@@ -23,6 +24,8 @@ export function AppChrome({
         <IconRail role={profile.role} />
         <div className="relative flex min-w-0 flex-1">{children}</div>
       </div>
+      {/* a save that hits the duplicate-phone guard opens the collaboration popup */}
+      <DuplicatePhoneHost fullName={profile.full_name ?? ""} />
     </div>
   );
 }
