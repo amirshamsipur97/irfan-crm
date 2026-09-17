@@ -186,9 +186,9 @@ export function RemindersBoard({
       <div className="flex h-full flex-col">
         <BoardHeader
           profile={profile}
-          title="Reminders"
-          tabs={["To-do list"]}
-          activeTab="To-do list"
+          title="To-do list"
+          tabs={["Reminders"]}
+          activeTab="Reminders"
           onTabChange={() => {}}
           newLabel="New reminder"
           onNew={() => setComposerOpen((v) => !v)}

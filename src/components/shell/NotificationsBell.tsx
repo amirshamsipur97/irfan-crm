@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRealtimeTable } from "@/lib/use-realtime";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Icon } from "@/components/ui/Icon";
@@ -35,7 +36,8 @@ function dayLabel(iso: string) {
 /** board chip from the notification link, e.g. /crm/deals -> Deals */
 function boardChip(link: string | null): string | null {
   if (!link) return null;
-  const seg = link.split("/").filter(Boolean)[1];
+  // follow-up links carry "?lead=<id>" / "?contact=<id>": the board is the path only
+  const seg = link.split(/[?#]/)[0].split("/").filter(Boolean)[1];
   if (!seg) return null;
   const names: Record<string, string> = {
     leads: "Leads",
@@ -176,6 +178,13 @@ export function NotificationsBell({ profile }: { profile: CrmUser }) {
     const t = setInterval(fetchCount, POLL_MS);
     return () => clearInterval(t);
   }, [fetchCount]);
+
+  // a new notification lights the bell at once (the poll stays as a fallback);
+  // RLS limits the stream to this member's own rows
+  useRealtimeTable("crm_notifications", () => {
+    fetchCount();
+    if (open) fetchList();
+  });
 
   // opening the panel is a user event, so the fetch belongs to the click that
   // opened it rather than to an effect that mirrors `open`

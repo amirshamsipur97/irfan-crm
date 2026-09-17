@@ -142,6 +142,25 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — "To-do list" rename + notification check (migration `crm_realtime_notifications` + this commit, DEPLOYED)
+
+- Sidebar item and page title renamed Reminders → **To-do list** (route stays
+  `/crm/reminders`; the page's view tab is now "Reminders").
+- **Notification audit (per agent):** every follow-up notification so far went
+  to the lead's owner (0 mismatches: babak chehrazi 4, sara zangeneh 3, all
+  unread); impersonating babak / sara / mehdi sarraf, each reads only their own
+  rows (`notifications select own`); `crm-reminders` and
+  `crm-timed-followups` all succeeded in the last 2 hours.
+- Fixed: the bell's board chip was missing on follow-up notifications (the link
+  `/crm/leads?lead=<id>` was split with its query string) → `boardChip` strips
+  `?`/`#`.
+- The bell now listens on realtime (`crm_notifications` added to
+  `supabase_realtime`): count refreshes at once, open list re-reads; the 60s
+  poll stays as a fallback.
+- Expected, not a bug: follow-ups more than 2 days past due never notify (the
+  window), so the 86 backfilled overdue items live on the To-do list only.
+  The 08:00 Muscat sweep (04:00 UTC) notifies today / up to 2 days late.
+
 ## SESSION 2026-09-17 — Offer Lead tracking joins the reminder system (migration `crm_offer_tracking_followup_sync` + this commit, DEPLOYED)
 
 Ask: connect Offers (the contact drawer's "Lead tracking, one trail per offer")
