@@ -10,10 +10,13 @@ export function OptionCell({
   value,
   options,
   onSelect,
+  allowNone = true,
 }: {
   value: string | null;
   options: { key: string; label: string; color: string }[];
   onSelect: (next: string | null) => void;
+  /** false drops the grey "None" choice (a value can be changed, not cleared) */
+  allowNone?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const current = options.find((o) => o.key === value) ?? null;
@@ -51,16 +54,18 @@ export function OptionCell({
               {o.label}
             </button>
           ))}
-          <button
-            type="button"
-            onClick={() => {
-              onSelect(null);
-              setOpen(false);
-            }}
-            className="flex h-[32px] items-center justify-center rounded-[4px] bg-[#c4c4c4] font-sans text-[14px] text-white transition-transform hover:scale-[1.03]"
-          >
-            None
-          </button>
+          {allowNone && (
+            <button
+              type="button"
+              onClick={() => {
+                onSelect(null);
+                setOpen(false);
+              }}
+              className="flex h-[32px] items-center justify-center rounded-[4px] bg-[#c4c4c4] font-sans text-[14px] text-white transition-transform hover:scale-[1.03]"
+            >
+              None
+            </button>
+          )}
         </div>
       </Popover>
     </div>

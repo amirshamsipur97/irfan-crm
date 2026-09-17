@@ -142,6 +142,20 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — Status: cold / pending / warm / void, no None, right before Move to contact (migration `crm_temperature_void_and_status_position` + this commit, DEPLOYED)
+
+- `TEMPERATURE_OPTIONS` (one list, used by Leads + Contacts cells, filters,
+  drawers, export) = Cold, Pending, Warm, **Void** (#676879). CHECK constraints
+  on `crm_leads` / `crm_contacts` now allow `void`.
+- The Status picker no longer offers the grey **None** (`OptionCell`
+  `allowNone={false}`, Leads and Contacts); other option cells keep None.
+  Rows that are already empty (166 leads, 8 contacts) stay empty until set.
+- Leads `BOARD_COLUMNS`: Status moved from first to just before "Move to
+  contact". The 3 saved per-user Leads layouts (amirali shamsipur, mehdi
+  mehrjooy, nastaran sistani) were rewritten to put temperature before contact
+  too, at the user's explicit "for every level" request; the rest of their
+  order is kept. The Excel export column order was NOT changed.
+
 ## SESSION 2026-09-17 — The follow-up column is a BUTTON that opens the follow-up popup (this commit, no migration, DEPLOYED)
 
 Ask: turn the "next follow up" cell into a button that brings up the info +

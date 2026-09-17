@@ -15,12 +15,6 @@ export const BOARD_COLUMNS: {
   w: number;
   headerIcon?: IconName;
 }[] = [
-  // the board's Status: how hot the person is. The pipeline-stage column
-  // that used to hold this name was dropped on request — the team never
-  // worked the funnel by stage, they work it by how warm the lead is.
-  // (crm_leads.stage_id is untouched and still drives the drawer's stage
-  // journey and the lead score.)
-  { key: "temperature", label: "Status", w: 130 },
   { key: "owner", label: "Owner", w: 190 },
   { key: "first_name", label: "First name", w: 150 },
   { key: "last_name", label: "Last name", w: 150 },
@@ -33,6 +27,11 @@ export const BOARD_COLUMNS: {
   { key: "source", label: "Lead Source", w: 160 },
   { key: "date", label: "Date", w: 130 },
   { key: "notes", label: "Text", w: 260 },
+  // the board's Status: how hot the person is, right before the move to
+  // contacts (asked 2026-09-17, for every member). The pipeline-stage column
+  // that used to hold this name was dropped on request; crm_leads.stage_id
+  // still drives the drawer's stage journey and the lead score.
+  { key: "temperature", label: "Status", w: 130 },
   { key: "contact", label: "Move to contact", w: 181 },
 ];
 

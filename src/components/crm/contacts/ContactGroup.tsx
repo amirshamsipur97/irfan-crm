@@ -402,6 +402,7 @@ export function ContactGroup({
                           <OptionCell
                             value={contact.temperature}
                             options={TEMPERATURE_OPTIONS}
+                            allowNone={false}
                             onSelect={(next) => onPatchContact(contact.id, { temperature: next })}
                           />
                         </span>

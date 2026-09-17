@@ -455,6 +455,7 @@ export function LeadGroup({
                           <OptionCell
                             value={lead.temperature}
                             options={TEMPERATURE_OPTIONS}
+                            allowNone={false}
                             onSelect={(next) => onPatchLead(lead.id, { temperature: next })}
                           />
                         </span>
