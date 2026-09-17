@@ -28,10 +28,10 @@ export function ageLabel(age: number | null | undefined): string {
 // the order the pickers show them in; "void" = a dead lead (wrong number,
 // not interested). No "None": once a status is set it is always one of these.
 export const TEMPERATURE_OPTIONS: { key: string; label: string; color: string }[] = [
-  { key: "cold", label: "Cold", color: "#0086c0" },
+  { key: "cold", label: "Cold", color: "#c4c4c4" },
   { key: "pending", label: "Pending", color: "#fdab3d" },
   { key: "warm", label: "Warm", color: "#00c875" },
-  { key: "void", label: "Void", color: "#676879" },
+  { key: "void", label: "Void", color: "#e2445c" },
 ];
 
 export function temperatureLabel(key: string | null | undefined): string {
