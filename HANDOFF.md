@@ -142,6 +142,19 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — To-do list count badge in the sidebar (this commit, no migration, DEPLOYED)
+
+- Right-aligned teal pill on the "To-do list" item (20px high, tabular-nums,
+  "99+" cap, hidden at 0) = **Today + Upcoming** (not done, time still ahead);
+  Overdue is NOT counted. Same scope the page opens on: agents = set by them or
+  on a client they own; manage roles = everyone visible.
+- `countTodoReminders()` in `crm/reminders/actions.ts` deliberately does NOT use
+  `getProfile()` (it redirects; a background refresh must never navigate) and
+  returns 0 without a session. `useTodoCount` in WorkspaceSidebar: on mount,
+  every 60s (a reminder whose time passes leaves the count), and on realtime
+  changes to `crm_lead_history` / `crm_offer_tracking` (debounced).
+- At ship: aylar homayoun 5, mehdi sarraf 2, babak chehrazi 2, everyone else 0.
+
 ## SESSION 2026-09-17 — To-do list: ticking no longer looks like deleting (this commit, no migration, DEPLOYED)
 
 Report: "the square next to a name deletes it". Nothing was deleted (DB: all 5

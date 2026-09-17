@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Icon } from "@/components/ui/Icon";
@@ -11,6 +11,35 @@ import { IconButton } from "@/components/ui/IconButton";
 import type { IconName } from "@/lib/figma-icons";
 import { canAnimate } from "@/lib/motion";
 import type { CrmRole } from "@/lib/types";
+import { countTodoReminders } from "@/app/(app)/crm/reminders/actions";
+import { useDebounced, useRealtimeTable } from "@/lib/use-realtime";
+
+const TODO_HREF = "/crm/reminders";
+
+/**
+ * Today + Upcoming count for the To-do list item. Re-counted on any reminder
+ * change (realtime) and every minute, since a reminder whose time passes moves
+ * from Today to Overdue and leaves the count.
+ */
+function useTodoCount() {
+  const [count, setCount] = useState<number | null>(null);
+  const refresh = useDebounced(async () => {
+    try {
+      setCount(await countTodoReminders());
+    } catch {
+      // a failed count keeps the last value rather than flashing a wrong one
+    }
+  }, 400);
+  useEffect(() => {
+    refresh();
+    const t = setInterval(refresh, 60_000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useRealtimeTable("crm_lead_history", refresh);
+  useRealtimeTable("crm_offer_tracking", refresh);
+  return count;
+}
 
 type NavItem = { label: string; icon: IconName; href: string };
 
@@ -51,6 +80,7 @@ export const WORKSPACE_NAV: NavItem[] = [...PRIMARY_NAV, ...SECONDARY_NAV];
 export function WorkspaceSidebar(_props: { role?: CrmRole }) {
   const pathname = usePathname();
   const rootRef = useRef<HTMLElement>(null);
+  const todoCount = useTodoCount();
 
   const renderItem = (item: NavItem) => {
     const active =
@@ -67,7 +97,22 @@ export function WorkspaceSidebar(_props: { role?: CrmRole }) {
           <span className="truncate font-sans text-[14px] leading-[20px] text-ink">
             {item.label}
           </span>
-          <LinkSpinner />
+          {item.href === TODO_HREF ? (
+            <span className="ml-auto flex shrink-0 items-center gap-[6px]">
+              <LinkSpinner className="" />
+              {todoCount != null && todoCount > 0 && (
+                <span
+                  aria-label={`${todoCount} due today or upcoming`}
+                  title={`${todoCount} due today or upcoming`}
+                  className="flex h-[20px] min-w-[20px] items-center justify-center rounded-[10px] bg-teal-deep px-[6px] font-sans text-[12px] font-medium leading-none tabular-nums text-white"
+                >
+                  {todoCount > 99 ? "99+" : todoCount}
+                </span>
+              )}
+            </span>
+          ) : (
+            <LinkSpinner />
+          )}
         </Link>
       </div>
     );

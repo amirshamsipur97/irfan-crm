@@ -2,7 +2,8 @@
 
 import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
-import type { CrmLeadHistory, CrmOfferTracking } from "@/lib/types";
+import { canManageBoards } from "@/lib/permissions";
+import type { CrmLeadHistory, CrmOfferTracking, CrmRole } from "@/lib/types";
 
 /**
  * One reminder, from either trail: a Lead history entry (lead or contact) or
@@ -201,4 +202,35 @@ export async function getReminderClient(input: {
     return { kind: "contact", source: lead_source, ...rest, recent: recent ?? [] } as ReminderClientDetails;
   }
   return null;
+}
+
+/**
+ * The sidebar badge: Today + Upcoming on the To-do list, i.e. reminders not
+ * done and not yet due, in the same scope the page opens on (an agent's own:
+ * set by them or on a client they own; the whole visible team for managers).
+ * Overdue is deliberately NOT counted.
+ */
+export async function countTodoReminders(): Promise<number> {
+  // no getProfile() here: it redirects, and a background badge refresh must
+  // never navigate someone away (an expired session just shows no count)
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return 0;
+  const { data: profile } = await supabase
+    .from("crm_users")
+    .select("id, role, is_active")
+    .eq("id", user.id)
+    .maybeSingle<{ id: string; role: CrmRole; is_active: boolean }>();
+  if (!profile?.is_active) return 0;
+  const rows = await listReminders();
+  const everyone = canManageBoards(profile.role);
+  const now = Date.now();
+  return rows.filter((r) => {
+    if (r.reminder_done || !r.remind_at || new Date(r.remind_at).getTime() <= now) return false;
+    if (everyone) return true;
+    const owner = r.lead?.owner_id ?? r.contact?.owner_id ?? null;
+    return r.created_by === profile.id || owner === profile.id;
+  }).length;
 }
