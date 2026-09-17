@@ -309,6 +309,7 @@ export function DevelopmentGroup({
                         <TimeCell
                           value={dev.completion_date}
                           label={`Completion date for ${dev.name}`}
+                            withTime={false}
                           format={shortDate}
                           onChange={(iso) =>
                             onPatch(dev.id, { completion_date: toLocalDateString(iso) })

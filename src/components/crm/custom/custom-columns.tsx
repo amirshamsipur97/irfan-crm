@@ -8,8 +8,8 @@ import { Checkbox, InlineEdit, OwnerCell, Popover } from "@/components/crm/leads
 import { OptionCell, TextCell } from "@/components/crm/contacts/contact-cells";
 import { NumberCell } from "@/components/crm/deals/deal-cells";
 import { TimeCell } from "@/components/crm/activities/activity-cells";
-import { toLocalDateString } from "@/components/crm/activities/activities-config";
-import { shortDate } from "@/components/crm/leads/board-config";
+import { toLocalDateString, toLocalDateTimeString } from "@/components/crm/activities/activities-config";
+import { shortDateTime } from "@/components/crm/leads/board-config";
 import { CountryCell } from "@/components/crm/country-cell";
 import { compactMoney, money } from "@/components/crm/deals/deals-config";
 import { BEDROOM_OPTIONS, PROPERTY_TYPES } from "@/components/crm/contacts/demand-config";
@@ -261,8 +261,11 @@ export function CustomValueCell({
           <TimeCell
             value={(value as string) ?? null}
             label={`${column.label} date`}
-            format={shortDate}
-            onChange={(iso) => onSave(toLocalDateString(iso))}
+            format={shortDateTime}
+            // a picked time is kept with its offset; a bare day stays a bare day
+            onChange={(iso, { hasTime }) =>
+              onSave(hasTime ? toLocalDateTimeString(iso) : toLocalDateString(iso))
+            }
           />
         </span>
       );

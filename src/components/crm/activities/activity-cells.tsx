@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { activityTime, parseLocalDate } from "./activities-config";
+import { activityTime, isDateOnly, parseLocalDate } from "./activities-config";
 
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -12,7 +12,7 @@ const POPOVER_W = 292;
 const POPOVER_H = 420;
 
 /** merge a picked calendar day with the time-of-day of the current value (9:00 default) */
-function withTime(day: Date, current: string | null): string {
+function withTimeOf(day: Date, current: string | null): string {
   const d = new Date(day);
   const c = parseLocalDate(current);
   if (c) {
@@ -41,30 +41,47 @@ export function TimeCell({
   onChange,
   label,
   format = activityTime,
+  withTime = true,
 }: {
   value: string | null;
-  onChange: (iso: string | null) => void;
+  /**
+   * `hasTime` is false when the agent only picked a day on a value that had
+   * no time yet — date-only columns store the bare day then.
+   */
+  onChange: (iso: string | null, meta: { hasTime: boolean }) => void;
   label: string;
   /** cell display formatting (defaults to "Jun 30, 7:00 PM") */
   format?: (iso: string | null) => string;
+  /** false for columns that can only hold a calendar day: no clock button */
+  withTime?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [showTime, setShowTime] = useState(false);
   const [pos, setPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
   // date-only values are the agent's LOCAL day, not UTC midnight
   const selected = parseLocalDate(value);
+  const valueHasTime = !!selected && !isDateOnly(value);
   const today = new Date();
   const [viewYear, setViewYear] = useState((selected ?? today).getFullYear());
   const [viewMonth, setViewMonth] = useState((selected ?? today).getMonth());
   const [draft, setDraft] = useState("");
+  // while the time panel is open, a picked day waits here for "Set time"
+  const [pickedDay, setPickedDay] = useState<Date | null>(null);
+  const [timeDraft, setTimeDraft] = useState("09:00");
   const rootRef = useRef<HTMLSpanElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+
+  const dayLabel = (d: Date) => `${pad2(d.getMonth() + 1)}/${pad2(d.getDate())}/${d.getFullYear()}`;
 
   const openPicker = () => {
     const base = selected ?? today;
     setViewYear(base.getFullYear());
     setViewMonth(base.getMonth());
-    setDraft(`${pad2(base.getMonth() + 1)}/${pad2(base.getDate())}/${base.getFullYear()}`);
+    setDraft(dayLabel(base));
+    setPickedDay(selected);
+    setTimeDraft(
+      valueHasTime && selected ? `${pad2(selected.getHours())}:${pad2(selected.getMinutes())}` : "09:00"
+    );
     const rect = btnRef.current?.getBoundingClientRect();
     if (rect) {
       // viewport dims can be 0 in embedded webviews — then just anchor to the cell
@@ -77,8 +94,29 @@ export function TimeCell({
         : below;
       setPos({ left, top });
     }
-    setShowTime(false);
+    // a value that already carries a time opens with its time showing
+    setShowTime(withTime && valueHasTime);
     setOpen(true);
+  };
+
+  /** a day was chosen: commit at once, or hold it while a time is being set */
+  const pickDay = (day: Date) => {
+    if (showTime) {
+      setPickedDay(day);
+      setDraft(dayLabel(day));
+      return;
+    }
+    onChange(withTime ? withTimeOf(day, value) : withTimeOf(day, null), { hasTime: valueHasTime });
+    setOpen(false);
+  };
+
+  const commitTime = () => {
+    const [h, m] = timeDraft.split(":").map(Number);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return;
+    const d = new Date(pickedDay ?? today);
+    d.setHours(h, m, 0, 0);
+    onChange(d.toISOString(), { hasTime: true });
+    setOpen(false);
   };
 
   useEffect(() => {
@@ -99,10 +137,7 @@ export function TimeCell({
 
   const commitDraft = () => {
     const parsed = new Date(draft);
-    if (!Number.isNaN(parsed.getTime())) {
-      onChange(withTime(parsed, value));
-      setOpen(false);
-    }
+    if (!Number.isNaN(parsed.getTime())) pickDay(parsed);
   };
 
   const prevMonth = () => {
@@ -127,10 +162,6 @@ export function TimeCell({
   });
 
   const years = Array.from({ length: 12 }, (_, i) => today.getFullYear() - 5 + i);
-
-  const timeValue = selected
-    ? `${pad2(selected.getHours())}:${pad2(selected.getMinutes())}`
-    : "09:00";
 
   return (
     <span ref={rootRef} className="relative block size-full">
@@ -163,18 +194,19 @@ export function TimeCell({
           <div className="flex items-center justify-between">
             <button
               type="button"
-              onClick={() => {
-                onChange(withTime(today, value));
-                setOpen(false);
-              }}
+              onClick={() => pickDay(today)}
               className="h-[32px] rounded-[4px] border border-line-strong px-[12px] font-sans text-[14px] leading-[20px] text-ink transition-colors hover:bg-[var(--hover-ghost)]"
             >
               Today
             </button>
+            {withTime && (
             <button
               type="button"
               aria-label="Set time"
-              onClick={() => setShowTime((v) => !v)}
+              onClick={() => {
+                setShowTime((v) => !v);
+                setPickedDay((p) => p ?? selected ?? today);
+              }}
               className={`flex size-[32px] items-center justify-center rounded-[16px] transition-colors ${
                 showTime ? "bg-[var(--active-nav)]" : "hover:bg-[var(--hover-ghost)]"
               }`}
@@ -184,6 +216,7 @@ export function TimeCell({
                 <path d="M9 5.2V9l2.6 1.7" stroke="#323338" strokeWidth="1.3" strokeLinecap="round" />
               </svg>
             </button>
+            )}
           </div>
 
           {/* date input (+ optional time input) */}
@@ -198,21 +231,30 @@ export function TimeCell({
             placeholder="MM/DD/YYYY"
             className="mt-[12px] h-[36px] w-full rounded-[4px] border border-teal-deep px-[10px] font-sans text-[14px] text-ink outline-none"
           />
-          {showTime && (
-            <input
-              type="time"
-              aria-label="Time"
-              value={timeValue}
-              onChange={(e) => {
-                if (!e.target.value) return;
-                const [h, m] = e.target.value.split(":").map(Number);
-                const base = selected ?? today;
-                const d = new Date(base);
-                d.setHours(h, m, 0, 0);
-                onChange(d.toISOString());
-              }}
-              className="mt-[8px] h-[32px] w-full rounded-[4px] border border-line-strong px-[10px] font-sans text-[14px] text-ink outline-none focus:border-teal-deep"
-            />
+          {withTime && showTime && (
+            <div className="mt-[8px] flex items-center gap-[8px]">
+              {/* a draft until "Set time": the native picker fires onChange on
+                  every wheel click, and saving each one lost the time */}
+              <input
+                type="time"
+                aria-label="Time"
+                value={timeDraft}
+                onChange={(e) => {
+                  if (e.target.value) setTimeDraft(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitTime();
+                }}
+                className="h-[32px] min-w-0 flex-1 rounded-[4px] border border-line-strong px-[10px] font-sans text-[14px] text-ink outline-none focus:border-teal-deep"
+              />
+              <button
+                type="button"
+                onClick={commitTime}
+                className="h-[32px] shrink-0 rounded-[4px] bg-teal-deep px-[12px] font-sans text-[14px] leading-[20px] text-white transition-opacity hover:opacity-90"
+              >
+                Set time
+              </button>
+            </div>
           )}
 
           {/* month / year selectors */}
@@ -279,16 +321,14 @@ export function TimeCell({
             ))}
             {days.map((d) => {
               const inMonth = d.getMonth() === viewMonth;
-              const isSelected = selected ? sameDay(d, selected) : false;
+              const shown = showTime ? pickedDay : selected;
+              const isSelected = shown ? sameDay(d, shown) : false;
               const isToday = sameDay(d, today);
               return (
                 <button
                   key={d.toISOString()}
                   type="button"
-                  onClick={() => {
-                    onChange(withTime(d, value));
-                    setOpen(false);
-                  }}
+                  onClick={() => pickDay(d)}
                   className={`mx-auto flex size-[30px] items-center justify-center rounded-[4px] font-sans text-[13px] leading-[18px] transition-colors ${
                     isSelected
                       ? "bg-teal-deep text-white"

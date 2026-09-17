@@ -1,5 +1,5 @@
 import type { IconName } from "@/lib/figma-icons";
-import { parseLocalDate } from "@/components/crm/activities/activities-config";
+import { isDateOnly, parseLocalDate } from "@/components/crm/activities/activities-config";
 
 /** Column layout of the Leads main table (widths from the Figma frame). */
 export const NAME_COL_W = 292;
@@ -107,6 +107,14 @@ export function shortDate(iso: string | null): string {
   const d = parseLocalDate(iso);
   if (!d) return "";
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+/** "Sep 17" for a bare day, "Sep 17, 3:30 PM" once a time has been set. */
+export function shortDateTime(value: string | null): string {
+  const day = shortDate(value);
+  if (!day || isDateOnly(value)) return day;
+  const d = parseLocalDate(value) as Date;
+  return `${day}, ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
 }
 
 export function daysAgoLabel(iso: string | null): string | null {

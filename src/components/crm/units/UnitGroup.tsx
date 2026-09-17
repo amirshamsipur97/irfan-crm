@@ -334,6 +334,7 @@ export function UnitGroup({
                         <TimeCell
                           value={unit.handover_date}
                           label={`Handover date for ${unit.name}`}
+                            withTime={false}
                           format={shortDate}
                           onChange={(iso) =>
                             onPatch(unit.id, { handover_date: toLocalDateString(iso) })

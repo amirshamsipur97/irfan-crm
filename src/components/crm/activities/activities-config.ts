@@ -72,6 +72,31 @@ export function toLocalDateString(iso: string | null): string | null {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/** True when a stored value is a bare calendar day ("2026-09-17"), no time of day. */
+export function isDateOnly(value: string | null): boolean {
+  return !!value && /^\d{4}-\d{2}-\d{2}$/.test(value.trim());
+}
+
+/**
+ * "2026-09-17T15:30:00+04:00" from an ISO timestamp, in the viewer's own
+ * timezone. For date custom columns that carry a time: the first 10
+ * characters stay the LOCAL day (the database reads the day from them),
+ * and the offset keeps the exact instant for the reminder.
+ */
+export function toLocalDateTimeString(iso: string | null): string | null {
+  const d = parseLocalDate(iso);
+  if (!d) return null;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const off = -d.getTimezoneOffset();
+  const sign = off >= 0 ? "+" : "-";
+  const abs = Math.abs(off);
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}:00` +
+    `${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`
+  );
+}
+
 /** Today as YYYY-MM-DD in the viewer's own timezone. */
 export function todayLocalDateString(): string {
   return toLocalDateString(new Date().toISOString()) as string;

@@ -390,6 +390,7 @@ export function LeadGroup({
                           <TimeCell
                             value={lead.lead_date}
                             label="Date"
+                            withTime={false}
                             format={shortDate}
                             // slicing the ISO string would shift the date a day
                             // in +04, so go through the local-date helper

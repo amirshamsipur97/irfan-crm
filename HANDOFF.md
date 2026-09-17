@@ -142,6 +142,36 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — date picker: a picked TIME is kept, and a timed follow-up rings at its time (migration `crm_followup_with_time` + this commit, DEPLOYED)
+
+Bug (user, screenshot of the "next follow up" picker): the clock opened a
+native time field with no confirm button, the cell never showed a time, and
+every time reset to 12:00 AM. Causes: (1) date custom columns saved through
+`toLocalDateString`, so any time was thrown away; (2) the time input saved on
+EVERY wheel click, and the re-read date-only value came back as midnight.
+
+**App:** `TimeCell` now keeps day + time as a DRAFT while the time panel is
+open and commits with a **Set time** button (Enter works too). `onChange(iso,
+{ hasTime })`; `withTime={false}` hides the clock on date-only columns (Leads
+Date, Contacts First negotiation, Development completion, Unit handover).
+Date custom columns store `"2026-09-20T15:30:00+04:00"` once a time is set
+(`toLocalDateTimeString`: first 10 chars = the LOCAL day, so `crm_try_date`
+and the export still read the right day) and show "Sep 20, 3:30 PM"
+(`shortDateTime`). A bare day stays a bare day. Verified on a throwaway
+/preview page: stored value, cell label and reopen all correct.
+
+**Database:** `crm_try_timestamptz(text)`; `crm_notify_followup` branches: a
+timed value notifies only once `now() >= time` (title "follow up now: <lead>",
+body "Follow-up: 20 Sep 2026, 03:30 PM", deduped on body so a changed time
+notifies again); bare days keep the 08:00 behaviour. New
+`crm_notify_due_timed_followups()` + pg_cron **`crm-timed-followups`
+every minute**. EXECUTE revoked on the helpers. Proven in a rolled-back
+transaction on a real lead: future time → 0, past time → 1 via the trigger,
+sweep re-run → 0 (dedupe).
+
+⚠️ Only the LEADS follow-up column notifies. The Contacts "Follow Up" date
+column (`date_mswvwsl5`) accepts a time now too but has no notification.
+
 ## SESSION 2026-09-17 — Lead history + reminders that ring (migration `crm_lead_history_and_reminders` + commit `06d11ed`, DEPLOYED)
 
 Ask: a log like each offer's trail but for the LEAD, to follow a client from
@@ -1534,6 +1564,7 @@ that day) · 0 follow-up notifications sent yet.
 | job | when (UTC) | does |
 |---|---|---|
 | `crm-reminders` | every minute | Lead history + offer-trail reminders → bell |
+| `crm-timed-followups` | every minute | "next follow up" values WITH a time → owner's bell at that time |
 | `crm-followup-reminders` | 04:00 (08:00 Muscat) | "next follow up" dates → owner's bell |
 | `crm-rescore-leads` | 02:00 | rescoring |
 | `crm-expire-reservations` | :15 hourly | reservation expiry |
