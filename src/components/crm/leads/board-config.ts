@@ -18,7 +18,7 @@ export const BOARD_COLUMNS: {
   { key: "owner", label: "Owner", w: 190 },
   { key: "first_name", label: "First name", w: 150 },
   { key: "last_name", label: "Last name", w: 150 },
-  { key: "phone", label: "Telephone", w: 170 },
+  { key: "phone", label: "Telephone", w: 230 },
   // nationality, picked separately — the dial code can't stand in for it
   { key: "country", label: "Country", w: 150 },
   { key: "gender", label: "Gender", w: 120 },

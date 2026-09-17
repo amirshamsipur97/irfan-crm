@@ -11,7 +11,7 @@ export const CONTACT_COLUMNS: {
   // carried over from the lead by crm_convert_lead, editable here too
   { key: "temperature", label: "Contact status", w: 140 },
   { key: "email", label: "Email", w: 189 },
-  { key: "phone", label: "Phone", w: 170 },
+  { key: "phone", label: "Phone", w: 230 },
   // nationality, picked separately — the dial code can't stand in for it
   { key: "country", label: "Country", w: 150 },
   { key: "gender", label: "Gender", w: 120 },

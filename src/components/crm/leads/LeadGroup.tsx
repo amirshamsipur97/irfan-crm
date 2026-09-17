@@ -434,6 +434,7 @@ export function LeadGroup({
                           <PhoneCell
                             phone={lead.phone}
                             countryCode={lead.country_code}
+                            shared={Boolean(lead.shared_collaboration_id)}
                             onSave={(phone, code) =>
                               onPatchLead(lead.id, { phone, country_code: code })
                             }

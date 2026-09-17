@@ -146,9 +146,30 @@ export function LeadsBoard({
   useRealtimeTable(
     "crm_leads",
     (payload) => {
-      if (payload.eventType !== "UPDATE" || !followupKey) return;
-      const next = payload.new as { id?: string; custom?: Record<string, unknown> | null };
+      if (payload.eventType !== "UPDATE") return;
+      const next = payload.new as {
+        id?: string;
+        custom?: Record<string, unknown> | null;
+        phone?: string | null;
+        country_code?: string | null;
+        shared_collaboration_id?: string | null;
+      };
       if (!next.id) return;
+      // an accepted collaboration places the number and marks the row shared
+      // server-side; those three fields follow the database
+      if ("shared_collaboration_id" in next) {
+        const setRows = setLocalLeads;
+        setRows((prev) =>
+          prev.map((r) =>
+            r.id === next.id &&
+            ((r.shared_collaboration_id ?? null) !== (next.shared_collaboration_id ?? null) ||
+              (r.shared_collaboration_id == null && next.shared_collaboration_id != null))
+              ? { ...r, phone: next.phone ?? null, country_code: next.country_code ?? null, shared_collaboration_id: next.shared_collaboration_id ?? null }
+              : r
+          )
+        );
+      }
+      if (!followupKey) return;
       const value = next.custom?.[followupKey] ?? null;
       setLocalLeads((prev) =>
         prev.map((l) => {
@@ -162,7 +183,7 @@ export function LeadsBoard({
         })
       );
     },
-    Boolean(followupKey)
+    true
   );
 
   /** cell edits: optimistic patch, awaited persist, rollback + toast on refusal */

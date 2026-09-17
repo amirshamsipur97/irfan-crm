@@ -381,6 +381,7 @@ export function ContactGroup({
                           <PhoneCell
                             phone={contact.phone}
                             countryCode={contact.country_code}
+                            shared={Boolean(contact.shared_collaboration_id)}
                             onSave={(phone, code) =>
                               onPatchContact(contact.id, { phone, country_code: code })
                             }

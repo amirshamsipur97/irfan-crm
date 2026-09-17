@@ -142,6 +142,31 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — Accepted collaboration places the number on the requester's row + "Shared" chip (migrations `crm_collaboration_place_phone_on_accept`, `crm_collaboration_place_phone_legacy_attempts` + this commit, DEPLOYED)
+
+Ask: the second member's number is not saved (the guard refuses it); once the
+admin approves and the owner accepts, the number must land in the second
+member's table, with a "shared lead" status next to it.
+
+- `crm_phone_duplicate_attempts.country_code` + `raw_phone` (the number as
+  typed; `crm_report_duplicate_phone` now stores them).
+- `crm_leads.shared_collaboration_id` / `crm_contacts.shared_collaboration_id`
+  (FK → crm_collaborations, on delete set null).
+- `crm_apply_accepted_collaboration(id)` (definer, not callable by clients),
+  run by `crm_respond_collaboration` on accept: marks the owner's client
+  shared; writes country_code + phone into the attempt's `row_id` (only if that
+  row is owned/created by the requester) with `crm.skip_phone_guard` on for
+  that statement only, and marks it shared. Older attempts without the typed
+  value copy the number from the owner's row. Result ("placed" / reason) goes
+  into the requester and admin notifications.
+- Proven rolled back: mehdi's lead +968 78820880 → after admin approve + sara
+  accept it is +971 507356320, shared on both leads.
+- App: `PhoneCell shared` shows a purple "Shared" chip before the flag (Leads
+  and Contacts); phone columns widened 170 → 230px so number + chip fit. Both
+  boards' realtime handler now also patches phone / country_code /
+  shared_collaboration_id when the database sets the shared marker (handler
+  always on, the follow-up patch still needs the follow-up column).
+
 ## SESSION 2026-09-17 — Collaboration agreement names the commission split (migration `crm_collaboration_commission_split` + this commit, DEPLOYED)
 
 - `crm_collaborations.requester_share` (int, default 50). Owner share = 100 −

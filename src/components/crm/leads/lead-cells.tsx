@@ -146,9 +146,12 @@ export function PhoneCell({
   phone,
   countryCode,
   onSave,
+  shared = false,
 }: {
   phone: string | null;
   countryCode: string | null;
+  /** an accepted collaboration: the number is shared with another member */
+  shared?: boolean;
   /** country code and number are stored separately, never as one string */
   onSave: (phone: string | null, countryCode: string | null) => void;
 }) {
@@ -175,6 +178,14 @@ export function PhoneCell({
     <span className="group/cell relative flex size-full items-center justify-center gap-[4px] px-[8px]">
       {phone ? (
         <>
+          {shared && (
+            <span
+              title="Shared lead: worked jointly through an accepted collaboration"
+              className="shrink-0 rounded-[9px] bg-[#a25ddc] px-[6px] py-[1px] font-sans text-[10.5px] font-medium leading-[14px] text-white"
+            >
+              Shared
+            </span>
+          )}
           <span aria-hidden>{dialFlagFor(countryCode)}</span>
           <a
             href={`tel:${countryCode ?? ""}${phone}`}

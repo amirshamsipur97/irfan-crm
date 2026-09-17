@@ -202,9 +202,30 @@ export function ContactsBoard({
   useRealtimeTable(
     "crm_contacts",
     (payload) => {
-      if (payload.eventType !== "UPDATE" || !followupKey) return;
-      const next = payload.new as { id?: string; custom?: Record<string, unknown> | null };
+      if (payload.eventType !== "UPDATE") return;
+      const next = payload.new as {
+        id?: string;
+        custom?: Record<string, unknown> | null;
+        phone?: string | null;
+        country_code?: string | null;
+        shared_collaboration_id?: string | null;
+      };
       if (!next.id) return;
+      // an accepted collaboration places the number and marks the row shared
+      // server-side; those three fields follow the database
+      if ("shared_collaboration_id" in next) {
+        const setRows = setLocalContacts;
+        setRows((prev) =>
+          prev.map((r) =>
+            r.id === next.id &&
+            ((r.shared_collaboration_id ?? null) !== (next.shared_collaboration_id ?? null) ||
+              (r.shared_collaboration_id == null && next.shared_collaboration_id != null))
+              ? { ...r, phone: next.phone ?? null, country_code: next.country_code ?? null, shared_collaboration_id: next.shared_collaboration_id ?? null }
+              : r
+          )
+        );
+      }
+      if (!followupKey) return;
       const value = next.custom?.[followupKey] ?? null;
       setLocalContacts((prev) =>
         prev.map((x) => {
@@ -218,7 +239,7 @@ export function ContactsBoard({
         })
       );
     },
-    Boolean(followupKey)
+    true
   );
 
   const patchContact = async (contactId: string, patch: Partial<CrmContact>, silent = false) => {
