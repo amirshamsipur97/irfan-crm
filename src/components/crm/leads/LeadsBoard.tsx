@@ -557,6 +557,20 @@ export function LeadsBoard({
             onConvert={handleMoveToContacts}
             historyRefreshKey={historyTick}
             onFollowupChange={() => refreshLeadCustom(openLead.id)}
+            followup={
+              followupKey
+                ? {
+                    value: (((openLead.custom ?? {}) as Record<string, unknown>)[followupKey] as string) ?? null,
+                    // the same save as the table cell: optimistic, persisted, rolled back on refusal
+                    onSet: (next) => {
+                      const custom = { ...((openLead.custom ?? {}) as Record<string, unknown>) };
+                      if (next == null) delete custom[followupKey];
+                      else custom[followupKey] = next;
+                      editLead(openLead.id, { custom } as Partial<CrmLead>);
+                    },
+                  }
+                : undefined
+            }
           />
         );
       })()}

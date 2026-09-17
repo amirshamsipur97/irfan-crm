@@ -12,6 +12,7 @@ import { canEditRow } from "@/lib/permissions";
 import { DemandSection } from "./demand-section";
 import { TrackingSection } from "./tracking-section";
 import { LeadHistorySection } from "@/components/crm/follow-ups/lead-history-section";
+import { FollowUpField } from "@/components/crm/follow-ups/followup-field";
 import { countryFlag } from "@/components/crm/country-cell";
 import { ageLabel, genderLabel } from "@/lib/person-fields";
 import { TemperaturePill } from "@/components/crm/temperature-pill";
@@ -71,11 +72,18 @@ export function ContactDrawer({
   profile,
   onClose,
   onToast,
+  followup,
+  historyRefreshKey,
+  onFollowupChange,
 }: {
   contact: CrmContact;
   profile: CrmUser;
   onClose: () => void;
   onToast?: (message: string, tone?: "success" | "alert") => void;
+  /** the "Follow Up" column, when the board has one */
+  followup?: { value: string | null; onSet: (next: string | null) => void };
+  historyRefreshKey?: number;
+  onFollowupChange?: () => void;
 }) {
   const { pending: planToDelete, ask: askPlan, close: closePlan } = useConfirm<CrmOfferFloorPlan>();
   const [composerOpen, setComposerOpen] = useState(false);
@@ -210,6 +218,8 @@ export function ContactDrawer({
         </div>
 
         <div className="flex-1 px-[24px] pb-[32px]">
+          {followup && <FollowUpField value={followup.value} onSet={followup.onSet} />}
+
           {/* details */}
           <SectionTitle>Details</SectionTitle>
           <DetailRow label="Email">
@@ -299,7 +309,13 @@ export function ContactDrawer({
           />
 
           {/* the same story the lead had, continued: lead + contact entries on one line */}
-          <LeadHistorySection contactId={contact.id} onToast={onToast} onChanged={load} />
+          <LeadHistorySection
+            contactId={contact.id}
+            onToast={onToast}
+            onChanged={load}
+            refreshKey={historyRefreshKey}
+            onFollowupChange={onFollowupChange}
+          />
 
           {loading ? (
             <p className="pt-[24px] font-sans text-[14px] text-ink-muted">Loading…</p>

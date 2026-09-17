@@ -16,6 +16,8 @@ import { ContactGroup } from "./ContactGroup";
 import { useColumnOrder } from "@/components/crm/column-order";
 import { CONTACT_COLUMNS } from "./contacts-config";
 import { ContactDrawer } from "./contact-drawer";
+import { getContactCustom } from "@/app/(app)/crm/history-actions";
+import { useRealtimeTable } from "@/lib/use-realtime";
 import {
   addContact,
   addContactGroup,
@@ -180,6 +182,42 @@ export function ContactsBoard({
     [accounts]
   );
 
+  // "Follow Up" and the contact's Lead history reminder are kept in sync by
+  // the database (see LeadsBoard for the same wiring on leads)
+  const [historyTick, setHistoryTick] = useState(0);
+  const followupKey = [...localColumns]
+    .filter((c) => c.type === "date" && c.label.toLowerCase().includes("follow"))
+    .sort((a, b) => a.position - b.position)[0]?.key;
+
+  const refreshContactCustom = async (contactId: string) => {
+    const custom = await getContactCustom(contactId);
+    if (custom)
+      setLocalContacts((prev) => prev.map((x) => (x.id === contactId ? ({ ...x, custom } as CrmContact) : x)));
+  };
+
+  // realtime: only the follow-up key is patched, never other in-flight edits
+  useRealtimeTable(
+    "crm_contacts",
+    (payload) => {
+      if (payload.eventType !== "UPDATE" || !followupKey) return;
+      const next = payload.new as { id?: string; custom?: Record<string, unknown> | null };
+      if (!next.id) return;
+      const value = next.custom?.[followupKey] ?? null;
+      setLocalContacts((prev) =>
+        prev.map((x) => {
+          if (x.id !== next.id) return x;
+          const current = (x.custom ?? {}) as Record<string, unknown>;
+          if ((current[followupKey] ?? null) === value) return x;
+          const custom = { ...current };
+          if (value == null) delete custom[followupKey];
+          else custom[followupKey] = value;
+          return { ...x, custom } as CrmContact;
+        })
+      );
+    },
+    Boolean(followupKey)
+  );
+
   const patchContact = async (contactId: string, patch: Partial<CrmContact>, silent = false) => {
     const prevRow = localContacts.find((x) => x.id === contactId);
     if (prevRow && !canEditRow(profile, prevRow)) {
@@ -195,6 +233,7 @@ export function ContactsBoard({
       setToast,
       silent,
     });
+    if (saved && "custom" in patch) setHistoryTick((t) => t + 1);
     if (saved && ("email" in patch || "phone" in patch)) {
       const next = { ...prevRow, ...patch } as CrmContact;
       const dup = await findDuplicateContact(
@@ -393,6 +432,21 @@ export function ContactsBoard({
               setDismissedLink(linkedContactId);
             }}
             onToast={(message, tone) => setToast({ message, tone })}
+            historyRefreshKey={historyTick}
+            onFollowupChange={() => refreshContactCustom(openContact.id)}
+            followup={
+              followupKey
+                ? {
+                    value: (((openContact.custom ?? {}) as Record<string, unknown>)[followupKey] as string) ?? null,
+                    onSet: (next) => {
+                      const custom = { ...((openContact.custom ?? {}) as Record<string, unknown>) };
+                      if (next == null) delete custom[followupKey];
+                      else custom[followupKey] = next;
+                      patchContact(openContact.id, { custom } as Partial<CrmContact>);
+                    },
+                  }
+                : undefined
+            }
           />
         );
       })()}

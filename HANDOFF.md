@@ -142,6 +142,34 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — "Next follow up" field in BOTH drawers + contacts get the full follow-up sync and notifications (migration `crm_contact_followup_sync` + this commit, DEPLOYED)
+
+Ask (screenshots of the contact drawer's offer trail): the side panel had no
+way to set the reminder that is synced with the table.
+
+- **`FollowUpField`** (`follow-ups/followup-field.tsx`) at the top of the Lead
+  AND Contact drawers: status chip (Overdue / Today / Scheduled), TimeCell with
+  Set time, Clear. It writes the board column through the SAME save as the cell
+  (`editLead` / `patchContact`: optimistic, persisted, rolled back), so the
+  table, the linked Lead history reminder, the Reminders page and the owner
+  notification all follow. Hidden when the board has no follow-up date column.
+- **Contacts now mirror leads in the database:** `crm_contact_followup_key()`
+  (contacts, date, label like "%follow%" → `date_mswvwsl5` "Follow Up"),
+  unique linked entry per contact, trigger `crm_contacts_followup_history`,
+  `crm_history_followup_to_lead` handles contact entries,
+  `crm_notify_contact_followup` + trigger `crm_contacts_followup_notify`, and
+  both sweeps (08:00 date-only, every-minute timed) loop contacts too.
+  Proven in a rolled-back transaction (table → entry, history → column + 1
+  owner notification, tick → cleared).
+- ⚠️ Contact follow-up notifications are NEW: the rolled-back sweep found 22
+  contacts with a Follow Up date inside the 2-day window that were never
+  notified, so the next 08:00 run sends their owners real notifications.
+- `crm_contacts` added to `supabase_realtime`; ContactsBoard patches only the
+  follow-up key from realtime, bumps the drawer history after a saved custom
+  edit, and re-reads custom after a history reminder change (`getContactCustom`).
+- Offer-trail ("Lead tracking, one trail per offer") reminders are still their
+  own thing: NOT linked to the Follow Up column and not on the Reminders page.
+
 ## SESSION 2026-09-17 — Reminders page (to-do list) + realtime across Reminders, Leads and every Lead history (migration `crm_realtime_reminders` + this commit, DEPLOYED)
 
 Ask: a separate sidebar item ABOVE Leads that is a to-do list of the

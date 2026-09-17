@@ -26,6 +26,7 @@ import {
 } from "@/app/(app)/crm/leads/drawer-actions";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
 import { LeadHistorySection } from "@/components/crm/follow-ups/lead-history-section";
+import { FollowUpField } from "@/components/crm/follow-ups/followup-field";
 
 const BAND_COLORS: Record<string, string> = {
   hot: "#e2445c",
@@ -82,6 +83,7 @@ export function LeadDrawer({
   onConvert,
   historyRefreshKey,
   onFollowupChange,
+  followup,
 }: {
   lead: CrmLead;
   profile: CrmUser;
@@ -94,6 +96,8 @@ export function LeadDrawer({
   /** bumped by the board after a cell edit that may have moved the follow-up */
   historyRefreshKey?: number;
   onFollowupChange?: () => void;
+  /** the "next follow up" column, when the board has one */
+  followup?: { value: string | null; onSet: (next: string | null) => void };
 }) {
   const [composerOpen, setComposerOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -173,6 +177,8 @@ export function LeadDrawer({
 
         <div className="flex-1 px-[24px] pb-[32px]">
           {/* details */}
+          {followup && <FollowUpField value={followup.value} onSet={followup.onSet} />}
+
           <SectionTitle>Details</SectionTitle>
           <DetailRow label="Email">
             {lead.email ? (

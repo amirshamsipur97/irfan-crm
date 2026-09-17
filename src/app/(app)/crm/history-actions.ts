@@ -198,3 +198,14 @@ export async function getLeadCustom(leadId: string): Promise<Record<string, unkn
     .maybeSingle<{ custom: Record<string, unknown> | null }>();
   return data ? data.custom ?? {} : null;
 }
+
+/** Same as getLeadCustom, for a contact's "Follow Up" column. */
+export async function getContactCustom(contactId: string): Promise<Record<string, unknown> | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("crm_contacts")
+    .select("custom")
+    .eq("id", contactId)
+    .maybeSingle<{ custom: Record<string, unknown> | null }>();
+  return data ? data.custom ?? {} : null;
+}
