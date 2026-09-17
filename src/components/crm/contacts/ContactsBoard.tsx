@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useServerState } from "@/lib/use-server-state";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -73,6 +74,11 @@ export function ContactsBoard({
   const [localGroups, setLocalGroups] = useServerState(groups);
   const [newGroupId, setNewGroupId] = useState<string | null>(null);
   const [openContactId, setOpenContactId] = useState<string | null>(null);
+  // a reminder links to /crm/contacts?contact=<id>, which opens that contact —
+  // derived, like the Leads board, so a second reminder still opens
+  const linkedContactId = useSearchParams().get("contact");
+  const [dismissedLink, setDismissedLink] = useState<string | null>(null);
+  const activeContactId = openContactId ?? (linkedContactId && linkedContactId !== dismissedLink ? linkedContactId : null);
 
   const [localColumns, setLocalColumns] = useServerState(customColumns);
   const columnDrag = useColumnOrder({ boardKey: "contacts", columns: CONTACT_COLUMNS, savedOrder: columnOrder });
@@ -375,14 +381,17 @@ export function ContactsBoard({
           }}
         />
       )}
-      {openContactId && (() => {
-        const openContact = localContacts.find((c) => c.id === openContactId);
+      {activeContactId && (() => {
+        const openContact = localContacts.find((c) => c.id === activeContactId);
         if (!openContact) return null;
         return (
           <ContactDrawer
             contact={openContact}
             profile={profile}
-            onClose={() => setOpenContactId(null)}
+            onClose={() => {
+              setOpenContactId(null);
+              setDismissedLink(linkedContactId);
+            }}
             onToast={(message, tone) => setToast({ message, tone })}
           />
         );

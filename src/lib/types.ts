@@ -306,6 +306,54 @@ export interface CrmOfferTracking {
   author?: { full_name: string | null; avatar_url: string | null } | null;
 }
 
+/**
+ * One entry on a client's Lead history: the same shape as an offer's trail,
+ * but hung on the lead OR on the contact (exactly one). Both drawers show the
+ * entries of the lead AND of the contact it became, so the story stays whole
+ * across "Move to contact".
+ */
+export interface CrmLeadHistory {
+  id: string;
+  lead_id: string | null;
+  contact_id: string | null;
+  entry_type: OfferTrackingType;
+  duration_min: number | null;
+  entry_date: string;
+  note: string;
+  remind_at: string | null;
+  reminder_done: boolean;
+  /** stamped by the reminder job once the notification went out */
+  reminder_sent_at: string | null;
+  file_name: string | null;
+  storage_path: string | null;
+  mime_type: string | null;
+  size_bytes: number | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  author?: { full_name: string | null; avatar_url: string | null } | null;
+}
+
+/** Things that happened to a client without anybody typing them: derived, never stored. */
+export type HistoryMilestoneKind =
+  | "lead_created"
+  | "assigned"
+  | "first_response"
+  | "moved"
+  | "contact_created"
+  | "offer_created"
+  | "offer_accepted"
+  | "downpayment_done"
+  | "invoice_sent";
+
+export interface HistoryMilestone {
+  id: string;
+  kind: HistoryMilestoneKind;
+  at: string;
+  title: string;
+  detail: string | null;
+}
+
 /** A floor-plan file sent to the client for a specific offer. */
 export interface CrmOfferFloorPlan {
   id: string;

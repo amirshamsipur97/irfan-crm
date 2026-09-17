@@ -25,6 +25,7 @@ import {
   setLeadInterestStatus,
 } from "@/app/(app)/crm/leads/drawer-actions";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
+import { LeadHistorySection } from "@/components/crm/follow-ups/lead-history-section";
 
 const BAND_COLORS: Record<string, string> = {
   hot: "#e2445c",
@@ -222,6 +223,9 @@ export function LeadDrawer({
               ? `${activityTime(lead.first_response_at)}${respTime ? ` (${respTime} after assignment)` : ""}`
               : "no response logged yet"}
           </DetailRow>
+
+          {/* the client's whole story, from the moment the lead came in */}
+          <LeadHistorySection leadId={lead.id} onToast={onToast} onChanged={reload} />
 
           {/* score breakdown */}
           <SectionTitle>Score breakdown</SectionTitle>

@@ -11,6 +11,7 @@ import { shortDate, sourceLabel } from "@/components/crm/leads/board-config";
 import { canEditRow } from "@/lib/permissions";
 import { DemandSection } from "./demand-section";
 import { TrackingSection } from "./tracking-section";
+import { LeadHistorySection } from "@/components/crm/follow-ups/lead-history-section";
 import { countryFlag } from "@/components/crm/country-cell";
 import { ageLabel, genderLabel } from "@/lib/person-fields";
 import { TemperaturePill } from "@/components/crm/temperature-pill";
@@ -296,6 +297,9 @@ export function ContactDrawer({
             onToast={onToast}
             onChanged={load}
           />
+
+          {/* the same story the lead had, continued: lead + contact entries on one line */}
+          <LeadHistorySection contactId={contact.id} onToast={onToast} onChanged={load} />
 
           {loading ? (
             <p className="pt-[24px] font-sans text-[14px] text-ink-muted">Loading…</p>
