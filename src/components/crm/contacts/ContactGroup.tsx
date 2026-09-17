@@ -43,6 +43,8 @@ import { DeleteIcon } from "@/components/ui/DeleteIcon";
 const ROW_H = 36;
 
 export function ContactGroup({
+  followupKey,
+  onOpenFollowUp,
   group,
   contacts,
   deals,
@@ -75,6 +77,9 @@ export function ContactGroup({
   /** present only for admin tier — hides the header trash button otherwise */
   onDeleteGroup?: () => void;
   onPatchContact: (contactId: string, patch: Partial<CrmContact>) => void;
+  /** key of the "Follow Up" column; its cell opens the follow-up popup */
+  followupKey?: string;
+  onOpenFollowUp?: (contact: CrmContact) => void;
   onAddContact: (name: string) => void;
   accountOptions: PickerOption[];
   onCreateAccount: (contactId: string, name: string) => void;
@@ -477,6 +482,9 @@ export function ContactGroup({
                     column={col}
                     value={(contact.custom ?? {})[col.key]}
                     users={users}
+                    onOpenFollowUp={
+                      onOpenFollowUp && col.key === followupKey ? () => onOpenFollowUp(contact) : undefined
+                    }
                     onSave={(next) =>
                       onPatchContact(contact.id, {
                         custom: { ...(contact.custom ?? {}), [col.key]: next },

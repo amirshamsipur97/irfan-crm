@@ -22,6 +22,7 @@ import { LeadGroup } from "./LeadGroup";
 import { LeadDrawer } from "./lead-drawer";
 import { getLeadCustom } from "@/app/(app)/crm/history-actions";
 import { useRealtimeTable } from "@/lib/use-realtime";
+import { FollowUpPopup } from "@/components/crm/reminders/reminder-popup";
 import { BOARD_COLUMNS, GROUP_COLORS, sourceColor, sourceLabel } from "./board-config";
 import { todayLocalDateString } from "@/components/crm/activities/activities-config";
 import { useColumnOrder } from "@/components/crm/column-order";
@@ -127,6 +128,8 @@ export function LeadsBoard({
   // database: a saved custom edit re-reads the open history, and a history
   // reminder change pulls the lead's custom back into the row
   const [historyTick, setHistoryTick] = useState(0);
+  // the lead whose follow-up popup is open (from the "next follow up" cell)
+  const [followUpLeadId, setFollowUpLeadId] = useState<string | null>(null);
   const refreshLeadCustom = async (leadId: string) => {
     const custom = await getLeadCustom(leadId);
     if (custom) patchLead(leadId, { custom } as Partial<CrmLead>);
@@ -437,6 +440,8 @@ export function LeadsBoard({
               columnDrag={columnDrag}
               onDeleteGroup={() => requestDeleteGroup(group)}
               onEmailLead={setEmailLead}
+              followupKey={followupKey}
+              onOpenFollowUp={(lead) => setFollowUpLeadId(lead.id)}
               leads={sortedRows.filter((l) => l.group_id === group.id)}
               doneContactIds={doneContactIds}
               users={users}
@@ -571,6 +576,32 @@ export function LeadsBoard({
                   }
                 : undefined
             }
+          />
+        );
+      })()}
+      {followUpLeadId && followupKey && (() => {
+        const lead = localLeads.find((l) => l.id === followUpLeadId);
+        if (!lead) return null;
+        const custom = (lead.custom ?? {}) as Record<string, unknown>;
+        return (
+          <FollowUpPopup
+            target={{ leadId: lead.id, contactId: null, dealId: null, name: lead.name }}
+            followup={{
+              value: (custom[followupKey] as string) ?? null,
+              onSet: (next) => {
+                const nextCustom = { ...custom };
+                if (next == null) delete nextCustom[followupKey];
+                else nextCustom[followupKey] = next;
+                editLead(lead.id, { custom: nextCustom } as Partial<CrmLead>);
+              },
+            }}
+            users={users}
+            onClose={() => setFollowUpLeadId(null)}
+            onSaved={() => {
+              refreshLeadCustom(lead.id);
+              setHistoryTick((t) => t + 1);
+            }}
+            onToast={(message, tone) => setToast({ message, tone })}
           />
         );
       })()}

@@ -18,6 +18,7 @@ import { CONTACT_COLUMNS } from "./contacts-config";
 import { ContactDrawer } from "./contact-drawer";
 import { getContactCustom } from "@/app/(app)/crm/history-actions";
 import { useRealtimeTable } from "@/lib/use-realtime";
+import { FollowUpPopup } from "@/components/crm/reminders/reminder-popup";
 import {
   addContact,
   addContactGroup,
@@ -185,6 +186,8 @@ export function ContactsBoard({
   // "Follow Up" and the contact's Lead history reminder are kept in sync by
   // the database (see LeadsBoard for the same wiring on leads)
   const [historyTick, setHistoryTick] = useState(0);
+  // the contact whose follow-up popup is open (from the "Follow Up" cell)
+  const [followUpContactId, setFollowUpContactId] = useState<string | null>(null);
   const followupKey = [...localColumns]
     .filter((c) => c.type === "date" && c.label.toLowerCase().includes("follow"))
     .sort((a, b) => a.position - b.position)[0]?.key;
@@ -363,6 +366,8 @@ export function ContactsBoard({
                 renameContactGroup(group.id, name);
               }}
               onPatchContact={patchContact}
+              followupKey={followupKey}
+              onOpenFollowUp={(contact) => setFollowUpContactId(contact.id)}
               customColumns={localColumns}
               users={users}
               profile={profile}
@@ -447,6 +452,32 @@ export function ContactsBoard({
                   }
                 : undefined
             }
+          />
+        );
+      })()}
+      {followUpContactId && followupKey && (() => {
+        const contact = localContacts.find((c) => c.id === followUpContactId);
+        if (!contact) return null;
+        const custom = (contact.custom ?? {}) as Record<string, unknown>;
+        return (
+          <FollowUpPopup
+            target={{ leadId: null, contactId: contact.id, dealId: null, name: contact.name }}
+            followup={{
+              value: (custom[followupKey] as string) ?? null,
+              onSet: (next) => {
+                const nextCustom = { ...custom };
+                if (next == null) delete nextCustom[followupKey];
+                else nextCustom[followupKey] = next;
+                patchContact(contact.id, { custom: nextCustom } as Partial<CrmContact>);
+              },
+            }}
+            users={users}
+            onClose={() => setFollowUpContactId(null)}
+            onSaved={() => {
+              refreshContactCustom(contact.id);
+              setHistoryTick((t) => t + 1);
+            }}
+            onToast={(message, tone) => setToast({ message, tone })}
           />
         );
       })()}

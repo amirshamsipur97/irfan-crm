@@ -10,6 +10,7 @@ import { NumberCell } from "@/components/crm/deals/deal-cells";
 import { TimeCell } from "@/components/crm/activities/activity-cells";
 import { toLocalDateString, toLocalDateTimeString } from "@/components/crm/activities/activities-config";
 import { shortDateTime } from "@/components/crm/leads/board-config";
+import { FollowUpButtonCell } from "@/components/crm/follow-ups/followup-button-cell";
 import { CountryCell } from "@/components/crm/country-cell";
 import { compactMoney, money } from "@/components/crm/deals/deals-config";
 import { BEDROOM_OPTIONS, PROPERTY_TYPES } from "@/components/crm/contacts/demand-config";
@@ -170,11 +171,14 @@ export function CustomValueCell({
   value,
   users,
   onSave,
+  onOpenFollowUp,
 }: {
   column: CrmCustomColumn;
   value: unknown;
   users: CrmUser[];
   onSave: (next: unknown) => void;
+  /** the board's follow-up column: the cell becomes a button that opens the follow-up popup */
+  onOpenFollowUp?: () => void;
 }) {
   const border = "border-b border-r border-line";
   const w = { width: CUSTOM_COL_W };
@@ -256,6 +260,7 @@ export function CustomValueCell({
         </span>
       );
     case "date":
+      if (onOpenFollowUp) return <FollowUpButtonCell value={(value as string) ?? null} onOpen={onOpenFollowUp} />;
       return (
         <span className={`${border} block bg-white`} style={w}>
           <TimeCell

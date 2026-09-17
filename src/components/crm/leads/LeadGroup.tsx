@@ -46,6 +46,8 @@ import { DeleteIcon } from "@/components/ui/DeleteIcon";
 const ROW_H = 36;
 
 export function LeadGroup({
+  followupKey,
+  onOpenFollowUp,
   group,
   leads,
   users,
@@ -89,6 +91,9 @@ export function LeadGroup({
   onAddLead: (name: string) => void;
   onLogActivity: (leadId: string, payload: LogPayload) => void;
   onPatchLead: (leadId: string, patch: Partial<CrmLead>) => void;
+  /** key of the "next follow up" column; its cell opens the follow-up popup */
+  followupKey?: string;
+  onOpenFollowUp?: (lead: CrmLead) => void;
   onMoveToContacts: (leadId: string) => void;
   onOpenLead?: (leadId: string) => void;
   onEmailLead?: (lead: CrmLead) => void;
@@ -507,6 +512,9 @@ export function LeadGroup({
                     column={col}
                     value={(lead.custom ?? {})[col.key]}
                     users={users}
+                    onOpenFollowUp={
+                      onOpenFollowUp && col.key === followupKey ? () => onOpenFollowUp(lead) : undefined
+                    }
                     onSave={(next) =>
                       onPatchLead(lead.id, {
                         custom: { ...(lead.custom ?? {}), [col.key]: next },

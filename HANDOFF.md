@@ -142,6 +142,30 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — The follow-up column is a BUTTON that opens the follow-up popup (this commit, no migration, DEPLOYED)
+
+Ask: turn the "next follow up" cell into a button that brings up the info +
+report page.
+
+- `follow-ups/followup-button-cell.tsx` (`FollowUpButtonCell`): the cell of the
+  board's follow-up column (Leads "next follow up", Contacts "Follow Up", found
+  like the DB: date + label like "follow", first by position) shows the value
+  with a status dot (red overdue / orange today / blue scheduled) or a hover
+  "+ Follow up", and opens the popup. `CustomValueCell` takes
+  `onOpenFollowUp`; LeadGroup/ContactGroup take `followupKey` +
+  `onOpenFollowUp`; LeadsBoard/ContactsBoard own the popup state.
+- `reminder-popup.tsx` refactored: generic **`FollowUpPopup`** (target
+  lead/contact/deal, optional `worked` reminder, optional `followup` column
+  {value,onSet}); `ReminderPopup` (To-do list) is a thin wrapper. From a cell:
+  FollowUpField at the top (set/clear the time without a report, same save as
+  the cell), client box, latest history, report composer. For a contact with
+  offers, a "Log on" select writes the report to Lead history or to Offer N's
+  Lead tracking (`getReminderClient` now returns the contact's offers). Save:
+  report → if a follow up existed and no next reminder was given, the column
+  is cleared (the DB ticks its reminder); a next reminder replaces it through
+  the triggers. Board refreshes the row's custom and the drawer history.
+- Verified on a throwaway page (cells + popup layout); not signed in.
+
 ## SESSION 2026-09-17 — To-do list filter by agent, for managers only (this commit, no migration, DEPLOYED)
 
 - Manage roles (`canManageBoards`): the Filter button opens the standard quick

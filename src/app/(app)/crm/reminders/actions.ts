@@ -139,6 +139,8 @@ export type ReminderClientDetails = {
   preferred_area: string | null;
   owner_id: string | null;
   recent: { id: string; entry_type: string; entry_date: string; note: string; created_at: string }[];
+  /** a contact's offers, oldest first, for "log this on Offer N" */
+  offers: { id: string; created_at: string; deal_value: number | null; currency: string | null; account_name: string | null; project_name: string | null }[];
 };
 
 /**
@@ -171,11 +173,11 @@ export async function getReminderClient(input: {
         .returns<Recent>(),
     ]);
     if (!lead) return null;
-    return { kind: "lead", code: null, preferred_area: null, ...lead, recent: recent ?? [] } as ReminderClientDetails;
+    return { kind: "lead", code: null, preferred_area: null, ...lead, recent: recent ?? [], offers: [] } as ReminderClientDetails;
   }
 
   if (input.contactId) {
-    const [{ data: contact }, { data: recent }] = await Promise.all([
+    const [{ data: contact }, { data: recent }, { data: offers }] = await Promise.all([
       supabase
         .from("crm_contacts")
         .select("id, name, code, phone, country_code, email, country, temperature, lead_source, budget, preferred_area, owner_id")
@@ -196,10 +198,16 @@ export async function getReminderClient(input: {
             .order("created_at", { ascending: false })
             .limit(4)
             .returns<Recent>(),
+      supabase
+        .from("crm_deals")
+        .select("id, created_at, deal_value, currency, account_name, project_name")
+        .eq("contact_id", input.contactId)
+        .order("created_at")
+        .returns<ReminderClientDetails["offers"]>(),
     ]);
     if (!contact) return null;
     const { lead_source, ...rest } = contact as typeof contact & { lead_source: string | null };
-    return { kind: "contact", source: lead_source, ...rest, recent: recent ?? [] } as ReminderClientDetails;
+    return { kind: "contact", source: lead_source, ...rest, recent: recent ?? [], offers: offers ?? [] } as ReminderClientDetails;
   }
   return null;
 }
