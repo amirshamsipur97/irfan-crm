@@ -21,6 +21,7 @@ import { BoardHeader } from "./BoardHeader";
 import { LeadGroup } from "./LeadGroup";
 import { LeadDrawer } from "./lead-drawer";
 import { getLeadCustom } from "@/app/(app)/crm/history-actions";
+import { useRealtimeTable } from "@/lib/use-realtime";
 import { BOARD_COLUMNS, GROUP_COLORS, sourceColor, sourceLabel } from "./board-config";
 import { todayLocalDateString } from "@/components/crm/activities/activities-config";
 import { useColumnOrder } from "@/components/crm/column-order";
@@ -130,6 +131,36 @@ export function LeadsBoard({
     const custom = await getLeadCustom(leadId);
     if (custom) patchLead(leadId, { custom } as Partial<CrmLead>);
   };
+
+  // the follow-up column, found the way the database finds it (crm_followup_key)
+  const followupKey = [...localColumns]
+    .filter((c) => c.type === "date" && c.label.toLowerCase().includes("follow"))
+    .sort((a, b) => a.position - b.position)[0]?.key;
+
+  // realtime: a follow-up moved anywhere else (Reminders page, a drawer, another
+  // member) lands in its cell. Only that one key is patched, so an edit the
+  // viewer has in flight on any other field is never overwritten.
+  useRealtimeTable(
+    "crm_leads",
+    (payload) => {
+      if (payload.eventType !== "UPDATE" || !followupKey) return;
+      const next = payload.new as { id?: string; custom?: Record<string, unknown> | null };
+      if (!next.id) return;
+      const value = next.custom?.[followupKey] ?? null;
+      setLocalLeads((prev) =>
+        prev.map((l) => {
+          if (l.id !== next.id) return l;
+          const current = (l.custom ?? {}) as Record<string, unknown>;
+          if ((current[followupKey] ?? null) === value) return l;
+          const custom = { ...current };
+          if (value == null) delete custom[followupKey];
+          else custom[followupKey] = value;
+          return { ...l, custom } as CrmLead;
+        })
+      );
+    },
+    Boolean(followupKey)
+  );
 
   /** cell edits: optimistic patch, awaited persist, rollback + toast on refusal */
   const editLead = async (leadId: string, patch: Partial<CrmLead>) => {

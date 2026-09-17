@@ -14,6 +14,7 @@ import {
   type LeadHistoryData,
 } from "@/app/(app)/crm/history-actions";
 import { buildMilestones, mergeTimeline } from "./history-timeline";
+import { useDebounced, useRealtimeTable } from "@/lib/use-realtime";
 import { EntryCard, TrailComposer, TrailMilestone } from "./trail";
 import type { CrmLeadHistory, HistoryMilestoneKind } from "@/lib/types";
 
@@ -138,6 +139,25 @@ export function LeadHistorySection({
       alive = false;
     };
   }, [leadId, contactId, refreshKey]);
+
+  // anyone's change to this client's history (the Reminders page, the Leads
+  // column, another member) re-reads it
+  const reloadSoon = useDebounced(async () => {
+    const fresh = await listLeadHistory({ leadId, contactId });
+    setLoaded({ key: `${leadId ?? ""}|${contactId ?? ""}`, data: fresh });
+  }, 300);
+  useRealtimeTable("crm_lead_history", (payload) => {
+    const row = payload.new as { id?: string; lead_id?: string | null; contact_id?: string | null };
+    const gone = payload.old as { id?: string };
+    const current = loaded?.data;
+    if (!current) return;
+    const leadIds = new Set(current.leads.map((l) => l.id));
+    const mine =
+      (row?.lead_id && leadIds.has(row.lead_id)) ||
+      (row?.contact_id && current.contact?.id === row.contact_id) ||
+      (gone?.id && current.entries.some((e) => e.id === gone.id));
+    if (mine) reloadSoon();
+  });
 
   /**
    * After a reminder change the database may have touched OTHER entries too

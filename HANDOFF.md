@@ -142,6 +142,35 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — Reminders page (to-do list) + realtime across Reminders, Leads and every Lead history (migration `crm_realtime_reminders` + this commit, DEPLOYED)
+
+Ask: a separate sidebar item ABOVE Leads that is a to-do list of the
+reminders, UI standard with the boards, and the reminder system matching the
+Leads table and each lead's side panel in realtime.
+
+- **`/crm/reminders`** (`RemindersBoard`, actions in `crm/reminders/actions.ts`):
+  the standard `BoardHeader` ("New reminder", Search), a "My reminders /
+  Everyone I can see" switch (mine = I set it OR I own the client), groups
+  Overdue / Today / Upcoming / Done (last 30 days, collapsed), each row:
+  tick, task, "next follow up" chip, client link (opens the lead/contact
+  drawer by `?lead=` / `?contact=`), owner, Due (TimeCell, moving it re-arms),
+  Set by, delete with confirm. New reminder = client search (leads + contacts)
+  + task + due → `addLeadHistoryEntry` (a lead one becomes the next follow up
+  through the 09-17 sync triggers). Rows ARE `crm_lead_history` rows with a
+  `remind_at`; there is no separate to-do table.
+- Sidebar: "Reminders" under Workspace home, icon `navReminders`
+  (`public/figma/ws_navReminders.svg`). Not in `BOARD_META` (no home stats).
+- **Realtime** (first use in this app): `crm_lead_history` + `crm_leads` added
+  to `supabase_realtime`; RLS applies per subscriber. Hook
+  `src/lib/use-realtime.ts` (`useRealtimeTable`, `useDebounced`). Reminders
+  page re-reads on any history change (skipped while its own save is in
+  flight); Lead history section re-reads when a change touches its lead/contact;
+  Leads board patches ONLY the follow-up key of `custom` from UPDATE payloads
+  (never clobbers other in-flight edits). DELETE payloads carry only `id`.
+- ⚠️ Realtime could NOT be tested signed in (no login in the pane). If a member
+  does not see live updates, check the browser client passes the session JWT
+  to realtime (`supabase.realtime.setAuth`). Everything still works on reload.
+
 ## SESSION 2026-09-17 — "next follow up" ⇄ Lead history reminder, one thing (migrations `crm_followup_history_sync` + `crm_followup_history_sync_new_after_done`, DEPLOYED)
 
 Ask: a reminder set in the drawer's Lead history must show in the Leads

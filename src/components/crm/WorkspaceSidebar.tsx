@@ -21,6 +21,9 @@ type NavItem = { label: string; icon: IconName; href: string };
  */
 export const PRIMARY_NAV: NavItem[] = [
   { label: "Workspace home", icon: "navHome", href: "/crm" },
+  // the day's to-do list: every Lead history reminder, synced with the
+  // Leads "next follow up" column and each client's drawer
+  { label: "Reminders", icon: "navReminders", href: "/crm/reminders" },
   { label: "Leads", icon: "navLeads", href: "/crm/leads" },
   { label: "Contacts", icon: "navContacts", href: "/crm/contacts" },
   // Offers = every proposal priced against a contact's demand; an accepted
