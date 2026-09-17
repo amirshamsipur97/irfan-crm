@@ -142,6 +142,20 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-17 — Reminders page fed by every existing follow-up (migration `crm_followup_backfill_history` + this commit, DEPLOYED)
+
+The page showed 0: the sync only linked follow-ups changed AFTER it shipped.
+The user confirmed the page's source is each agent's next follow ups, set in
+the table or the side panel. Backfill (additive): one linked 'table' Lead
+history entry per lead (36) and contact (57) that had a follow-up value and no
+linked entry, `created_by` = owner, `entry_date` = 2026-09-17, no
+notifications fired (verified). 86 of the 93 were already past due, so they
+land under Overdue. Split: mehdi sarraf 22, sara zangeneh 16, nastaran
+sistani 14, mehdi mehrjooy 13, aylar homayoun 12, mahammad faizal 8, Syed
+Nazeer Abbas Rizvi 4, babak chehrazi 3, arshia beigi 1. Undo = delete those
+'table' rows by their created_at. Page default scope: manage roles start on
+"Everyone I can see", agents on "My reminders".
+
 ## SESSION 2026-09-17 — "Next follow up" field in BOTH drawers + contacts get the full follow-up sync and notifications (migration `crm_contact_followup_sync` + this commit, DEPLOYED)
 
 Ask (screenshots of the contact drawer's offer trail): the side panel had no

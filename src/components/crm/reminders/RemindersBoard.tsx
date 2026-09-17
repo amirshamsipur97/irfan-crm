@@ -24,6 +24,7 @@ import {
   type ReminderRow,
 } from "@/app/(app)/crm/reminders/actions";
 import { useDebounced, useRealtimeTable } from "@/lib/use-realtime";
+import { canManageBoards } from "@/lib/permissions";
 import type { CrmUser } from "@/lib/types";
 
 type Bucket = "overdue" | "today" | "upcoming" | "done";
@@ -77,7 +78,8 @@ export function RemindersBoard({
   users: CrmUser[];
 }) {
   const [rows, setRows] = useState(initialReminders);
-  const [scope, setScope] = useState<"mine" | "all">("mine");
+  // an agent's list is their own follow-ups; managers and developers start on the whole team
+  const [scope, setScope] = useState<"mine" | "all">(canManageBoards(profile.role) ? "all" : "mine");
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Record<Bucket, boolean>>({
     overdue: false,
@@ -204,7 +206,8 @@ export function RemindersBoard({
             ))}
           </div>
           <span className="font-sans text-[13px] text-ink-muted">
-            {openCount} open {openCount === 1 ? "reminder" : "reminders"}
+            {openCount} open {openCount === 1 ? "reminder" : "reminders"} · next follow ups from the Leads and
+            Contacts tables and their side panels
           </span>
         </div>
 
