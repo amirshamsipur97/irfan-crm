@@ -66,6 +66,7 @@ export function ContactGroup({
   onDeleteColumn,
   onOpenContact,
   onOpenNegotiation,
+  onSetFirstNegotiationDate,
   onEmailContact,
   tools,
   columns,
@@ -93,8 +94,10 @@ export function ContactGroup({
   onRenameColumn: (columnId: string, label: string) => void;
   onDeleteColumn: (columnId: string) => void;
   onOpenContact?: (contactId: string) => void;
-  /** opens the first-negotiation popup for this client */
+  /** opens the negotiation log popup for this client */
   onOpenNegotiation?: (contact: CrmContact) => void;
+  /** the First negotiation date column writes through to round 1 of the log */
+  onSetFirstNegotiationDate?: (contact: CrmContact, date: string | null) => void;
   onEmailContact?: (contact: CrmContact) => void;
   tools?: RowToolsConfig;
   /** the board's columns in this user's saved order */
@@ -378,12 +381,12 @@ export function ContactGroup({
                             label="First negotiation"
                             withTime={false}
                             format={shortDate}
-                            // slicing the ISO string would shift the date a day
-                            // in +04, so go through the local-date helper
+                            // the date belongs to round 1 of the negotiation
+                            // log, so the column writes through to it instead
+                            // of setting a mirror the next save would undo.
+                            // Slicing the ISO string would shift the day in +04.
                             onChange={(iso) =>
-                              onPatchContact(contact.id, {
-                                first_negotiation_at: toLocalDateString(iso),
-                              })
+                              onSetFirstNegotiationDate?.(contact, toLocalDateString(iso))
                             }
                           />
                         </span>
@@ -394,7 +397,12 @@ export function ContactGroup({
                           {/* the call is six answers plus a note now, so the
                               cell summarises and the popup does the editing */}
                           <NegotiationCell
-                            summary={negotiationSummary(contact)}
+                            summary={[
+                              ...negotiationSummary(contact),
+                              ...(contact.next_negotiation_at
+                                ? [`Next ${shortDate(contact.next_negotiation_at)}`]
+                                : []),
+                            ]}
                             note={contact.first_negotiation_note}
                             onOpen={() => onOpenNegotiation?.(contact)}
                           />

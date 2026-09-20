@@ -145,6 +145,59 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-20 — The negotiation LOG: a round per call, "+" for the next one (migration `crm_contact_negotiation_log`, DEPLOYED)
+
+A cold client is not closed on the first call, so one negotiation per client was
+never enough. Every round now has its own row in the new table
+**`crm_contact_negotiations`** (contact_id, `round`, negotiated_at, the six
+answers, note, and **`next_at`** — the day the next call was agreed for), unique
+per (contact, round), RLS shaped like `crm_lead_history`'s contact side so the
+rounds follow whoever may see the client.
+
+- **The popup is the log.** It opens on the LATEST round, the earlier rounds sit
+  in a strip of chips under the header ("#1 · 5 Jul", "#2 · 5 Oct"), and
+  **"+ Next negotiation"** writes the open round and starts the next one on the
+  date that round agreed (today when it named none). Switching rounds saves the
+  open one first, so an edit is never lost. Each round can be deleted behind a
+  ConfirmDialog.
+- **A "Next negotiation" block** sits under the answers, and when the answer to
+  "do we have a matching offer" is **no** it says so in words: no offer yet, set
+  the day we speak again, then add it with "+".
+- **The client row is a MIRROR, not a second truth** (`mirrorToContact` in
+  `contacts/negotiation-actions.ts`, recomputed after every write and handed
+  back so the open board patches its row without a reload):
+  `first_negotiation_at` = the FIRST round's date, the `negotiation_*` columns +
+  `first_negotiation_note` = the LATEST round's answers, and the new
+  `crm_contacts.next_negotiation_at` = the latest round's `next_at`.
+  The board's "First negotiation" date cell therefore writes THROUGH to round 1
+  (`setFirstNegotiationDate`) instead of setting a mirror the next save would
+  undo, and the summary cell gained a "Next 5 Oct" chip.
+- **The side panel shows the log**: `NegotiationLogSection` draws every round on
+  a numbered vertical trail (chips, note, the next date), with the planned next
+  call called out at the top. The old "First negotiation" chips + note blocks in
+  the drawer were replaced by it — one place to write, one place to read.
+- The header icon was a speech bubble whose path never closed, so its tail stuck
+  out of the circle; it is a closed 20px bubble now, measured at 11.6px inset on
+  both sides of the 34px circle.
+
+**Backfill** — every contact that already carried negotiation data became round
+1: **125 rows** (106 with a date, 111 with a note, 1 with the new answers),
+matching `backups/crm-negotiation-columns-2026-09-20.json` row for row.
+
+**Verified** — `npx tsc --noEmit` clean, `npx next build` clean, eslint back at
+the 37+3 baseline. The popup was driven on a throwaway `/preview-negotiation`
+page (deleted before the commit): the strip, the "+", the Next-negotiation block
+and the fixed icon all render, and Save on an untouched round now closes instead
+of refusing (persist() used to return `null` for "nothing changed", which read as
+failure — fixed to `{ ok }`). The database half was proved by impersonating the
+owning agent inside `begin … set local role authenticated … rollback`: round 1
+took a `next_at`, round 2 was inserted for the same client, both were visible,
+and the mirror came out exactly as designed — first date from round 1, answers
+and note from round 2. A re-count after the rollback shows 125 rounds, 0 extra
+rounds and 0 clients with a next date, so nothing live was touched. Never
+exercised: the actions themselves by a real signed-in member (sign-in is still
+blocked for me).
+
 ## SESSION 2026-09-20 — Contacts: Comments opens in a dialog too (this commit, no migration, DEPLOYED)
 
 The Comments column edited inline, so a sentence was written into a one-line box

@@ -20,6 +20,7 @@ import { getContactCustom } from "@/app/(app)/crm/history-actions";
 import { useRealtimeTable } from "@/lib/use-realtime";
 import { FollowUpPopup } from "@/components/crm/reminders/reminder-popup";
 import { NegotiationPopup, type ProjectOption } from "./negotiation-popup";
+import { setFirstNegotiationDate } from "@/app/(app)/crm/contacts/negotiation-actions";
 import {
   addContact,
   addContactGroup,
@@ -332,6 +333,7 @@ export function ContactsBoard({
         negotiation_alt_project: null,
         negotiation_alt_project_id: null,
         negotiation_readiness: null,
+        next_negotiation_at: null,
         custom: {},
         group_id: groupId,
         last_interaction_at: null,
@@ -428,6 +430,23 @@ export function ContactsBoard({
               onAddContact={(name) => handleAddContact(group.id, name)}
               onOpenContact={setOpenContactId}
               onOpenNegotiation={(contact) => setNegotiationContactId(contact.id)}
+              onSetFirstNegotiationDate={async (contact, date) => {
+                if (!canEditRow(profile, contact)) {
+                  setToast({ message: OWNER_ONLY_MESSAGE, tone: "alert" });
+                  return;
+                }
+                const prev = contact.first_negotiation_at;
+                setLocalContacts((rows) =>
+                  rows.map((r) => (r.id === contact.id ? { ...r, first_negotiation_at: date } : r))
+                );
+                const result = await setFirstNegotiationDate(contact.id, date);
+                if ("error" in result && result.error) {
+                  setLocalContacts((rows) =>
+                    rows.map((r) => (r.id === contact.id ? { ...r, first_negotiation_at: prev } : r))
+                  );
+                  setToast({ message: result.error, tone: "alert" });
+                }
+              }}
             />
           ))}
 
@@ -552,9 +571,11 @@ export function ContactsBoard({
                 .map((o) => ({ id: o.id, name: o.name, stage: null })),
             ]}
             canEdit={canEditRow(profile, contact)}
-            onSave={async (patch) => {
-              await patchContact(contact.id, patch);
-            }}
+            onMirrored={(mirror) =>
+              setLocalContacts((rows) =>
+                rows.map((r) => (r.id === contact.id ? ({ ...r, ...mirror } as CrmContact) : r))
+              )
+            }
             onCreateOffer={async (projectName) => {
               const result = await createOfferFromContact(contact.id, projectName);
               if ("error" in result && result.error) return { error: result.error };

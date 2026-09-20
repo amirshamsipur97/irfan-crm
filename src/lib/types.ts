@@ -252,10 +252,38 @@ export interface CrmContact {
   negotiation_alt_project?: string | null;
   negotiation_alt_project_id?: string | null;
   negotiation_readiness?: string | null;
+  /** mirror of the latest round's next_at — when the next call is planned */
+  next_negotiation_at?: string | null;
   last_interaction_at: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;
   position?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * One round of negotiation with a client. A cold client takes several, so the
+ * rounds are the log and the contact row only mirrors them.
+ */
+export interface CrmContactNegotiation {
+  id: string;
+  contact_id: string;
+  /** 1 for the first negotiation, 2 for the next… */
+  round: number;
+  negotiated_at: string | null;
+  channel: string | null;
+  resident: boolean | null;
+  purpose: string | null;
+  purpose_other: string | null;
+  has_offer: boolean | null;
+  alt_project: string | null;
+  alt_project_id: string | null;
+  readiness: string | null;
+  note: string | null;
+  /** the date agreed for the next negotiation */
+  next_at: string | null;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 }

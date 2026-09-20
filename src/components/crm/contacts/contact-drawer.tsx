@@ -10,7 +10,7 @@ import { money, offerNumbers } from "@/components/crm/deals/deals-config";
 import { shortDate, sourceLabel } from "@/components/crm/leads/board-config";
 import { canEditRow } from "@/lib/permissions";
 import { DemandSection } from "./demand-section";
-import { negotiationSummary } from "./negotiation-config";
+import { NegotiationLogSection } from "./negotiation-log-section";
 import { TrackingSection } from "./tracking-section";
 import { LeadHistorySection } from "@/components/crm/follow-ups/lead-history-section";
 import { FollowUpField } from "@/components/crm/follow-ups/followup-field";
@@ -295,37 +295,17 @@ export function ContactDrawer({
           <DetailRow label="First negotiation">
             {contact.first_negotiation_at ? shortDate(contact.first_negotiation_at) : "—"}
           </DetailRow>
+          {contact.next_negotiation_at && (
+            <DetailRow label="Next negotiation">{shortDate(contact.next_negotiation_at)}</DetailRow>
+          )}
           <DetailRow label="Last interaction">
             {contact.last_interaction_at ? activityTime(contact.last_interaction_at) : "—"}
           </DetailRow>
           <DetailRow label="Created">{shortDate(contact.created_at)}</DetailRow>
 
-          {/* the answers picked in the negotiation popup, read-only here */}
-          {negotiationSummary(contact).length > 0 && (
-            <>
-              <SectionTitle>First negotiation</SectionTitle>
-              <div className="flex flex-wrap gap-[6px]">
-                {negotiationSummary(contact).map((chip) => (
-                  <span
-                    key={chip}
-                    className="rounded-[12px] border border-line bg-canvas px-[9px] py-[3px] font-sans text-[12px] leading-[18px] text-ink"
-                  >
-                    {chip}
-                  </span>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* the full note, untruncated — a DetailRow would clip it to one line */}
-          {contact.first_negotiation_note && (
-            <>
-              <SectionTitle>First negotiation notes</SectionTitle>
-              <p className="m-0 whitespace-pre-wrap rounded-[6px] border border-line bg-canvas px-[12px] py-[10px] font-sans text-[13px] leading-[19px] text-ink">
-                {contact.first_negotiation_note}
-              </p>
-            </>
-          )}
+          {/* every round with this client, read-only — the popup on the board
+              is the one place they are written */}
+          <NegotiationLogSection contactId={contact.id} />
 
           <DemandSection
             contact={contact}
