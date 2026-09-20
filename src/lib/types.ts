@@ -239,6 +239,19 @@ export interface CrmContact {
   /** when the first negotiation with the client happened, and what was said */
   first_negotiation_at: string | null;
   first_negotiation_note: string | null;
+  /**
+   * The first negotiation, answered rather than typed — see
+   * `contacts/negotiation-config.ts` for the option lists these keys come from.
+   */
+  negotiation_channel?: string | null;
+  negotiation_resident?: boolean | null;
+  negotiation_purpose?: string | null;
+  negotiation_purpose_other?: string | null;
+  negotiation_has_offer?: boolean | null;
+  /** the project suggested when we had nothing matching the demand */
+  negotiation_alt_project?: string | null;
+  negotiation_alt_project_id?: string | null;
+  negotiation_readiness?: string | null;
   last_interaction_at: string | null;
   custom: Record<string, unknown>;
   created_by: string | null;

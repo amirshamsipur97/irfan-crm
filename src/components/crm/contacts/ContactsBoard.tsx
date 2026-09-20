@@ -19,6 +19,7 @@ import { ContactDrawer } from "./contact-drawer";
 import { getContactCustom } from "@/app/(app)/crm/history-actions";
 import { useRealtimeTable } from "@/lib/use-realtime";
 import { FollowUpPopup } from "@/components/crm/reminders/reminder-popup";
+import { NegotiationPopup, type ProjectOption } from "./negotiation-popup";
 import {
   addContact,
   addContactGroup,
@@ -32,7 +33,7 @@ import { applyRowEdit } from "@/components/crm/persist";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { findDuplicateContact } from "@/app/(app)/crm/contacts/actions";
-import { quickCreateAccount } from "@/app/(app)/crm/offers/actions";
+import { createOfferFromContact, quickCreateAccount } from "@/app/(app)/crm/offers/actions";
 import type { PickerOption } from "@/components/crm/deals/connect-picker";
 import type { CrmCustomColumn, CustomColumnType } from "@/lib/custom-columns";
 import {
@@ -58,6 +59,7 @@ export function ContactsBoard({
   deals,
   users,
   accounts,
+  projects = [],
   customColumns,
   columnOrder = null,
 }: {
@@ -67,6 +69,8 @@ export function ContactsBoard({
   deals: CrmDeal[];
   users: CrmUser[];
   accounts: CrmAccount[];
+  /** the Developments projects, offered as the negotiation's alternative suggestion */
+  projects?: ProjectOption[];
   customColumns: CrmCustomColumn[];
   /** this user's saved column order */
   columnOrder?: string[] | null;
@@ -188,6 +192,11 @@ export function ContactsBoard({
   const [historyTick, setHistoryTick] = useState(0);
   // the contact whose follow-up popup is open (from the "Follow Up" cell)
   const [followUpContactId, setFollowUpContactId] = useState<string | null>(null);
+  // the contact whose first-negotiation popup is open (from the notes cell)
+  const [negotiationContactId, setNegotiationContactId] = useState<string | null>(null);
+  // offers created from the popup this session — the server prop only refreshes
+  // on the next navigation, and the agent must see what they just made
+  const [freshOffers, setFreshOffers] = useState<{ contactId: string; id: string; name: string }[]>([]);
   const followupKey = [...localColumns]
     .filter((c) => c.type === "date" && c.label.toLowerCase().includes("follow"))
     .sort((a, b) => a.position - b.position)[0]?.key;
@@ -315,6 +324,14 @@ export function ContactsBoard({
         requirements: null,
         first_negotiation_at: null,
         first_negotiation_note: null,
+        negotiation_channel: null,
+        negotiation_resident: null,
+        negotiation_purpose: null,
+        negotiation_purpose_other: null,
+        negotiation_has_offer: null,
+        negotiation_alt_project: null,
+        negotiation_alt_project_id: null,
+        negotiation_readiness: null,
         custom: {},
         group_id: groupId,
         last_interaction_at: null,
@@ -410,6 +427,7 @@ export function ContactsBoard({
               }}
               onAddContact={(name) => handleAddContact(group.id, name)}
               onOpenContact={setOpenContactId}
+              onOpenNegotiation={(contact) => setNegotiationContactId(contact.id)}
             />
           ))}
 
@@ -505,6 +523,46 @@ export function ContactsBoard({
               refreshContactCustom(contact.id);
               setHistoryTick((t) => t + 1);
             }}
+            onToast={(message, tone) => setToast({ message, tone })}
+          />
+        );
+      })()}
+      {negotiationContactId && (() => {
+        const contact = localContacts.find((c) => c.id === negotiationContactId);
+        if (!contact) return null;
+        // the offers the Offers board already holds for this client, matched by
+        // FK first and by the cached name second — the same rule as the badge
+        const linked = deals
+          .filter(
+            (d) =>
+              d.contact_id === contact.id ||
+              (!!d.contact_name &&
+                !!contact.name &&
+                d.contact_name.trim().toLowerCase() === contact.name.trim().toLowerCase())
+          )
+          .map((d) => ({ id: d.id, name: d.name, stage: null }));
+        return (
+          <NegotiationPopup
+            contact={contact}
+            projects={projects}
+            offers={[
+              ...linked,
+              ...freshOffers
+                .filter((o) => o.contactId === contact.id && !linked.some((l) => l.id === o.id))
+                .map((o) => ({ id: o.id, name: o.name, stage: null })),
+            ]}
+            canEdit={canEditRow(profile, contact)}
+            onSave={async (patch) => {
+              await patchContact(contact.id, patch);
+            }}
+            onCreateOffer={async (projectName) => {
+              const result = await createOfferFromContact(contact.id, projectName);
+              if ("error" in result && result.error) return { error: result.error };
+              const made = result as { id: string; name: string };
+              setFreshOffers((prev) => [...prev, { contactId: contact.id, ...made }]);
+              return made;
+            }}
+            onClose={() => setNegotiationContactId(null)}
             onToast={(message, tone) => setToast({ message, tone })}
           />
         );

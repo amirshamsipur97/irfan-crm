@@ -343,3 +343,37 @@ export async function createOfferForContact(contactName: string) {
   revalidatePath("/crm/contacts");
   return { id: data.id };
 }
+
+/**
+ * Create an offer for a client straight from the first-negotiation popup on
+ * Contacts.
+ *
+ * It goes through `addDeal`, so it is the SAME row the Offers add-row makes —
+ * first group, first stage, the client's demand carried over — and the popup
+ * can never grow a second kind of offer the Offers board does not understand.
+ */
+export async function createOfferFromContact(contactId: string, projectName?: string | null) {
+  const supabase = await createClient();
+  const { data: group } = await supabase
+    .from("crm_deal_groups")
+    .select("id")
+    .order("position")
+    .limit(1)
+    .maybeSingle<{ id: string }>();
+  if (!group) return { error: "no offer group configured" };
+
+  const created = await addDeal(group.id, "", contactId);
+  if (created.error || !created.id) return { error: created.error ?? "could not create the offer" };
+
+  // the alternative project the agent named on the call, if any
+  if (projectName?.trim()) {
+    await supabase
+      .from("crm_deals")
+      .update({ project_name: projectName.trim() })
+      .eq("id", created.id);
+  }
+
+  // the Contacts board reads crm_deals too — the new offer shows on the client
+  revalidatePath("/crm/contacts");
+  return { id: created.id, name: ((created.row as { name?: string }).name ?? "New Offer") as string };
+}

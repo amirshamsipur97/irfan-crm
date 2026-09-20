@@ -56,8 +56,8 @@ sessions — re-count, never quote these numbers back.
 2. **Ask before anything destructive or permission-widening.** Two
    examples from 08-03 that were confirmed first: zeroing the boards, and
    opening group-delete to every role.
-3. `git log --oneline -5` — the tree must be clean and end at **`6180b03`**
-   (or later). `git status` must be empty.
+3. `git log --oneline -5` — the tree must be clean and end at the first
+   negotiation popup commit (or later). `git status` must be empty.
 4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
    GitHub does NOT deploy. Push after every commit anyway (backup):
    https://github.com/amirshamsipur97/irfan-crm — **PRIVATE, and it must
@@ -144,6 +144,62 @@ an unused destructure in ContactGroup).
 
 > Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
+
+## SESSION 2026-09-20 — The first negotiation is asked, not typed (migration `crm_contact_first_negotiation_details`, DEPLOYED)
+
+The "Negotiation notes" cell used to open one blank textarea, so the same call
+came back written five different ways and none of it could be counted. It now
+opens a **first-negotiation popup** built from the questions the agents actually
+ask, each a dropdown, with the free note kept underneath for everything a list
+cannot hold:
+
+1. **Date of the negotiation** — the same `first_negotiation_at` the neighbouring
+   column edits, so the two can never disagree (goes through `toLocalDateString`).
+2. **First contact type** — Phone call / WhatsApp message / Email / In person.
+3. **Lives in Oman** — Yes / No.
+4. **Purpose of buying** — Residency / Investment / Living in Oman / Other; Other
+   opens a one-line "in their own words" field.
+5. **Handover** — Ready to move / Off-plan.
+6. **Do we have a matching offer?** — Yes / No, and the answer changes the block
+   underneath:
+   - **Yes** → a green block with **Create offer**. It calls
+     `createOfferFromContact` in `offers/actions.ts`, which goes through the SAME
+     `addDeal` the Offers add-row uses (first group, first stage, the client's
+     property type + size carried over, `contact_id` pinned), so the popup can
+     never grow a second kind of offer. Offers already linked to the client are
+     listed there and link to /crm/offers; a project picked while the answer was
+     still "no" is shown, not silently kept, and is carried into the new offer's
+     `project_name`.
+   - **No** → an amber block with a searchable **project** picker fed by
+     `crm_developments` (every project of every developer company on Accounts),
+     searchable by project OR developer. The contacts page now fetches
+     `id, name, developer_name` and passes it down as `projects`.
+
+**Where it shows.** The board cell (`NegotiationCell`) became a summary of chips
+("WhatsApp · Abroad · +3", tooltip carries everything including the note) instead
+of the first words of a paragraph, and reads "Add negotiation…" when the call has
+not been recorded. The contact drawer shows the same chips above the note.
+
+**Storage** — 8 new nullable columns on `crm_contacts` (`negotiation_channel`,
+`negotiation_resident`, `negotiation_purpose`, `negotiation_purpose_other`,
+`negotiation_has_offer`, `negotiation_alt_project`, `negotiation_alt_project_id`
+→ FK to `crm_developments` ON DELETE SET NULL, `negotiation_readiness`), all
+added to the `PATCHABLE` whitelist. The popup writes ONLY the fields that
+changed. Option lists live in `contacts/negotiation-config.ts` — one list per
+concept, `short` labels for the cell, full labels for the dropdowns.
+
+**Verified** — `npx tsc --noEmit` clean, `npx next build` clean, eslint back at
+the 37+3 baseline. The popup was driven on a throwaway `/preview-negotiation`
+page (deleted before the commit): dropdowns open portalled and aligned to their
+trigger, the project search filters by developer ("mur" → Jebel Sifah / Muriya),
+No→Yes swaps the amber block for the green one, Create offer logged
+`SAVE {negotiation_has_offer, negotiation_alt_project, negotiation_alt_project_id}`
+— only the changed fields — then created the offer and appended it to the list.
+The database half was proved by impersonating the owning agent inside
+`begin … set local role authenticated … rollback`: 1 row updated under RLS, and
+a re-count afterwards shows 0 contacts carrying any negotiation value, so
+nothing live was touched. Never exercised: the popup by a real signed-in member
+on the live board (sign-in is still blocked for me).
 
 ## SESSION 2026-09-20 — Contacts: an "As request" band over the client's demand columns (this commit, no migration, DEPLOYED)
 

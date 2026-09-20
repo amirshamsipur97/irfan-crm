@@ -301,3 +301,50 @@ export function DealsChipCell({ dealNames }: { dealNames: string[] }) {
     </span>
   );
 }
+
+/**
+ * The first negotiation, read at a glance: the answers as small chips instead
+ * of the first few words of a paragraph. A 220px cell fits two of them, so the
+ * rest are counted and the tooltip carries everything including the note.
+ * Clicking anywhere in the cell opens the negotiation popup.
+ */
+export function NegotiationCell({
+  summary,
+  note,
+  onOpen,
+}: {
+  /** the answered questions, already worded — see negotiationSummary() */
+  summary: string[];
+  note: string | null;
+  onOpen: () => void;
+}) {
+  const empty = summary.length === 0 && !note?.trim();
+  const title = empty
+    ? "Record the first negotiation"
+    : [summary.join(" · "), note?.trim()].filter(Boolean).join("\n");
+  const shown = summary.slice(0, 2);
+  const hidden = summary.length - shown.length;
+
+  return (
+    <button type="button" onClick={onOpen} className={CELL_BUTTON_TEXT} title={title}>
+      {empty ? (
+        <span className="min-w-0 truncate text-ink-muted">Add negotiation…</span>
+      ) : (
+        <span className="flex min-w-0 items-center gap-[4px]">
+          {shown.map((chip) => (
+            <span
+              key={chip}
+              className="flex h-[20px] max-w-[104px] shrink-0 items-center truncate rounded-[10px] border border-line bg-canvas px-[7px] font-sans text-[11.5px] leading-[20px] text-ink"
+            >
+              {chip}
+            </span>
+          ))}
+          {hidden > 0 && (
+            <span className="shrink-0 font-sans text-[11.5px] text-ink-muted tabular-nums">+{hidden}</span>
+          )}
+          {shown.length === 0 && note && <span className="min-w-0 truncate">{note}</span>}
+        </span>
+      )}
+    </button>
+  );
+}

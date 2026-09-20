@@ -20,7 +20,8 @@ import {
   CONTACT_NAME_COL_W,
   requestBandSegments,
 } from "./contacts-config";
-import { NoteDialogCell, OptionCell, TextCell } from "./contact-cells";
+import { NegotiationCell, OptionCell, TextCell } from "./contact-cells";
+import { negotiationSummary } from "./negotiation-config";
 import { BEDROOM_OPTIONS, PROPERTY_TYPES } from "./demand-config";
 import { NumberCell } from "@/components/crm/deals/deal-cells";
 import { EmailCell, PhoneCell } from "@/components/crm/leads/lead-cells";
@@ -64,6 +65,7 @@ export function ContactGroup({
   onRenameColumn,
   onDeleteColumn,
   onOpenContact,
+  onOpenNegotiation,
   onEmailContact,
   tools,
   columns,
@@ -91,6 +93,8 @@ export function ContactGroup({
   onRenameColumn: (columnId: string, label: string) => void;
   onDeleteColumn: (columnId: string) => void;
   onOpenContact?: (contactId: string) => void;
+  /** opens the first-negotiation popup for this client */
+  onOpenNegotiation?: (contact: CrmContact) => void;
   onEmailContact?: (contact: CrmContact) => void;
   tools?: RowToolsConfig;
   /** the board's columns in this user's saved order */
@@ -387,15 +391,12 @@ export function ContactGroup({
                     case "first_negotiation_note":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
-                          <NoteDialogCell
-                            value={contact.first_negotiation_note}
-                            title={`First negotiation — ${contact.name}`}
-                            placeholder="What was discussed in the first negotiation…"
-                            onSave={(next) =>
-                              onPatchContact(contact.id, {
-                                first_negotiation_note: next,
-                              })
-                            }
+                          {/* the call is six answers plus a note now, so the
+                              cell summarises and the popup does the editing */}
+                          <NegotiationCell
+                            summary={negotiationSummary(contact)}
+                            note={contact.first_negotiation_note}
+                            onOpen={() => onOpenNegotiation?.(contact)}
                           />
                         </span>
                       );
