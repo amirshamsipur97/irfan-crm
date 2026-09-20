@@ -1,0 +1,88 @@
+{
+  "taken_at": "2026-09-20T10:03:46Z",
+  "what": "State BEFORE the Accounts standardisation merge (agent-made rows folded into the developer-company register). Restore by writing account_id / account_name / custom back on the listed contacts and re-inserting the deleted accounts.",
+  "deleted_accounts": [
+    {
+      "id": "321054bd-ff14-44df-9240-b4b2cb7f4849",
+      "name": "Azura by Almouj",
+      "owner_id": "99d6ec48-5a70-431f-b511-c1915255aee9",
+      "created_by": "99d6ec48-5a70-431f-b511-c1915255aee9",
+      "created_at": "2026-08-17T08:21:55.230299+00:00",
+      "group_id": "8c816b11-751e-4b5d-9ae6-a5810fa6ac0f",
+      "merged_into": "Majid Al Futtaim / project Azura"
+    },
+    {
+      "id": "e1771f26-a704-42d0-b3bd-aa481e317774",
+      "name": "azura",
+      "owner_id": "99d6ec48-5a70-431f-b511-c1915255aee9",
+      "created_by": "99d6ec48-5a70-431f-b511-c1915255aee9",
+      "created_at": "2026-08-17T08:21:20.396988+00:00",
+      "group_id": "8c816b11-751e-4b5d-9ae6-a5810fa6ac0f",
+      "merged_into": "Majid Al Futtaim / project Azura (had no contacts or deals)"
+    },
+    {
+      "id": "f54c97ed-0360-47ba-8266-cf4cbe1132d0",
+      "name": "jebel sifah",
+      "owner_id": "7856a819-44f8-451f-8e2a-cd0a9201773c",
+      "created_by": "7856a819-44f8-451f-8e2a-cd0a9201773c",
+      "created_at": "2026-09-05T08:23:13.388414+00:00",
+      "group_id": "8c816b11-751e-4b5d-9ae6-a5810fa6ac0f",
+      "merged_into": "Muriya Tourism Development / project Jebel Sifah"
+    },
+    {
+      "id": "a3cbcc7d-d823-4426-b50b-3541798ede2f",
+      "name": "wadi zaha",
+      "owner_id": "7856a819-44f8-451f-8e2a-cd0a9201773c",
+      "created_by": "7856a819-44f8-451f-8e2a-cd0a9201773c",
+      "created_at": "2026-09-17T08:22:44.508409+00:00",
+      "group_id": "8c816b11-751e-4b5d-9ae6-a5810fa6ac0f",
+      "merged_into": "Ahly Sabbour / project Wadi Zaha"
+    },
+    {
+      "id": "f7d692d9-f9d0-480e-a65c-5aa39cd0995b",
+      "name": "yenair",
+      "owner_id": "2f978edc-5f58-4ef4-b7a9-14a559d48367",
+      "created_by": "2f978edc-5f58-4ef4-b7a9-14a559d48367",
+      "created_at": "2026-09-09T11:25:19.690218+00:00",
+      "group_id": "8c816b11-751e-4b5d-9ae6-a5810fa6ac0f",
+      "merged_into": "Adante/Adrak / project Yenaier (had no contacts or deals)"
+    },
+    {
+      "id": "4c51a678-67c0-4ff7-b87c-548bbfb4a46b",
+      "name": "non freehold",
+      "owner_id": "7856a819-44f8-451f-8e2a-cd0a9201773c",
+      "created_by": "7856a819-44f8-451f-8e2a-cd0a9201773c",
+      "created_at": "2026-08-22T12:53:46.808243+00:00",
+      "group_id": "8c816b11-751e-4b5d-9ae6-a5810fa6ac0f",
+      "merged_into": "nothing: not a company or a project. Its contact was left with no account."
+    }
+  ],
+  "contacts_changed": [
+    { "id": "ff20d950-2c1a-4891-98c9-afbd6e303c5c", "name": "Saabyr Beyg", "was_account_id": "321054bd-ff14-44df-9240-b4b2cb7f4849", "was_account_name": "Azura by Almouj", "now": "Majid Al Futtaim + Project Azura" },
+    { "id": "f8c2df5e-c413-4f43-bc7f-35183d261ed9", "name": "Subhra Sinha", "was_account_id": "321054bd-ff14-44df-9240-b4b2cb7f4849", "was_account_name": "Azura by Almouj", "now": "Majid Al Futtaim + Project Azura" },
+    { "id": "585c555a-7164-4fd1-ac5d-ea64b7c5ea60", "name": "jitka", "was_account_id": "321054bd-ff14-44df-9240-b4b2cb7f4849", "was_account_name": "Azura by Almouj", "now": "Majid Al Futtaim + Project Azura" },
+    { "id": "150f5c10-6e99-48da-a700-0e1f960151b2", "name": "الرحبی", "was_account_id": "321054bd-ff14-44df-9240-b4b2cb7f4849", "was_account_name": "Azura by Almouj", "now": "Majid Al Futtaim + Project Azura" },
+    { "id": "289f82a8-b1f3-49e3-af7f-15d0230f5935", "name": "jikta", "was_account_id": "321054bd-ff14-44df-9240-b4b2cb7f4849", "was_account_name": "Azura by Almouj", "now": "Majid Al Futtaim + Project Azura" },
+    { "id": "2182f2c0-da2c-406d-8aeb-31ce757765bd", "name": "maryam zarei", "was_account_id": "f54c97ed-0360-47ba-8266-cf4cbe1132d0", "was_account_name": "jebel sifah", "now": "Muriya Tourism Development + Project Jebel Sifah" },
+    { "id": "f8d91e96-6498-4ab4-aadf-c3120b6d9d42", "name": "nisham moidutti", "was_account_id": "a3cbcc7d-d823-4426-b50b-3541798ede2f", "was_account_name": "wadi zaha", "now": "Ahly Sabbour + Project Wadi Zaha" },
+    { "id": "10353d78-e4c5-4717-ab3f-2c0ff43a7e6f", "name": "asif", "was_account_id": "a3cbcc7d-d823-4426-b50b-3541798ede2f", "was_account_name": "wadi zaha", "now": "Ahly Sabbour + Project Wadi Zaha" },
+    { "id": "4560d56e-e666-4fc5-b17b-3a2bc2c35752", "name": "Estefania", "was_account_id": "4c51a678-67c0-4ff7-b87c-548bbfb4a46b", "was_account_name": "non freehold", "now": "no account" },
+    { "id": "2f969de9-016d-4aaa-8d61-9770a1e4d1e9", "name": "Abdul alrahman al omani", "was_account_id": "30b3fcba-d049-40f9-a8bb-566fb403d89a", "was_account_name": "morouj lanes", "now": "unchanged account, Project morouj lanes added" },
+    { "id": "1e16160c-dfc7-4133-a3a4-c0d71601c4ea", "name": "abderahman", "was_account_id": "30b3fcba-d049-40f9-a8bb-566fb403d89a", "was_account_name": "morouj lanes", "now": "unchanged account, Project morouj lanes added" },
+    { "id": "f7e7121d-7f66-4660-bb42-22553b7682ea", "name": "Fuad khatri", "was_account_id": "e6f8c891-7fa2-4e18-aadf-31f62dd42da8", "was_account_name": "ray al qurum", "now": "unchanged account, Project ray al qurum added" },
+    { "id": "f35ba8e9-a4f3-4132-bc8f-159b508bc0f0", "name": "ibrahim al tamimi", "was_account_id": "e6f8c891-7fa2-4e18-aadf-31f62dd42da8", "was_account_name": "ray al qurum", "now": "unchanged account, Project ray al qurum added" },
+    { "id": "5278aba5-e342-496e-a5c0-c393124e7215", "name": "Dr. Jaya Krish Nair", "was_account_id": "7ccf6efd-c575-48b9-bc03-9dd6a4d008f2", "was_account_name": "Talal Al Qurum (Sorouh Al Qurm)", "now": "unchanged account, Project Talal Al Qurum (Sorouh Al Qurm) added" }
+  ],
+  "kept_as_area": [
+    { "id": "764910ed-1b67-4fe8-9822-9b0d3652ecd4", "name": "almouj", "contacts": 12, "deals": 2 },
+    { "id": "6687ee00-3000-4119-a827-a5e749156b1d", "name": "muscat hills", "contacts": 5, "deals": 1 },
+    { "id": "470ae0fc-2cec-452d-807a-b8bace153b31", "name": "yiti", "contacts": 2, "deals": 0 },
+    { "id": "9f0404ec-2a28-45ea-abf4-5af913e957cc", "name": "sultan haitham city", "contacts": 1, "deals": 0 },
+    { "id": "f4bb2571-8124-4dde-92f7-dff848de32d0", "name": "downtown alkhuwair", "contacts": 1, "deals": 0 }
+  ],
+  "kept_as_other_pending_developer": [
+    { "id": "30b3fcba-d049-40f9-a8bb-566fb403d89a", "name": "morouj lanes", "contacts": 2, "deals": 2 },
+    { "id": "e6f8c891-7fa2-4e18-aadf-31f62dd42da8", "name": "ray al qurum", "contacts": 2, "deals": 0 },
+    { "id": "7ccf6efd-c575-48b9-bc03-9dd6a4d008f2", "name": "Talal Al Qurum (Sorouh Al Qurm)", "contacts": 1, "deals": 0 }
+  ]
+}

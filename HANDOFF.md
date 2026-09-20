@@ -142,6 +142,29 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-20 — the Accounts merge (user approved; backup in `backups/crm-accounts-standardisation-2026-09-20.json`)
+
+The 14 agent-made Accounts rows were folded into the standard. Accounts now:
+**24 developer companies · 5 areas · 3 projects waiting for their developer**
+(32 rows), Developments **26**, and NO account or development is owned by a
+person any more (register rows belong to the company).
+
+- New contacts custom column **Project** (`text_project`), so a contact keeps
+  its project when it moves to the developer company.
+- Merged + deleted: "Azura by Almouj" and "azura" → Majid Al Futtaim / Azura
+  (5 contacts), "jebel sifah" → Muriya / Jebel Sifah (1), "wadi zaha" → Ahly
+  Sabbour / Wadi Zaha (2), "yenair" → Adante/Adrak / Yenaier (no rows),
+  "non freehold" deleted (its one contact left with no account).
+- Kept as **area** (their contacts untouched): almouj (12 contacts, 2 deals),
+  muscat hills (5, 1), yiti (2), sultan haitham city (1), downtown alkhuwair (1).
+- Kept as **other** + added to Developments as manual projects with no developer
+  yet: morouj lanes, ray al qurum, Talal Al Qurum (Sorouh Al Qurm); their
+  contacts got the Project field filled.
+- ⛔ Still for the user: which company owns **Yiti / Sustainable City** — the
+  register says project TSCY under **SDIC**, while **Diamond Developers**
+  (12 contacts, 0 projects) is described as "Sustainable City Yiti". And the
+  developer for morouj lanes / ray al qurum / Talal Al Qurum.
+
 ## SESSION 2026-09-20 — The property register standard: Accounts = developer COMPANIES, Developments = their PROJECTS (migrations `crm_property_register_standard` + `crm_property_register_ids_are_integers`, DEPLOYED)
 
 Report: agents had been typing project and area names into Accounts ("yiti",
