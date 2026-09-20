@@ -9,7 +9,8 @@ import { ConfirmDialog, useConfirm } from "@/components/ui/ConfirmDialog";
 import { Checkbox } from "@/components/crm/leads/cells";
 import { BoardHeader } from "@/components/crm/leads/BoardHeader";
 import { TimeCell } from "@/components/crm/activities/activity-cells";
-import { activityTime, parseLocalDate, todayLocalDateString } from "@/components/crm/activities/activities-config";
+import { activityTime, todayLocalDateString } from "@/components/crm/activities/activities-config";
+import { followUpTone, isLate } from "@/components/crm/follow-ups/followup-status";
 import {
   addLeadHistoryEntry,
   deleteLeadHistoryEntry,
@@ -46,14 +47,15 @@ const COLS = { task: 380, client: 230, owner: 190, due: 190, by: 170 } as const;
 const ROW_H = 40;
 const CELL = "flex items-center border-b border-r border-line";
 
-function bucketOf(row: ReminderRow, today: string): Bucket {
+/**
+ * Which list a reminder sits in. It used to drop into Overdue the moment its
+ * TIME had passed, and a follow up written as a plain date carries 08:00
+ * Muscat, so a client set for today was "overdue" by breakfast and Today was
+ * empty all day. The day decides the bucket; the hour only colours the row.
+ */
+function bucketOf(row: ReminderRow): Bucket {
   if (row.reminder_done) return "done";
-  const at = parseLocalDate(row.remind_at);
-  if (!at) return "upcoming";
-  if (at.getTime() <= Date.now()) return "overdue";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const day = `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
-  return day === today ? "today" : "upcoming";
+  return followUpTone(row.remind_at) ?? "upcoming";
 }
 
 function clientOf(row: ReminderRow) {
@@ -157,7 +159,7 @@ export function RemindersBoard({
   const toggleDone = (row: ReminderRow) => {
     const key = rowKey(row);
     if (!row.reminder_done) {
-      const from = stay[key] ?? bucketOf(row, todayLocalDateString());
+      const from = stay[key] ?? bucketOf(row);
       setStay((s) => ({ ...s, [key]: from }));
       setDone(row, true);
       setToast({
@@ -193,7 +195,6 @@ export function RemindersBoard({
     );
   };
 
-  const today = todayLocalDateString();
   const q = search.trim().toLowerCase();
   const inScope = rows.filter((r) => {
     const client = clientOf(r);
@@ -211,7 +212,7 @@ export function RemindersBoard({
     return r.note.toLowerCase().includes(q) || (client?.name.toLowerCase().includes(q) ?? false);
   });
   const grouped = BUCKETS.map((b) => {
-    const list = visible.filter((r) => (stay[rowKey(r)] ?? bucketOf(r, today)) === b.key);
+    const list = visible.filter((r) => (stay[rowKey(r)] ?? bucketOf(r)) === b.key);
     // done: most recent first; everything else: soonest first
     if (b.key === "done") list.reverse();
     return { ...b, list };
@@ -425,11 +426,19 @@ export function RemindersBoard({
                               <span className="font-sans text-[13px] text-ink-muted">No owner</span>
                             )}
                           </span>
-                          <span className="block border-b border-r border-line" style={{ width: COLS.due }}>
+                          <span
+                            className="block border-b border-r border-line"
+                            style={{ width: COLS.due }}
+                            // due today but the hour has gone by: still Today,
+                            // marked so nobody has to read the clock
+                            title={isLate(row.remind_at) && !row.reminder_done ? "Its time has passed today" : undefined}
+                          >
                             <TimeCell
                               value={row.remind_at}
                               label={`Due time for ${row.note.slice(0, 40)}`}
-                              format={activityTime}
+                              format={(v) =>
+                                `${activityTime(v)}${isLate(v) && !row.reminder_done ? " · late" : ""}`
+                              }
                               onChange={(iso) => moveTime(row, iso)}
                             />
                           </span>

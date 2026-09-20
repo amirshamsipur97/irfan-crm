@@ -2,22 +2,22 @@
 
 import { TimeCell } from "@/components/crm/activities/activity-cells";
 import {
-  isDateOnly,
-  parseLocalDate,
   toLocalDateString,
   toLocalDateTimeString,
-  todayLocalDateString,
 } from "@/components/crm/activities/activities-config";
+import { followUpTone, isLate } from "./followup-status";
 import { shortDateTime } from "@/components/crm/leads/board-config";
 
 function status(value: string | null): { label: string; className: string } | null {
-  const at = parseLocalDate(value);
-  if (!at || !value) return null;
-  const day = toLocalDateString(value);
-  const today = todayLocalDateString();
-  const past = isDateOnly(value) ? (day ?? "") < today : at.getTime() <= Date.now();
-  if (past) return { label: "Overdue", className: "bg-[#e2445c]/12 text-[#c23b53]" };
-  if (day === today) return { label: "Today", className: "bg-[#fdab3d]/20 text-[#b97416]" };
+  // one rule for the badge, the board cell and the To-do list
+  const tone = followUpTone(value);
+  if (!tone) return null;
+  if (tone === "overdue") return { label: "Overdue", className: "bg-[#e2445c]/12 text-[#c23b53]" };
+  if (tone === "today")
+    return {
+      label: isLate(value) ? "Today, past its time" : "Today",
+      className: "bg-[#fdab3d]/20 text-[#b97416]",
+    };
   return { label: "Scheduled", className: "bg-[#579bfc]/15 text-[#2d6fd1]" };
 }
 

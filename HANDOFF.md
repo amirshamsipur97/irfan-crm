@@ -145,6 +145,51 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-20 — "Next follow up": today belongs in Today (this commit, no migration, DEPLOYED)
+
+Report: a follow up set for today does not show under Today on the To-do list.
+It was real, and the cause is one line of arithmetic repeated in three places.
+
+**What was wrong.** A follow up written as a plain date becomes **08:00
+Asia/Muscat** in the database (`crm_followup_instant`), and all three places
+that show a follow up asked `remind_at <= now()` before asking what DAY it was.
+So from 08:00 onwards a client set for TODAY read as **Overdue** everywhere, and
+the Today bucket sat empty all day. Verified against the live database: a
+date-only follow up for 2026-09-20 stores `2026-09-20 04:00+00` = 08:00 Muscat.
+
+**The rule now, in one place** — `follow-ups/followup-status.ts`:
+`followUpTone()` compares the LOCAL CALENDAR DAY (before today → overdue, today
+→ today, after → upcoming) and `isLate()` says separately that today's hour has
+already gone by. The To-do list buckets (`bucketOf`), the board's Follow Up cell
+and the drawer's badge all read it, so the three can no longer drift. A row due
+earlier today stays under **Today** and its due time reads "8:00 AM · late"; the
+drawer badge says "Today, past its time". A day without a time is never late
+until the day ends.
+
+**Checked and already correct, left alone**: the database side. A date-only
+value becomes 08:00 Muscat, a timed value keeps its instant, the log note reads
+"Next follow up: 24 Sep 2026, 04:30 PM", the daily notifier
+(`crm_notify_due_followups`, 04:00 UTC = 08:00 Muscat) works off
+`(now() at time zone 'Asia/Muscat')::date` and covers up to two days late, and
+the per-minute `crm_notify_due_timed_followups` handles timed ones.
+
+**Setting the NEXT follow up works for both roles** — proved by impersonation
+inside `begin … rollback`: an AGENT on their own client set today, then changed
+it to 24 Sep 16:30, and the log kept **one** reminder row, updated in place,
+open, with the right Muscat time and note. A **CEO** set a follow up on a client
+owned by another agent: one row, written as the CEO, reminder open. Nothing live
+was touched (both transactions rolled back).
+
+**Verified in the browser** on a throwaway `/preview-followup` page (deleted
+before the commit), with the exact instant the database stores: plain today →
+today, today 08:00 → today · late, today 23:30 → today, yesterday → overdue,
++3 days → upcoming.
+
+⚠️ Unrelated date trap noticed, NOT changed: `offers/finance-actions.ts`
+`dueDateFor()` falls back to `new Date().toISOString().slice(0, 10)`, which is
+the UTC day — in Oman before 04:00 that is yesterday. It only bites when a
+transaction has no contract date. Worth a fix in its own session.
+
 ## SESSION 2026-09-20 — The app now runs in Tokyo, beside its database (`vercel.json`, DEPLOYED)
 
 Every page render used to cross the planet twice. The Vercel functions ran in

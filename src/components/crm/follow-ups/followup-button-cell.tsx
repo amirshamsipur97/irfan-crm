@@ -1,31 +1,14 @@
 "use client";
 
 import { CUSTOM_COL_W } from "@/lib/custom-columns";
-import {
-  isDateOnly,
-  parseLocalDate,
-  toLocalDateString,
-  todayLocalDateString,
-} from "@/components/crm/activities/activities-config";
+import { followUpTone, isLate, type FollowUpTone } from "./followup-status";
 import { shortDateTime } from "@/components/crm/leads/board-config";
 
-type Tone = "overdue" | "today" | "scheduled";
-
-const TONE: Record<Tone, { dot: string; text: string; label: string }> = {
+const TONE: Record<FollowUpTone, { dot: string; text: string; label: string }> = {
   overdue: { dot: "#e2445c", text: "text-[#c23b53]", label: "Overdue" },
   today: { dot: "#fdab3d", text: "text-[#b97416]", label: "Today" },
-  scheduled: { dot: "#579bfc", text: "text-ink", label: "Scheduled" },
+  upcoming: { dot: "#579bfc", text: "text-ink", label: "Scheduled" },
 };
-
-function toneOf(value: string): Tone | null {
-  const at = parseLocalDate(value);
-  if (!at) return null;
-  const day = toLocalDateString(value) ?? "";
-  const today = todayLocalDateString();
-  const past = isDateOnly(value) ? day < today : at.getTime() <= Date.now();
-  if (past) return "overdue";
-  return day === today ? "today" : "scheduled";
-}
 
 /**
  * The "next follow up" cell as a button: it shows the follow up (with a
@@ -33,14 +16,15 @@ function toneOf(value: string): Tone | null {
  * client's details are at hand and the report is written.
  */
 export function FollowUpButtonCell({ value, onOpen }: { value: string | null; onOpen: () => void }) {
-  const tone = value ? toneOf(value) : null;
+  const tone = followUpTone(value);
   const look = tone ? TONE[tone] : null;
+  const late = isLate(value);
   return (
     <span className="block border-b border-r border-line bg-white" style={{ width: CUSTOM_COL_W }}>
       <button
         type="button"
         onClick={onOpen}
-        title={value ? `${look?.label ?? ""} · open follow up` : "Set a follow up"}
+        title={value ? `${look?.label ?? ""}${late ? " (its time has passed)" : ""} · open follow up` : "Set a follow up"}
         className="group/fu flex size-full items-center justify-center gap-[6px] px-[8px] transition-colors hover:bg-[var(--hover-ghost)]"
       >
         {value && look ? (
