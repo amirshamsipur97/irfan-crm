@@ -18,6 +18,7 @@ import {
   CONNECTED_UNDERLINE,
   CONTACT_COLUMNS,
   CONTACT_NAME_COL_W,
+  requestBandSegments,
 } from "./contacts-config";
 import { NoteDialogCell, OptionCell, TextCell } from "./contact-cells";
 import { BEDROOM_OPTIONS, PROPERTY_TYPES } from "./demand-config";
@@ -193,11 +194,34 @@ export function ContactGroup({
 
       {!collapsed && (
         <div ref={bodyRef} className="w-fit">
+          {/* "As request" — one highlighted band over the client's demand
+              columns, sitting on top of the header and scrolling with it */}
+          <div className="board-head sticky top-0 z-30 flex h-[24px] w-fit items-stretch bg-white">
+            <span
+              className="gutter-cover sticky left-0 z-10 bg-white"
+              style={{ width: CONTACT_NAME_COL_W }}
+            />
+            {requestBandSegments(columns).map((seg) =>
+              seg.request ? (
+                <span
+                  key={`band-${seg.key}`}
+                  title="What the client is asking for"
+                  className="flex items-center justify-center gap-[6px] rounded-t-[6px] border-x border-t border-teal-deep/30 bg-teal-deep/12 px-[4px] font-sans text-[11.5px] font-semibold uppercase tracking-[0.4px] text-teal-deep"
+                  style={{ width: seg.width }}
+                >
+                  As request
+                </span>
+              ) : (
+                <span key={`band-${seg.key}`} className="bg-white" style={{ width: seg.width }} />
+              )
+            )}
+          </div>
+
           {/* column headers — .board-head paints the 8px band the scroller's
               pt-[8px] leaves above the pinned bar (sticky offsets measure from
               the content box), the same reason .gutter-cover paints the 40px
               lane on the left */}
-          <div className="board-head sticky top-0 z-30 flex h-[36px] w-fit items-stretch bg-white">
+          <div className="board-head sticky top-[24px] z-30 flex h-[36px] w-fit items-stretch bg-white">
             <div
               className="gutter-cover sticky left-0 z-10 flex items-stretch bg-white"
               style={{ width: CONTACT_NAME_COL_W }}

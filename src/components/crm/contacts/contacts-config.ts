@@ -32,6 +32,36 @@ export const CONTACT_COLUMNS: {
   { key: "comments", label: "Comments", w: 220 },
 ];
 
+/**
+ * What the CLIENT asked for. These four sit together on the board under one
+ * "As request" band, so an agent reads the demand as one block instead of four
+ * unrelated columns. Kept as keys, not positions: members reorder columns.
+ */
+export const REQUEST_COLUMN_KEYS = ["property_type", "bedrooms", "budget", "accounts"];
+
+/**
+ * The band is drawn over the columns as they are ordered right now: each run of
+ * neighbouring request columns becomes one segment, anything else is a gap of
+ * the same width, so the band always lines up with the header below it.
+ */
+export function requestBandSegments(columns: { key: string; w: number }[]): {
+  key: string;
+  width: number;
+  request: boolean;
+}[] {
+  const out: { key: string; width: number; request: boolean }[] = [];
+  for (const col of columns) {
+    const request = REQUEST_COLUMN_KEYS.includes(col.key);
+    const last = out[out.length - 1];
+    if (last && last.request === request) {
+      last.width += col.w;
+    } else {
+      out.push({ key: col.key, width: col.w, request });
+    }
+  }
+  return out;
+}
+
 export const CONTACT_TYPES: { key: string; label: string; color: string }[] = [
   { key: "customer", label: "Customer", color: "#66ccff" },
   { key: "partner", label: "Partner", color: "#fdab3d" },

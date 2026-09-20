@@ -142,6 +142,20 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-20 — Contacts: an "As request" band over the client's demand columns (this commit, no migration, DEPLOYED)
+
+The four columns that hold what the CLIENT asked for — Property type, Size,
+Budget, Accounts — now sit under one highlighted band (teal tint, uppercase
+"As request", tooltip "What the client is asking for"), so the demand reads as
+one block. `REQUEST_COLUMN_KEYS` + `requestBandSegments(columns)` in
+contacts-config build the band from the columns AS ORDERED right now (members
+drag columns), so a run of neighbouring request columns becomes one segment and
+everything else is a gap of the same width — the band can never drift out of
+line. The band is a 24px sticky row above the header; the header moved to
+`top-[24px]`. Verified in the browser on the real ContactGroup: band width 592px
+= 150+110+140+192, left edge on "Property type", right edge on "Accounts",
+sitting exactly 24px above the header row.
+
 ## SESSION 2026-09-20 — the Accounts merge (user approved; backup in `backups/crm-accounts-standardisation-2026-09-20.json`)
 
 The 14 agent-made Accounts rows were folded into the standard. Accounts now:
