@@ -3,7 +3,15 @@
 import { PERMISSION_ERROR } from "@/lib/mutate";
 import { createClient } from "@/lib/supabase/server";
 import { canManageBoards } from "@/lib/permissions";
-import type { CrmLeadHistory, CrmOfferTracking, CrmRole } from "@/lib/types";
+import type {
+  CrmContact,
+  CrmLead,
+  CrmLeadHistory,
+  CrmOfferTracking,
+  CrmRole,
+  CrmStage,
+  CrmUnit,
+} from "@/lib/types";
 
 /**
  * One reminder, from either trail: a Lead history entry (lead or contact) or
@@ -241,4 +249,63 @@ export async function countTodoReminders(): Promise<number> {
     const owner = r.lead?.owner_id ?? r.contact?.owner_id ?? null;
     return r.created_by === profile.id || owner === profile.id;
   }).length;
+}
+
+/**
+ * Everything the real Lead / Contact side panel needs, fetched by id.
+ *
+ * The To-do list opens the SAME drawers the boards open, rather than a second
+ * summary that would drift from them: a reminder is worked from here, so the
+ * client's details, demand, documents and trail have to be here too. Read
+ * through the caller's own session, so an agent still only sees their own
+ * clients.
+ */
+export type PanelClient =
+  | { kind: "contact"; contact: CrmContact; followupKey: string | null }
+  | {
+      kind: "lead";
+      lead: CrmLead;
+      stages: CrmStage[];
+      units: CrmUnit[];
+      followupKey: string | null;
+    };
+
+/** the board's "next follow up" column, by the same rule the database uses */
+async function followupKeyFor(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  board: "leads" | "contacts"
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("crm_custom_columns")
+    .select("key, label, type, position")
+    .eq("board_key", board)
+    .eq("type", "date")
+    .order("position")
+    .returns<{ key: string; label: string }[]>();
+  return data?.find((c) => c.label.toLowerCase().includes("follow"))?.key ?? null;
+}
+
+export async function getClientForPanel(
+  kind: "lead" | "contact",
+  id: string
+): Promise<PanelClient | null> {
+  const supabase = await createClient();
+
+  if (kind === "contact") {
+    const [{ data: contact }, followupKey] = await Promise.all([
+      supabase.from("crm_contacts").select("*").eq("id", id).maybeSingle<CrmContact>(),
+      followupKeyFor(supabase, "contacts"),
+    ]);
+    return contact ? { kind: "contact", contact, followupKey } : null;
+  }
+
+  const [{ data: lead }, { data: stages }, { data: units }, followupKey] = await Promise.all([
+    supabase.from("crm_leads").select("*").eq("id", id).maybeSingle<CrmLead>(),
+    supabase.from("crm_stages").select("*").order("position").returns<CrmStage[]>(),
+    supabase.from("crm_units").select("*").order("name").returns<CrmUnit[]>(),
+    followupKeyFor(supabase, "leads"),
+  ]);
+  return lead
+    ? { kind: "lead", lead, stages: stages ?? [], units: units ?? [], followupKey }
+    : null;
 }

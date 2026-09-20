@@ -145,6 +145,33 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-20 — To-do list: the client name opens the client's own side panel (this commit, no migration, DEPLOYED)
+
+The Client column linked out to the board, so working a reminder meant leaving
+the list and finding the row again. The name now opens **the very drawer the
+Leads and Contacts boards open** — `LeadDrawer` for a lead, `ContactDrawer` for
+a contact or an offer's client — over the To-do list. Reused, not rebuilt: a
+second summary would drift from the boards within a month.
+
+- `getClientForPanel(kind, id)` in `reminders/actions.ts` fetches what each
+  drawer needs (the contact row, or the lead + stages + units) plus the board's
+  "next follow up" custom-column key, through the caller's own session, so an
+  agent still only opens their own clients.
+- The panel is live, not read-only: the next follow up can be set from it
+  (through `updateContact` / `updateLead`, rolled back on refusal), a lead can
+  be moved to Contacts (`moveLeadToContacts`), and any change reloads the
+  reminder list underneath.
+- A load that fails says "That client could not be opened" instead of a dead
+  click (`reachable` from persist.ts).
+
+**Verified in the browser** on a throwaway `/preview-todo` page (deleted before
+the commit) rendering the REAL RemindersBoard with two fixture reminders: the
+contact drawer opened over the list with Next follow up (badge "Today"),
+Details, Demand, Documents and the trail; the lead drawer opened with its stage
+pill, Details, Lead history and Score breakdown. The same page also confirmed
+this morning's bucket fix on the real board: the reminder due today at 08:00 sat
+under **Today 1** reading "Sep 20, 8:00 AM · late", with Overdue empty.
+
 ## SESSION 2026-09-20 — "Next follow up": today belongs in Today (this commit, no migration, DEPLOYED)
 
 Report: a follow up set for today does not show under Today on the To-do list.

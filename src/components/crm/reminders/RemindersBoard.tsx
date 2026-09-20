@@ -22,17 +22,24 @@ import {
   setTrackingReminderTime,
 } from "@/app/(app)/crm/contacts/tracking-actions";
 import {
+  getClientForPanel,
   listReminders,
   searchReminderClients,
   setReminderTime,
   type ClientOption,
+  type PanelClient,
   type ReminderRow,
 } from "@/app/(app)/crm/reminders/actions";
+import { updateContact } from "@/app/(app)/crm/contacts/actions";
+import { moveLeadToContacts, updateLead } from "@/app/(app)/crm/leads/actions";
+import { ContactDrawer } from "@/components/crm/contacts/contact-drawer";
+import { LeadDrawer } from "@/components/crm/leads/lead-drawer";
+import { friendlyError, reachable } from "@/components/crm/persist";
 import { useDebounced, useRealtimeTable } from "@/lib/use-realtime";
 import { canManageBoards } from "@/lib/permissions";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 import { ReminderPopup } from "./reminder-popup";
-import type { CrmUser } from "@/lib/types";
+import type { CrmContact, CrmLead, CrmUser } from "@/lib/types";
 
 type Bucket = "overdue" | "today" | "upcoming" | "done";
 
@@ -59,13 +66,22 @@ function bucketOf(row: ReminderRow): Bucket {
 }
 
 function clientOf(row: ReminderRow) {
-  if (row.lead) return { kind: "Lead", name: row.lead.name, href: `/crm/leads?lead=${row.lead.id}`, owner: row.lead.owner_id };
+  if (row.lead)
+    return {
+      kind: "Lead",
+      name: row.lead.name,
+      href: `/crm/leads?lead=${row.lead.id}`,
+      owner: row.lead.owner_id,
+      // what the side panel loads when the name is clicked
+      ref: { kind: "lead" as const, id: row.lead.id },
+    };
   if (row.contact)
     return {
       kind: row.source === "offer" ? "Offer" : "Contact",
       name: row.contact.code ? `${row.contact.name} · ${row.contact.code}` : row.contact.name,
       href: `/crm/contacts?contact=${row.contact.id}`,
       owner: row.contact.owner_id,
+      ref: { kind: "contact" as const, id: row.contact.id },
     };
   return null;
 }
@@ -107,6 +123,11 @@ export function RemindersBoard({
   // opened again, instead of vanishing into the collapsed Done group
   const [stay, setStay] = useState<Record<string, Bucket>>({});
   const { pending: toDelete, ask: askDelete, close: closeDelete } = useConfirm<ReminderRow>();
+  // the client whose side panel is open: the SAME drawer the Leads and
+  // Contacts boards open, so a reminder can be worked without leaving the list
+  const [panel, setPanel] = useState<PanelClient | null>(null);
+  const [panelLoading, setPanelLoading] = useState(false);
+  const [panelTick, setPanelTick] = useState(0);
   // edits in flight: a realtime echo must not overwrite an optimistic row mid-save
   const busy = useRef(0);
 
@@ -125,6 +146,44 @@ export function RemindersBoard({
     const id = (payload.new as { id?: string })?.id;
     if (id && rows.some((r) => r.lead?.id === id)) reloadSoon();
   });
+
+  const openPanel = async (ref: { kind: "lead" | "contact"; id: string }) => {
+    setPanelLoading(true);
+    const data = await getClientForPanel(ref.kind, ref.id).catch(() => null);
+    setPanelLoading(false);
+    if (!data) {
+      setToast({ message: "That client could not be opened — refresh and try again.", tone: "alert" });
+      return;
+    }
+    setPanel(data);
+  };
+
+  /** a panel edit goes through the board's own action, then back into the panel */
+  const patchPanelContact = async (patch: Partial<CrmContact>) => {
+    if (panel?.kind !== "contact") return;
+    const before = panel.contact;
+    setPanel({ ...panel, contact: { ...before, ...patch } });
+    const result = await reachable(updateContact(before.id, patch as Record<string, unknown>));
+    if (result?.error) {
+      setPanel((p) => (p?.kind === "contact" ? { ...p, contact: before } : p));
+      setToast({ message: friendlyError(result.error), tone: "alert" });
+      return;
+    }
+    reloadSoon();
+  };
+
+  const patchPanelLead = async (patch: Partial<CrmLead>) => {
+    if (panel?.kind !== "lead") return;
+    const before = panel.lead;
+    setPanel({ ...panel, lead: { ...before, ...patch } });
+    const result = await reachable(updateLead(before.id, patch as Record<string, unknown>));
+    if (result?.error) {
+      setPanel((p) => (p?.kind === "lead" ? { ...p, lead: before } : p));
+      setToast({ message: friendlyError(result.error), tone: "alert" });
+      return;
+    }
+    reloadSoon();
+  };
 
   const run = async (optimistic: () => void, rollback: () => void, save: () => Promise<{ error?: string }>) => {
     busy.current += 1;
@@ -405,8 +464,8 @@ export function RemindersBoard({
                                 </span>
                                 <button
                                   type="button"
-                                  onClick={() => setWorking(row)}
-                                  title={row.offer ? `${row.offer.label}: ${client.name}` : client.name}
+                                  onClick={() => openPanel(client.ref)}
+                                  title={`Open ${client.name} — everything we know about this client`}
                                   className="min-w-0 truncate text-left font-sans text-[14px] leading-[20px] text-link hover:underline"
                                 >
                                   {client.name}
@@ -473,6 +532,85 @@ export function RemindersBoard({
           })}
         </div>
       </div>
+
+      {panelLoading && (
+        <span className="fixed bottom-[20px] right-[20px] z-[90] rounded-[8px] bg-ink px-[12px] py-[8px] font-sans text-[13px] text-white">
+          Opening the client…
+        </span>
+      )}
+
+      {/* the client's own side panel — the very drawer the Leads and Contacts
+          boards open, so what an agent reads here can never drift from there */}
+      {panel?.kind === "contact" && (
+        <ContactDrawer
+          contact={panel.contact}
+          profile={profile}
+          onClose={() => setPanel(null)}
+          onToast={(message, tone) => setToast({ message, tone })}
+          historyRefreshKey={panelTick}
+          onFollowupChange={() => {
+            setPanelTick((t) => t + 1);
+            reloadSoon();
+          }}
+          followup={
+            panel.followupKey
+              ? {
+                  value:
+                    (((panel.contact.custom ?? {}) as Record<string, unknown>)[panel.followupKey] as string) ?? null,
+                  onSet: (next) => {
+                    const key = panel.followupKey as string;
+                    const custom = { ...((panel.contact.custom ?? {}) as Record<string, unknown>) };
+                    if (next == null) delete custom[key];
+                    else custom[key] = next;
+                    patchPanelContact({ custom } as Partial<CrmContact>);
+                  },
+                }
+              : undefined
+          }
+        />
+      )}
+
+      {panel?.kind === "lead" && (
+        <LeadDrawer
+          lead={panel.lead}
+          profile={profile}
+          stages={panel.stages}
+          users={users}
+          units={panel.units}
+          onClose={() => setPanel(null)}
+          onToast={(message, tone) => setToast({ message, tone })}
+          historyRefreshKey={panelTick}
+          onFollowupChange={() => {
+            setPanelTick((t) => t + 1);
+            reloadSoon();
+          }}
+          onConvert={async (leadId) => {
+            const custom = (panel.lead.custom ?? {}) as Record<string, unknown>;
+            if (custom.moved_to_contacts) return;
+            const result = await reachable(moveLeadToContacts(leadId));
+            if (result?.error) {
+              setToast({ message: friendlyError(result.error), tone: "alert" });
+              return;
+            }
+            patchPanelLead({ custom: { ...custom, moved_to_contacts: true } } as Partial<CrmLead>);
+            setToast({ message: `${panel.lead.name} moved to Contacts` });
+          }}
+          followup={
+            panel.followupKey
+              ? {
+                  value: (((panel.lead.custom ?? {}) as Record<string, unknown>)[panel.followupKey] as string) ?? null,
+                  onSet: (next) => {
+                    const key = panel.followupKey as string;
+                    const custom = { ...((panel.lead.custom ?? {}) as Record<string, unknown>) };
+                    if (next == null) delete custom[key];
+                    else custom[key] = next;
+                    patchPanelLead({ custom } as Partial<CrmLead>);
+                  },
+                }
+              : undefined
+          }
+        />
+      )}
 
       {toDelete && (
         <ConfirmDialog
