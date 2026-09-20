@@ -145,6 +145,24 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-20 — The app now runs in Tokyo, beside its database (`vercel.json`, DEPLOYED)
+
+Every page render used to cross the planet twice. The Vercel functions ran in
+**iad1 (Washington)** while the Supabase project is in **ap-northeast-1
+(Tokyo)** — proved by `x-vercel-id: bom1::iad1::…` on a live request and by the
+build listing `λ index [iad1]`. A board page makes roughly eight database round
+trips (its queries + `getProfile` + `recordBoardVisit`), each one Washington to
+Tokyo, on top of Oman to Washington for the user. That is seconds per
+navigation and, on a bad link, the "site cuts out" the team reported.
+
+`vercel.json` now pins the functions to **hnd1 (Tokyo)**, next to the database,
+and Tokyo is also nearer to Oman than Washington. Verified after the deploy:
+`x-vercel-id: bom1::hnd1::…` and `λ index (1.63MB) [hnd1]`.
+⚠️ If the Supabase project is ever moved, move this with it — a stale region
+here is worse than none.
+Not measurable from my side: a signed-in board page (I cannot sign in), so the
+size of the win is unmeasured, only its cause removed.
+
 ## SESSION 2026-09-20 — Why a save "does nothing" and the site "drops" (this commit, no migration, DEPLOYED)
 
 Report from the team: the report popup sometimes does not save, and the site
