@@ -7,6 +7,7 @@ import { anchorFixedPos } from "@/components/crm/leads/cells";
 import { shortDate } from "@/components/crm/leads/board-config";
 import { toLocalDateString, todayLocalDateString } from "@/components/crm/activities/activities-config";
 import { ConfirmDialog, useConfirm } from "@/components/ui/ConfirmDialog";
+import { friendlyError, reachable, UNREACHABLE_MESSAGE } from "@/components/crm/persist";
 import { DeleteIcon } from "@/components/ui/DeleteIcon";
 import { bedroomLabel, propertyTypeLabel } from "./demand-config";
 import {
@@ -123,6 +124,7 @@ export function NegotiationPopup({
 }) {
   const [rounds, setRounds] = useState<CrmContactNegotiation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   /** null while the first round is still a draft that no one has saved */
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<RoundDraft>(EMPTY_DRAFT);
@@ -134,8 +136,15 @@ export function NegotiationPopup({
   useEffect(() => {
     let alive = true;
     (async () => {
-      const rows = await listNegotiations(contact.id);
+      const rows = await listNegotiations(contact.id).catch(() => null);
       if (!alive) return;
+      if (!rows) {
+        // the read never came back: say so in the body instead of showing an
+        // empty log that an agent would fill in a second time
+        setLoadError(true);
+        setLoading(false);
+        return;
+      }
       setRounds(rows);
       // an agent opens this to record the call they just had: the newest round
       const latest = rows[rows.length - 1] ?? null;
@@ -179,9 +188,9 @@ export function NegotiationPopup({
     if (Object.keys(patch).length === 0) return { ok: true };
 
     if (selected) {
-      const result = await updateNegotiation(selected.id, patch);
+      const result = await reachable(updateNegotiation(selected.id, patch));
       if ("error" in result && result.error) {
-        onToast?.(result.error, "alert");
+        onToast?.(friendlyError(result.error), "alert");
         return { ok: false };
       }
       setRounds((prev) => prev.map((r) => (r.id === selected.id ? ({ ...r, ...patch } as CrmContactNegotiation) : r)));
@@ -189,9 +198,9 @@ export function NegotiationPopup({
       return { ok: true };
     }
 
-    const result = await createNegotiation(contact.id, patch);
+    const result = await reachable(createNegotiation(contact.id, patch));
     if ("error" in result && result.error) {
-      onToast?.(result.error, "alert");
+      onToast?.(friendlyError(result.error), "alert");
       return { ok: false };
     }
     const row = result.row as CrmContactNegotiation;
@@ -224,10 +233,10 @@ export function NegotiationPopup({
     }
     // the next call starts on the day this round agreed on, today otherwise
     const startsOn = draft.next_at ?? todayLocalDateString();
-    const result = await createNegotiation(contact.id, { negotiated_at: startsOn });
+    const result = await reachable(createNegotiation(contact.id, { negotiated_at: startsOn }));
     setSaving(false);
     if ("error" in result && result.error) {
-      onToast?.(result.error, "alert");
+      onToast?.(friendlyError(result.error), "alert");
       return;
     }
     const row = result.row as CrmContactNegotiation;
@@ -239,9 +248,9 @@ export function NegotiationPopup({
 
   const removeRound = async (round: CrmContactNegotiation) => {
     closeDelete();
-    const result = await deleteNegotiation(round.id);
+    const result = await reachable(deleteNegotiation(round.id));
     if ("error" in result && result.error) {
-      onToast?.(result.error, "alert");
+      onToast?.(friendlyError(result.error), "alert");
       return;
     }
     const left = rounds.filter((r) => r.id !== round.id);
@@ -258,10 +267,10 @@ export function NegotiationPopup({
     // the answers go in first: an agent who creates then closes must not lose
     // the call they just recorded
     await persist();
-    const result = await onCreateOffer(draft.alt_project);
+    const result = await onCreateOffer(draft.alt_project).catch(() => ({ error: UNREACHABLE_MESSAGE }));
     setCreating(false);
     if ("error" in result) {
-      onToast?.(result.error, "alert");
+      onToast?.(friendlyError(result.error), "alert");
       return;
     }
     setMadeOffers((prev) => [...prev, { id: result.id, name: result.name, stage: null }]);
@@ -390,6 +399,8 @@ export function NegotiationPopup({
 
         {loading ? (
           <p className="px-[22px] py-[28px] font-sans text-[14px] text-ink-muted">Loading the log…</p>
+        ) : loadError ? (
+          <p className="px-[22px] py-[28px] font-sans text-[14px] text-alert">{UNREACHABLE_MESSAGE}</p>
         ) : (
           <div className="px-[22px] pb-[20px] pt-[16px]">
             <p className="m-0 pb-[10px] font-sans text-[12.5px] text-ink-muted">

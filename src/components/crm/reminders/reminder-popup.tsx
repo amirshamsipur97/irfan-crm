@@ -10,6 +10,7 @@ import { sourceLabel } from "@/components/crm/leads/board-config";
 import { activityTime } from "@/components/crm/activities/activities-config";
 import { FollowUpField } from "@/components/crm/follow-ups/followup-field";
 import { TrailComposer, TypeNode, trailTypeMeta, type TrailValues } from "@/components/crm/follow-ups/trail";
+import { friendlyError, reachable } from "@/components/crm/persist";
 import { addLeadHistoryEntry, setLeadHistoryReminderDone } from "@/app/(app)/crm/history-actions";
 import { addTrackingEntry, setReminderDone as setTrackingReminderDone } from "@/app/(app)/crm/contacts/tracking-actions";
 import { getReminderClient, type ReminderClientDetails, type ReminderRow } from "@/app/(app)/crm/reminders/actions";
@@ -96,14 +97,17 @@ export function FollowUpPopup({
   const closesCurrent = worked ? !worked.done : Boolean(followup?.value);
 
   const save = async (values: TrailValues): Promise<{ error?: string }> => {
-    const report = logDeal
-      ? await addTrackingEntry({ dealId: logDeal, ...values })
-      : await addLeadHistoryEntry({ leadId, contactId: leadId ? null : contactId, ...values });
-    if (report.error) return { error: report.error };
+    const report = await reachable<{ error?: string }>(
+      logDeal
+        ? addTrackingEntry({ dealId: logDeal, ...values })
+        : addLeadHistoryEntry({ leadId, contactId: leadId ? null : contactId, ...values })
+    );
+    if (report.error) return { error: friendlyError(report.error) };
     if (worked && !worked.done) {
-      // a next reminder already replaced it; ticking the replaced one again is a no-op
-      const done = await worked.markDone();
-      if (done.error) onToast(`Report saved, but the reminder could not be ticked off: ${done.error}`, "alert");
+      // the report is already written: a failure to tick the reminder off is
+      // reported on its own, never as "the report did not save"
+      const done = await reachable(worked.markDone());
+      if (done.error) onToast(`Report saved, but the reminder could not be ticked off: ${friendlyError(done.error)}`, "alert");
     } else if (!worked && followup?.value && !values.remindAt) {
       // no next reminder: this follow up is done (the database ticks its reminder)
       followup.onSet(null);

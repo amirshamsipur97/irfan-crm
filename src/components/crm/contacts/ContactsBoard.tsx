@@ -30,7 +30,7 @@ import {
 } from "@/app/(app)/crm/contacts/actions";
 import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import { SuccessToast } from "@/components/ui/SuccessToast";
-import { applyRowEdit } from "@/components/crm/persist";
+import { applyRowEdit, reachable } from "@/components/crm/persist";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { findDuplicateContact } from "@/app/(app)/crm/contacts/actions";
@@ -439,7 +439,7 @@ export function ContactsBoard({
                 setLocalContacts((rows) =>
                   rows.map((r) => (r.id === contact.id ? { ...r, first_negotiation_at: date } : r))
                 );
-                const result = await setFirstNegotiationDate(contact.id, date);
+                const result = await reachable(setFirstNegotiationDate(contact.id, date));
                 if ("error" in result && result.error) {
                   setLocalContacts((rows) =>
                     rows.map((r) => (r.id === contact.id ? { ...r, first_negotiation_at: prev } : r))
@@ -577,7 +577,7 @@ export function ContactsBoard({
               )
             }
             onCreateOffer={async (projectName) => {
-              const result = await createOfferFromContact(contact.id, projectName);
+              const result = await reachable(createOfferFromContact(contact.id, projectName));
               if ("error" in result && result.error) return { error: result.error };
               const made = result as { id: string; name: string };
               setFreshOffers((prev) => [...prev, { contactId: contact.id, ...made }]);

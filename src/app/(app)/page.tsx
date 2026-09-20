@@ -59,12 +59,14 @@ export default async function HomePage() {
     >(),
     supabase
       .from("crm_leads")
-      .select("id, lead_source, converted_contact_id, created_at")
+      // the column is `source`; "lead_source" 400'd every time this page was
+      // opened, so the lead numbers below silently read as zero
+      .select("id, source, converted_contact_id, created_at")
       .eq("is_archived", false)
       .returns<
         {
           id: string;
-          lead_source: string | null;
+          source: string | null;
           converted_contact_id: string | null;
           created_at: string;
         }[]
@@ -126,7 +128,7 @@ export default async function HomePage() {
   const leads30d = allLeads.filter((l) => l.created_at >= thirtyDaysAgo);
   const sourceCounts = new Map<string, number>();
   for (const l of leads30d) {
-    const key = l.lead_source?.trim() || "No source";
+    const key = l.source?.trim() || "No source";
     sourceCounts.set(key, (sourceCounts.get(key) ?? 0) + 1);
   }
   const leadSources = [...sourceCounts.entries()]

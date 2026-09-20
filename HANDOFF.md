@@ -145,6 +145,55 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-20 — Why a save "does nothing" and the site "drops" (this commit, no migration, DEPLOYED)
+
+Report from the team: the report popup sometimes does not save, and the site
+cuts out at times. Two causes found, both in the logs, neither a guess.
+
+**1. A server action that REJECTS was caught by nobody.** Every board write goes
+through `applyRowEdit` / `persist`, and the report composer through
+`TrailComposer.submit` — all of them did `await action(...)` with no try/catch.
+When the request itself fails (connection drops, the function times out, or the
+page was loaded from a deployment that no longer exists so its action id is
+gone) the promise rejects: the optimistic value stayed on the board **as if it
+had saved**, and the composer's button stayed stuck on "Saving…" with no
+message at all. That is exactly "I pressed Save and nothing happened".
+`reachable()` + `friendlyError()` in `persist.ts` now turn a rejection into the
+same `{ error }` every caller already handles, and "not authenticated" is
+reported as an expired session instead of jargon. Wired through applyRowEdit,
+persist, the trail composer (upload AND save), the reminder popup (a failure to
+tick the reminder can no longer read as "the report did not save"), the
+negotiation popup and the Contacts board.
+**Proved in the browser** on a throwaway `/preview-save` page with an onSave
+that throws: red toast "That did not save…", the typed note still in the box,
+the button live again. Before the fix that same throw left a dead button.
+
+**2. The workspace home page has been querying a column that does not exist.**
+`crm_leads.lead_source` — the column is `source`. Postgres logged
+"column crm_leads.lead_source does not exist" **8 times in 24 hours**, once per
+home-page open, so New leads / Converted / the lead-source breakdown silently
+read as zero for everyone. Fixed.
+
+**A stale tab now recovers itself.** `StaleTabGuard` (mounted in the (app)
+layout) listens for a `/_next/static` asset that will not load or a ChunkLoadError
+rejection — what an open tab hits after a deploy — and reloads once, with a
+one-minute cooldown in sessionStorage so it can never loop. Verified in the
+browser: a dispatched ChunkLoadError reloaded the page (the mount stamp
+changed), and a second one within the minute did not.
+
+**⛔ For the user: turn on Skew Protection** in the Vercel project (Settings →
+Advanced), which is what actually keeps an open tab talking to the build it was
+served. My Vercel token 403s on project settings, so it needs the dashboard.
+Until then, prefer deploying outside Oman working hours.
+
+**Checked and NOT at fault**: Supabase is healthy (22,430 × 200, zero 5xx in
+24h; auth 9,598 × 200 on /user, 61 token refreshes, 8 bad logins = a typed
+password). No RLS refusal was logged for `crm_lead_history` — the two POSTs in
+the window both returned 201, which is why the failures had to be client-side.
+The `permission denied for function crm_is_member` lines were my own signed-out
+preview page hitting the new table as `anon`; `authenticated` has EXECUTE, and
+`crm_contact_negotiations` carries the normal Supabase grants.
+
 ## SESSION 2026-09-20 — The negotiation LOG: a round per call, "+" for the next one (migration `crm_contact_negotiation_log`, DEPLOYED)
 
 A cold client is not closed on the first call, so one negotiation per client was

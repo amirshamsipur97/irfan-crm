@@ -9,6 +9,7 @@
 
 import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyError, reachable } from "@/components/crm/persist";
 import { Avatar } from "@/components/ui/Avatar";
 import type { CrmOfferTracking, OfferTrackingType } from "@/lib/types";
 
@@ -406,33 +407,40 @@ export function TrailComposer({
       // straight to the private bucket, like the identity papers
       const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
       const path = `${uploadFolder}/${crypto.randomUUID()}-${safe}`;
-      const { error: uploadError } = await supabase.storage
-        .from(BUCKET)
-        .upload(path, file, { contentType: file.type || undefined });
-      if (uploadError) {
+      const upload = await reachable(
+        supabase.storage
+          .from(BUCKET)
+          .upload(path, file, { contentType: file.type || undefined })
+          .then((r) => ({ error: r.error?.message }))
+      );
+      if (upload.error) {
         setSaving(false);
-        onToast?.(uploadError.message, "alert");
+        onToast?.(friendlyError(upload.error), "alert");
         return;
       }
       uploaded = { name: file.name, storagePath: path, mimeType: file.type || null, sizeBytes: file.size };
     }
 
     const minutes = Number(duration);
-    const result = await onSave({
-      entryType: type,
-      durationMin:
-        trailTypeMeta(type).timed && duration.trim() && Number.isFinite(minutes) && minutes > 0
-          ? Math.min(Math.round(minutes), 24 * 60)
-          : null,
-      entryDate: date,
-      note,
-      remindAt: remindAt ? remindAt.toISOString() : null,
-      file: uploaded,
-    });
+    // the report is the agent's work: a save that never comes back must say so
+    // and leave the form filled in, never die with the button stuck on "Saving…"
+    const result = await reachable(
+      onSave({
+        entryType: type,
+        durationMin:
+          trailTypeMeta(type).timed && duration.trim() && Number.isFinite(minutes) && minutes > 0
+            ? Math.min(Math.round(minutes), 24 * 60)
+            : null,
+        entryDate: date,
+        note,
+        remindAt: remindAt ? remindAt.toISOString() : null,
+        file: uploaded,
+      })
+    );
     setSaving(false);
     if (result.error) {
-      if (uploaded) await supabase.storage.from(BUCKET).remove([uploaded.storagePath]);
-      onToast?.(result.error, "alert");
+      if (uploaded) await supabase.storage.from(BUCKET).remove([uploaded.storagePath]).catch(() => {});
+      onToast?.(friendlyError(result.error), "alert");
       return;
     }
     onToast?.(`${trailTypeMeta(type).label} logged`);
