@@ -325,7 +325,7 @@ panel, filters and reports.
 ## SESSION 2026-09-17 — Status: cold / pending / warm / void, no None, right before Move to contact (migration `crm_temperature_void_and_status_position` + this commit, DEPLOYED)
 
 - `TEMPERATURE_OPTIONS` (one list, used by Leads + Contacts cells, filters,
-  drawers, export) = Cold (grey #c4c4c4), Pending (#fdab3d), Warm (#00c875), **Void** (red #e2445c; colours changed the same day on request). CHECK constraints
+  drawers, export) = Cold (blue #0086c0), Pending (#fdab3d), Warm (#00c875), **Void** (red #e2445c). Colours were changed twice on request the same day; Cold went grey then back to BLUE on 09-20, in both Lead status and Contact status (one shared option list). CHECK constraints
   on `crm_leads` / `crm_contacts` now allow `void`.
 - The Status picker no longer offers the grey **None** (`OptionCell`
   `allowNone={false}`, Leads and Contacts); other option cells keep None.
