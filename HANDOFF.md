@@ -145,6 +145,18 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-20 — Contacts: Comments opens in a dialog too (this commit, no migration, DEPLOYED)
+
+The Comments column edited inline, so a sentence was written into a one-line box
+that showed its middle and clipped both ends. It now opens the same
+`NoteDialogCell` the negotiation note used: "Comments — <client>", an eight-row
+textarea, Cancel / Save. `NoteDialogCell` gained an optional `emptyHint`, drawn
+muted in an empty cell ("Add comment…") so the column does not look dead — Leads
+notes pass none and keep their blank cell. Verified on a throwaway
+`/preview-comments` page (deleted before the commit): the dialog opens with the
+existing text, editing and Save wrote the whole edited comment back, and the
+empty cell shows the hint.
+
 ## SESSION 2026-09-20 — The first negotiation is asked, not typed (migration `crm_contact_first_negotiation_details`, DEPLOYED)
 
 The "Negotiation notes" cell used to open one blank textarea, so the same call

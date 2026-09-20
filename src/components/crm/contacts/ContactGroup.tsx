@@ -20,7 +20,7 @@ import {
   CONTACT_NAME_COL_W,
   requestBandSegments,
 } from "./contacts-config";
-import { NegotiationCell, OptionCell, TextCell } from "./contact-cells";
+import { NegotiationCell, NoteDialogCell, OptionCell } from "./contact-cells";
 import { negotiationSummary } from "./negotiation-config";
 import { BEDROOM_OPTIONS, PROPERTY_TYPES } from "./demand-config";
 import { NumberCell } from "@/components/crm/deals/deal-cells";
@@ -490,11 +490,15 @@ export function ContactGroup({
                     case "comments":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
-                          <TextCell
+                          {/* a comment is a sentence, not a tag — the inline
+                              input showed the middle of it and edited blind,
+                              so it opens in its own dialog like the note */}
+                          <NoteDialogCell
                             value={contact.comments}
-                            onSave={(next) =>
-                              onPatchContact(contact.id, { comments: next || null })
-                            }
+                            title={`Comments — ${contact.name}`}
+                            placeholder="Anything the team should know about this client…"
+                            emptyHint="Add comment…"
+                            onSave={(next) => onPatchContact(contact.id, { comments: next })}
                           />
                         </span>
                       );

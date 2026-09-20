@@ -203,11 +203,14 @@ export function NoteDialogCell({
   value,
   title,
   placeholder,
+  emptyHint,
   onSave,
 }: {
   value: string | null;
   title: string;
   placeholder?: string;
+  /** muted hint drawn in an empty cell, so the column does not look dead */
+  emptyHint?: string;
   onSave: (next: string | null) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -228,9 +231,9 @@ export function NoteDialogCell({
           setOpen(true);
         }}
         className={CELL_BUTTON_TEXT}
-        title={value ?? "Add note"}
+        title={value ?? emptyHint ?? "Add note"}
       >
-        <span className="min-w-0 truncate">{value ?? ""}</span>
+        <span className={`min-w-0 truncate${value ? "" : " text-ink-muted"}`}>{value ?? emptyHint ?? ""}</span>
       </button>
       {open &&
         createPortal(
