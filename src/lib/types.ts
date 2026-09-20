@@ -289,6 +289,10 @@ export interface CrmAccount {
   position?: number;
   created_at: string;
   updated_at: string;
+  /** developer company (the standard), an area, or something else */
+  account_type?: "developer" | "area" | "other";
+  /** id in the irfaninvest.com developer register, when it came from there */
+  register_developer_id?: number | null;
 }
 
 /** One follow-up entry on an offer's tracking trail (date + note + reminder + file). */
@@ -485,6 +489,11 @@ export interface CrmDevelopment {
   position?: number;
   created_at: string;
   updated_at: string;
+  /** id in the irfaninvest.com project register, when it came from there */
+  register_project_id?: number | null;
+  /** units the register knows for this project */
+  units_count?: number | null;
+  source?: "register" | "manual";
 }
 
 export interface CrmUnitGroup {

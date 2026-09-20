@@ -83,6 +83,7 @@ export function BoardHeader({
   onNew,
   automateLabel = "Automate",
   showImport = true,
+  extraAction,
   onExport,
   exportLabel = "Export to Excel",
   searchValue,
@@ -99,6 +100,8 @@ export function BoardHeader({
   onNew: () => void;
   automateLabel?: string;
   showImport?: boolean;
+  /** an extra toolbar button, e.g. "Import from register" on Accounts/Developments */
+  extraAction?: { label: string; title?: string; onClick: () => void; busy?: boolean };
   /** when provided, the toolbar grows an Export button that downloads the board */
   onExport?: () => void;
   exportLabel?: string;
@@ -152,6 +155,15 @@ export function BoardHeader({
         <div className="flex items-center gap-[4px]">
           {showImport && (
             <GhostAction icon={<Icon name="bhImport" size={20} />}>Import</GhostAction>
+          )}
+          {extraAction && (
+            <GhostAction
+              icon={<Icon name="bhImport" size={20} />}
+              onClick={extraAction.busy ? undefined : extraAction.onClick}
+              title={extraAction.title}
+            >
+              {extraAction.busy ? "Importing…" : extraAction.label}
+            </GhostAction>
           )}
           {onExport && (
             <GhostAction

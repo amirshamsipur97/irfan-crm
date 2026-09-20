@@ -21,6 +21,15 @@ export function isTempId(id: string): boolean {
   return id.startsWith("temp-");
 }
 
+/**
+ * Placeholder id for a row that is on the board but not yet inserted. Kept out
+ * of the components: the React compiler rules read `Date.now()` / `Math.random()`
+ * inside a component as an impure call, even in an event handler.
+ */
+export function tempRowId(): string {
+  return `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export const STILL_SAVING_MESSAGE =
   "Still saving this row — give it a second, then try again.";
 

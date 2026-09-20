@@ -15,7 +15,7 @@ import { Surface } from "@/components/shell/AppChrome";
 import { AiFloaty } from "@/components/shell/AiFloaty";
 import { Icon } from "@/components/ui/Icon";
 import { SuccessToast } from "@/components/ui/SuccessToast";
-import { applyRowEdit } from "@/components/crm/persist";
+import { applyRowEdit, tempRowId } from "@/components/crm/persist";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { canAnimate } from "@/lib/motion";
@@ -30,6 +30,8 @@ import { BoardHeader } from "@/components/crm/leads/BoardHeader";
 import { GROUP_COLORS } from "@/components/crm/leads/board-config";
 import type { PickerOption } from "@/components/crm/deals/connect-picker";
 import { quickCreateAccount } from "@/app/(app)/crm/offers/actions";
+import { importPropertyRegister } from "@/app/(app)/crm/developments/register-actions";
+import { useRouter } from "next/navigation";
 import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import { DevelopmentGroup } from "./DevelopmentGroup";
 import {
@@ -60,6 +62,23 @@ export function DevelopmentsBoard({
   customColumns?: CrmCustomColumn[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  // the company register: developers → Accounts, their projects → this board
+  const [importing, setImporting] = useState(false);
+  const runImport = async () => {
+    setImporting(true);
+    const result = await importPropertyRegister();
+    setImporting(false);
+    if (result.error) {
+      setToast({ message: result.error, tone: "alert" });
+      return;
+    }
+    const r = result.result!;
+    setToast({
+      message: `Register imported: ${r.projects_added} new projects, ${r.developers_added} new companies (${r.projects_updated} projects refreshed)`,
+    });
+    router.refresh();
+  };
   const [activeTab, setActiveTab] = useState("Main table");
   const [localDevelopments, setLocalDevelopments] = useServerState(developments);
   const [search, setSearch] = useState("");
@@ -146,7 +165,7 @@ export function DevelopmentsBoard({
   };
 
   const handleAdd = async (groupId: string, name: string) => {
-    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const tempId = tempRowId();
     setLocalDevelopments((prev) => [
       ...prev,
       {
@@ -221,6 +240,12 @@ export function DevelopmentsBoard({
             quickFilters={{ dims: filterDims, rows: localDevelopments, state: qf.state, onToggle: qf.toggle, onClear: qf.clear, visible: sortedRows.length, noun: "developments" }}
             profile={profile}
             title="Developments"
+            extraAction={{
+              label: "Import from register",
+              title: "Pull the developer companies and their projects from the irfaninvest register",
+              busy: importing,
+              onClick: runImport,
+            }}
             tabs={["Main table"]}
             activeTab={activeTab}
             onTabChange={setActiveTab}

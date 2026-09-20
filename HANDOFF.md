@@ -142,6 +142,39 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-17** — committed and pushed through `e121141`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-20 — The property register standard: Accounts = developer COMPANIES, Developments = their PROJECTS (migrations `crm_property_register_standard` + `crm_property_register_ids_are_integers`, DEPLOYED)
+
+Report: agents had been typing project and area names into Accounts ("yiti",
+"almouj", "muscat hills", "azura"…), so the company list was a mix; owners were
+individual agents; the Developments board was empty.
+
+**Audit (2026-09-20):** 38 accounts = 24 real developer companies (created
+08-01, all owned by amirali shamsipur) + 14 agent rows that are projects/areas.
+`crm_developments` and `crm_projects` were EMPTY. The source of truth is the
+website register in the SAME database: `public.developers` (24) and
+`public.projects` (23, integer ids, with `project_units` counts).
+
+**The standard:**
+- `crm_accounts.account_type` = developer | area | other (+ `register_developer_id`).
+  Accounts are the COMPANY register; register rows have `owner_id = null`
+  (the company, not an agent).
+- `crm_developments` = the projects (its "Developer" column already links to an
+  account) + `register_project_id`, `units_count`, `source` (register|manual).
+- `crm_import_property_register()` (definer, any member): developers → accounts,
+  projects → developments, matched by register id then by name, refreshing
+  location/units and adopting rows instead of duplicating. Idempotent (proven:
+  second run added 0). RAN on production: **23 projects added, 24 companies
+  linked and un-owned.**
+- App: "Import from register" button on Accounts and Developments
+  (`importPropertyRegister`, BoardHeader `extraAction`); Accounts gained a
+  **Type** column (editable) and a **Projects** column (purple chips, unit
+  counts); `quickCreateAccount` now refuses non-manage roles with "Accounts are
+  the developer companies… add the project on the Developments board" — that is
+  how the junk rows appeared; `tempRowId()` moved to persist.ts (lint purity).
+- The 14 agent rows were LABELLED only (5 area, 9 other) — nothing renamed or
+  merged yet; the merge that re-points their contacts/deals is waiting for the
+  user (mapping in the session message).
+
 ## SESSION 2026-09-17 — "Shared" chip missing on the OWNER's board (this commit + migration `crm_collaboration_shared_on_converted_rows`, DEPLOYED)
 
 Report: only the second member's number showed "Shared". DB check: both rows

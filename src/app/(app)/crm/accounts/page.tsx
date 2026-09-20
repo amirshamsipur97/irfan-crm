@@ -11,11 +11,12 @@ import type {
   CrmContact,
   CrmDeal,
 } from "@/lib/types";
+import type { DevelopmentLink } from "@/components/crm/accounts/AccountsBoard";
 
 export default async function AccountsBoardPage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient(), recordBoardVisit("accounts")]);
 
-  const [{ data: groups }, { data: accounts }, { data: contacts }, { data: deals }, { data: customColumns }, { data: users }] =
+  const [{ data: groups }, { data: accounts }, { data: contacts }, { data: deals }, { data: customColumns }, { data: users }, { data: developments }] =
     await Promise.all([
       supabase
         .from("crm_account_groups")
@@ -37,6 +38,12 @@ export default async function AccountsBoardPage() {
         .eq("is_active", true)
         .order("full_name")
         .returns<CrmUser[]>(),
+      // the developer's projects, shown as a connected column
+      supabase
+        .from("crm_developments")
+        .select("id, name, developer_account_id, developer_name, units_count")
+        .order("name")
+        .returns<DevelopmentLink[]>(),
     ]);
 
   return (
@@ -48,6 +55,7 @@ export default async function AccountsBoardPage() {
       deals={deals ?? []}
       customColumns={customColumns ?? []}
       users={users ?? []}
+      developments={developments ?? []}
     />
   );
 }

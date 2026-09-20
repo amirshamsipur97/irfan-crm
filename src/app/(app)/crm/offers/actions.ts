@@ -221,12 +221,31 @@ export async function deleteDealGroup(groupId: string) {
 }
 
 /** Quick-create an account from the deal board's connect picker. */
+/**
+ * Create a developer company. Accounts are the COMPANY register (one row per
+ * developer), so only managers and admins may add one — agents typing a project
+ * or an area name here is exactly how the board filled up with "yiti",
+ * "almouj" and the like. They add the project on the Developments board
+ * instead, or import the register.
+ */
 export async function quickCreateAccount(name: string) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "not authenticated" };
+
+  const { data: me } = await supabase
+    .from("crm_users")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle<{ role: string }>();
+  if (!me || !["developer", "ceo", "media", "manager"].includes(me.role)) {
+    return {
+      error:
+        "Accounts are the developer companies. Ask a manager to add the company, or add the project on the Developments board.",
+    };
+  }
 
   const { data: group } = await supabase
     .from("crm_account_groups")

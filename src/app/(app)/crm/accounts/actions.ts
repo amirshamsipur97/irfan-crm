@@ -10,6 +10,8 @@ const BOARD_PATH = "/crm/accounts";
 const PATCHABLE = new Set([
   "name",
   "owner_id",
+  // developer company / area / other — the register standard
+  "account_type",
   "domain",
   "email",
   "email_label",

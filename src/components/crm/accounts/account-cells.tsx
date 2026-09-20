@@ -152,6 +152,28 @@ export function IndustryCell({
 }
 
 /** Connected contacts chips: first contact + "+N" overflow. */
+/** The developer's projects, newest register data first. */
+export function ProjectsChipCell({ projects }: { projects: { name: string; units: number }[] }) {
+  if (projects.length === 0) return <span className="block size-full" />;
+  const [first, ...rest] = projects;
+  return (
+    <span className="flex size-full items-center justify-center gap-[4px] px-[8px]">
+      <span
+        title={projects.map((p) => (p.units > 0 ? `${p.name} (${p.units} units)` : p.name)).join(" · ")}
+        className="flex h-[24px] min-w-0 items-center gap-[4px] truncate rounded-[4px] bg-[#a25ddc]/12 px-[8px] font-sans text-[14px] leading-[20px] text-ink"
+      >
+        <span className="truncate">{first.name}</span>
+        {first.units > 0 && <span className="shrink-0 text-ink-muted">· {first.units}</span>}
+      </span>
+      {rest.length > 0 && (
+        <span className="flex h-[24px] shrink-0 items-center rounded-[4px] bg-[#a25ddc]/12 px-[6px] font-sans text-[14px] leading-[20px] text-ink">
+          +{rest.length}
+        </span>
+      )}
+    </span>
+  );
+}
+
 export function ContactsChipCell({ contactNames }: { contactNames: string[] }) {
   if (contactNames.length === 0) return <span className="block size-full" />;
   const [first, ...rest] = contactNames;

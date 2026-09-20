@@ -19,6 +19,8 @@ import type { CrmAccount, CrmAccountGroup, CrmContact, CrmDeal, CrmUser } from "
 import { BoardHeader } from "@/components/crm/leads/BoardHeader";
 import { GROUP_COLORS } from "@/components/crm/leads/board-config";
 import { AccountGroup } from "./AccountGroup";
+import { importPropertyRegister } from "@/app/(app)/crm/developments/register-actions";
+import { useRouter } from "next/navigation";
 import {
   addAccount,
   addAccountGroup,
@@ -28,12 +30,21 @@ import {
 } from "@/app/(app)/crm/accounts/actions";
 import { setGroupCollapsed } from "@/app/(app)/crm/actions";
 import { SuccessToast } from "@/components/ui/SuccessToast";
-import { applyRowEdit } from "@/components/crm/persist";
+import { applyRowEdit, tempRowId } from "@/components/crm/persist";
 import { canEditRow, OWNER_ONLY_MESSAGE } from "@/lib/permissions";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { byPosition, useRowTools } from "@/components/crm/row-tools";
 import { applyQuickFilters, useQuickFilters, type QuickFilterDim } from "@/components/crm/quick-filters";
 import { EmailComposer } from "@/components/crm/email/EmailComposer";
+
+/** the bit of a Development the Accounts board needs */
+export type DevelopmentLink = {
+  id: string;
+  name: string;
+  developer_account_id: string | null;
+  developer_name: string | null;
+  units_count: number | null;
+};
 
 export function AccountsBoard({
   profile,
@@ -43,6 +54,7 @@ export function AccountsBoard({
   deals,
   customColumns = [],
   users = [],
+  developments = [],
 }: {
   profile: CrmUser;
   groups: CrmAccountGroup[];
@@ -51,8 +63,28 @@ export function AccountsBoard({
   deals: CrmDeal[];
   customColumns?: CrmCustomColumn[];
   users?: CrmUser[];
+  /** projects of these developers, for the Projects column */
+  developments?: DevelopmentLink[];
 }) {
+
   const rootRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  // the company register: developers → Accounts, their projects → Developments
+  const [importing, setImporting] = useState(false);
+  const runImport = async () => {
+    setImporting(true);
+    const result = await importPropertyRegister();
+    setImporting(false);
+    if (result.error) {
+      setToast({ message: result.error, tone: "alert" });
+      return;
+    }
+    const r = result.result!;
+    setToast({
+      message: `Register imported: ${r.developers_added} new companies, ${r.projects_added} new projects (${r.developers_updated} companies and ${r.projects_updated} projects refreshed)`,
+    });
+    router.refresh();
+  };
   const [activeTab, setActiveTab] = useState("Main View");
   const [localAccounts, setLocalAccounts] = useServerState(accounts);
   const [search, setSearch] = useState("");
@@ -134,7 +166,7 @@ export function AccountsBoard({
   };
 
   const handleAddAccount = async (groupId: string, name: string) => {
-    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const tempId = tempRowId();
     setLocalAccounts((prev) => [
       ...prev,
       {
@@ -211,6 +243,12 @@ export function AccountsBoard({
             quickFilters={{ dims: filterDims, rows: localAccounts, state: qf.state, onToggle: qf.toggle, onClear: qf.clear, visible: sortedRows.length, noun: "accounts" }}
             profile={profile}
             title="Accounts"
+            extraAction={{
+              label: "Import from register",
+              title: "Pull the developer companies and their projects from the irfaninvest register",
+              busy: importing,
+              onClick: runImport,
+            }}
             tabs={["Main View", "Main table"]}
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -242,6 +280,7 @@ export function AccountsBoard({
               )}
               contacts={contacts}
               deals={deals}
+              developments={developments}
               onToggleCollapse={(collapsed) => {
                 setGroupCollapsed("accounts", group.id, collapsed);
               }}

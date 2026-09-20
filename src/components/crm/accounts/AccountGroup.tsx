@@ -14,13 +14,14 @@ import { useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Icon } from "@/components/ui/Icon";
+import type { DevelopmentLink } from "./AccountsBoard";
 import type { CrmAccount, CrmAccountGroup, CrmContact, CrmDeal } from "@/lib/types";
 import { Checkbox, InlineEdit, OwnerCell } from "@/components/crm/leads/cells";
-import { DealsChipCell, TextCell } from "@/components/crm/contacts/contact-cells";
+import { DealsChipCell, OptionCell, TextCell } from "@/components/crm/contacts/contact-cells";
 import { NumberCell } from "@/components/crm/deals/deal-cells";
 import { CONNECTED_UNDERLINE } from "@/components/crm/contacts/contacts-config";
-import { ACCOUNT_COLUMNS, ACCOUNT_NAME_COL_W } from "./accounts-config";
-import { ContactsChipCell, DomainCell, IndustryCell } from "./account-cells";
+import { ACCOUNT_COLUMNS, ACCOUNT_NAME_COL_W, ACCOUNT_TYPES } from "./accounts-config";
+import { ContactsChipCell, DomainCell, IndustryCell, ProjectsChipCell } from "./account-cells";
 import { RowTools, dropTargetProps, type RowToolsConfig } from "@/components/crm/row-tools";
 import { useActiveRow, useCheckedRow } from "@/components/crm/active-row";
 import { EmailCell } from "@/components/crm/leads/lead-cells";
@@ -29,6 +30,7 @@ import { DeleteIcon } from "@/components/ui/DeleteIcon";
 const ROW_H = 36;
 
 export function AccountGroup({
+  developments = [],
   group,
   accounts,
   contacts,
@@ -52,6 +54,8 @@ export function AccountGroup({
   accounts: CrmAccount[];
   contacts: CrmContact[];
   deals: CrmDeal[];
+  /** projects of these developers (Projects column) */
+  developments?: DevelopmentLink[];
   isNew?: boolean;
   users: CrmUser[];
   customColumns: CrmCustomColumn[];
@@ -349,6 +353,36 @@ export function AccountGroup({
                           </span>
                         </span>
                       );
+                    case "type":
+                      return (
+                        <span key={col.key} className={`${cellBorder} block`} style={w}>
+                          <OptionCell
+                            value={account.account_type ?? "developer"}
+                            options={ACCOUNT_TYPES}
+                            allowNone={false}
+                            onSelect={(next) =>
+                              onPatchAccount(account.id, { account_type: (next ?? "developer") as CrmAccount["account_type"] })
+                            }
+                          />
+                        </span>
+                      );
+                    case "projects": {
+                      const projects = developments.filter(
+                        (d) =>
+                          d.developer_account_id === account.id ||
+                          (!d.developer_account_id && byAccount(d.developer_name, account.name))
+                      );
+                      return (
+                        <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
+                          <ProjectsChipCell
+                            projects={projects.map((d) => ({
+                              name: d.name,
+                              units: d.units_count ?? 0,
+                            }))}
+                          />
+                        </span>
+                      );
+                    }
                     case "contacts":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
