@@ -151,10 +151,11 @@ one block. `REQUEST_COLUMN_KEYS` + `requestBandSegments(columns)` in
 contacts-config build the band from the columns AS ORDERED right now (members
 drag columns), so a run of neighbouring request columns becomes one segment and
 everything else is a gap of the same width — the band can never drift out of
-line. The band is a 24px sticky row above the header; the header moved to
-`top-[24px]`. Verified in the browser on the real ContactGroup: band width 592px
-= 150+110+140+192, left edge on "Property type", right edge on "Accounts",
-sitting exactly 24px above the header row.
+line. The band is a **32px** sticky row above the header (24px clipped the text;
+raised the same day on request, text 12px with `leading-[32px]`), and the header
+sits at `top-[32px]`. Verified in the browser on the real ContactGroup: band
+width 592px = 150+110+140+192, left edge on "Property type", right edge on
+"Accounts", header immediately below it with no gap.
 
 ## SESSION 2026-09-20 — the Accounts merge (user approved; backup in `backups/crm-accounts-standardisation-2026-09-20.json`)
 

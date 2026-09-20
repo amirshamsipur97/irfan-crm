@@ -196,7 +196,7 @@ export function ContactGroup({
         <div ref={bodyRef} className="w-fit">
           {/* "As request" — one highlighted band over the client's demand
               columns, sitting on top of the header and scrolling with it */}
-          <div className="board-head sticky top-0 z-30 flex h-[24px] w-fit items-stretch bg-white">
+          <div className="board-head sticky top-0 z-30 flex h-[32px] w-fit items-stretch bg-white">
             <span
               className="gutter-cover sticky left-0 z-10 bg-white"
               style={{ width: CONTACT_NAME_COL_W }}
@@ -206,7 +206,7 @@ export function ContactGroup({
                 <span
                   key={`band-${seg.key}`}
                   title="What the client is asking for"
-                  className="flex items-center justify-center gap-[6px] rounded-t-[6px] border-x border-t border-teal-deep/30 bg-teal-deep/12 px-[4px] font-sans text-[11.5px] font-semibold uppercase tracking-[0.4px] text-teal-deep"
+                  className="flex items-center justify-center gap-[6px] rounded-t-[6px] border-x border-t border-teal-deep/30 bg-teal-deep/12 px-[4px] font-sans text-[12px] font-semibold uppercase leading-[32px] tracking-[0.4px] text-teal-deep"
                   style={{ width: seg.width }}
                 >
                   As request
@@ -221,7 +221,7 @@ export function ContactGroup({
               pt-[8px] leaves above the pinned bar (sticky offsets measure from
               the content box), the same reason .gutter-cover paints the 40px
               lane on the left */}
-          <div className="board-head sticky top-[24px] z-30 flex h-[36px] w-fit items-stretch bg-white">
+          <div className="board-head sticky top-[32px] z-30 flex h-[36px] w-fit items-stretch bg-white">
             <div
               className="gutter-cover sticky left-0 z-10 flex items-stretch bg-white"
               style={{ width: CONTACT_NAME_COL_W }}
