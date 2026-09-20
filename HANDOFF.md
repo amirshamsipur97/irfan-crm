@@ -12,38 +12,41 @@
 (The keyword is **CRM-LOAD**. Everything needed to resume is in this file;
 read the three sections above before touching anything.)
 
-### ▶️ Where the next session starts (written 2026-09-17)
+### ▶️ Where the next session starts (written 2026-09-20)
 
-1. **Two things are waiting on the USER, ask about them first:**
-   - **the 43-row consistency cleanup** — 39 leads still show a green
-     "moved" check with no contact behind it, and 4 leads have no group so
-     no board shows them. The exact statement, the expected result
-     (`relinked 1 · stale_checks_cleared 38 · leads_given_a_group 4`) and the
-     backup (`backups/crm-cleanup-2026-09-17.json`) are in the 09-17
-     "why counts disagree" entry. The permission classifier refused to run it
-     ("Modify Shared Resources"); it needs the user's yes or their own run.
-   - three judgement calls from the same audit: offer "New Offer" (sara, no
-     client), contact C-0113 "Amir" with no owner, 5 phone numbers duplicated
-     on 12 leads from before the 08-26 guard.
-2. **Check the reminders really rang**, the first morning after 09-17:
-   `select type, title, created_at from crm_notifications where type =
-   'followup' order by created_at desc limit 20;` and
-   `select * from cron.job_run_details d join cron.job j using (jobid) where
-   j.jobname in ('crm-followup-reminders','crm-reminders') order by start_time desc
-   limit 10;`. On 09-17, 13 leads were due and 0 notifications had gone out
-   yet (the 08:00 run had passed before the feature landed).
-3. **Lead history has never been used by a signed-in person yet**
-   (0 entries at ship). The first real entry is the real end-to-end test: an
-   entry with a reminder two minutes out should appear in the author's bell
-   within a minute of its time.
+1. **Three things are waiting on the USER, ask about them first:**
+   - **Yiti / Sustainable City belongs to WHICH company?** The register has
+     project `TSCY` under **SDIC**, while **Diamond Developers** (12 contacts,
+     0 projects) is described as "Sustainable City Yiti". One of the two is
+     wrong; the 12 contacts should then hang off the right project.
+   - **Who develops `morouj lanes`, `ray al qurum`, `Talal Al Qurum (Sorouh Al
+     Qurm)`?** They are on Developments as manual projects with an empty
+     Developer column, and still have an Accounts row of type `other`.
+   - **the 43-row consistency cleanup** (still open from 09-17): 39 leads show a
+     green "moved" check with no contact behind it, 4 leads have no group. The
+     statement, expected result (`relinked 1 · stale_checks_cleared 38 ·
+     leads_given_a_group 4`) and backup (`backups/crm-cleanup-2026-09-17.json`)
+     are in the 09-17 "why counts disagree" entry. The permission classifier
+     refused it; it needs the user's yes.
+2. **The reminder system is proven in production — leave it alone unless asked.**
+   `crm-followup-reminders` ran 04:00 UTC on 09-19 and 09-20, 46 follow-up
+   notifications have gone out, 104 Lead history entries exist (102 of them the
+   linked "next follow up" rows). Two collaborations are accepted and 2 leads
+   carry the Shared chip.
+3. **Nothing in the app is unverified except what could not be tested signed in**
+   (every board change this stretch was checked on a throwaway `/preview-*`
+   page, the database halves inside rolled-back transactions). The one thing
+   never exercised by a real signed-in member: the duplicate-phone popup end to
+   end on a live board (guard → popup → sign → admin approve → owner accept →
+   number lands + Shared chip).
 
 ### 🔴 The system is LIVE — read this before your first command
 
-As of **2026-09-17** the CRM is in daily production use by **15 active
+As of **2026-09-20** the CRM is in daily production use by **15 active
 members (10 agents, 1 CEO, 4 developers)** entering real client data
-right now: **307 leads · 213 contacts · 33 offers · 1 accepted deal ·
-38 developer accounts**. It grows between sessions — re-count, never
-quote these numbers back.
+right now: **324 leads · 222 contacts · 34 offers · 32 accounts (24
+developer companies) · 26 projects on Developments**. It grows between
+sessions — re-count, never quote these numbers back.
 
 1. **Never wipe, reseed or "clean up" data.** Rows appear between your
    queries — the team is typing while you work. Match by **id, never by
@@ -53,7 +56,7 @@ quote these numbers back.
 2. **Ask before anything destructive or permission-widening.** Two
    examples from 08-03 that were confirmed first: zeroing the boards, and
    opening group-delete to every role.
-3. `git log --oneline -5` — the tree must be clean and end at **`e121141`**
+3. `git log --oneline -5` — the tree must be clean and end at **`6180b03`**
    (or later). `git status` must be empty.
 4. **Deploy is ALWAYS `npx vercel deploy --prod --yes`.** Pushing to
    GitHub does NOT deploy. Push after every commit anyway (backup):
@@ -139,7 +142,7 @@ an unused destructure in ContactGroup).
    This proved both 08-26 changes on the real markup.
    **Delete the file before committing — it ships as a public route.**
 
-> Updated: **2026-09-17** — committed and pushed through `e121141`, every
+> Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
 
 ## SESSION 2026-09-20 — Contacts: an "As request" band over the client's demand columns (this commit, no migration, DEPLOYED)
@@ -2044,7 +2047,53 @@ newline, drawer section verified on BOTH boards, test note reverted.
   contact drawer = Details / First negotiation notes / Demand / Documents
   / Offers / Latest activity / Lead tracking.
 
-## 📊 LIVE SYSTEM STATE — end of 2026-09-17 (CURRENT)
+## 📊 LIVE SYSTEM STATE — end of 2026-09-20 (CURRENT)
+
+**https://crm.irfaninvest.com** · code at `6180b03` · everything deployed,
+pushed, working tree clean.
+
+**Team: 15 active** — 10 agents · 1 CEO · 4 developers. The roster moves;
+re-read `crm_users`.
+
+**Real data, re-counted 2026-09-20:** 324 leads · 222 contacts · 34 offers ·
+32 accounts (24 developer companies, 5 areas, 3 projects awaiting a developer) ·
+26 projects on Developments · 104 Lead history entries (102 linked follow-ups,
+93 of them the 09-20 backfill) · 93 open reminders · 46 follow-up notifications
+sent · 2 accepted collaborations · 5 duplicate-number attempts logged.
+
+**Scheduled jobs (pg_cron):**
+| job | when (UTC) | does |
+|---|---|---|
+| `crm-reminders` | every minute | Lead history + offer-trail reminders → bell |
+| `crm-timed-followups` | every minute | follow-ups WITH a time → owner's bell |
+| `crm-followup-reminders` | 04:00 (08:00 Muscat) | bare-date follow-ups → owner |
+| `crm-rescore-leads` | 02:00 | rescoring |
+| `crm-expire-reservations` | :15 hourly | reservation expiry |
+
+**Shipped 09-17 → 09-20** (entries above, newest first): the "As request" band
+over the Contacts demand columns · the property-register standard (Accounts =
+developer companies, Developments = their projects, register import, Type +
+Projects columns, agents can no longer invent a company) and the merge of the 14
+agent-made account rows · Lead status and Contact status separated (no mirroring,
+own dashboard pies) · Status options cold/pending/warm/void with no "None",
+placed before Move to contact · the whole Collaboration feature (duplicate
+number → signed request → admin review with the commission split → owner accepts
+→ the number lands on the requester's row with a Shared chip; rejection needs a
+reason both agents see) · the To-do list page with its popup, filters and badge ·
+"next follow up" ⇄ Lead history ⇄ offer trails kept in sync.
+
+**Known open items**
+1. ⛔ Yiti/Sustainable City company, the 3 projects without a developer, and the
+   43-row cleanup — all waiting on the user (see "Where the next session starts").
+2. **Email is still dark** — no RESEND_API_KEY / verified domain; temp passwords
+   show on screen only, every "Send email" returns 503.
+3. Auth "leaked password protection" still off (Supabase dashboard toggle).
+4. Column drag is wired on Leads, Contacts, Offers only; Export to Excel on
+   Leads only.
+5. Accepting a collaboration does NOT widen row permissions: the collaborator
+   sees the client under "Shared clients", not on their own board.
+
+## 📊 LIVE SYSTEM STATE — end of 2026-09-17 (superseded)
 
 **https://crm.irfaninvest.com** · code at `06d11ed` (+ HANDOFF commits) ·
 production `dpl_FgGjHP4PLdhunPLPPhPy9tgdYPDE` · everything deployed.
