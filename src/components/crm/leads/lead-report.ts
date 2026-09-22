@@ -19,7 +19,15 @@
 import type { CrmLead, CrmUser } from "@/lib/types";
 import type { XlsxColumn, XlsxSheet, XlsxValue } from "@/lib/xlsx";
 import { toLocalDateString } from "@/components/crm/activities/activities-config";
-import { temperatureLabel } from "@/lib/person-fields";
+import { genderLabel, temperatureLabel } from "@/lib/person-fields";
+import type { CrmCustomColumn } from "@/lib/custom-columns";
+import { bedroomLabel, propertyTypeLabel } from "@/components/crm/contacts/demand-config";
+import {
+  NEGOTIATION_CHANNELS,
+  NEGOTIATION_PURPOSES,
+  NEGOTIATION_READINESS,
+} from "@/components/crm/contacts/negotiation-config";
+import { customValue } from "./lead-export";
 import { sourceLabel } from "./board-config";
 import type { JourneyContact, JourneyData, JourneyDeal } from "@/app/(app)/crm/leads/report-actions";
 
@@ -197,8 +205,10 @@ export function buildLeadReportSheets(opts: {
   to: string | null;
   /** set when the report was narrowed to one agent's leads */
   agent?: string | null;
-}): XlsxSheet[] {
-  const { journeys, users, dealStages, from, to, agent } = opts;
+  /** the Contacts table's own added columns */
+  contactColumns?: CrmCustomColumn[];
+}): { summary: XlsxSheet; journey: XlsxSheet; contacts: XlsxSheet; offers: XlsxSheet; about: XlsxSheet } {
+  const { journeys, users, dealStages, from, to, agent, contactColumns = [] } = opts;
   const userName = (id: string | null) => users.find((u) => u.id === id)?.full_name ?? null;
   const stageName = (id: string | null) => dealStages.find((s) => s.id === id)?.name ?? null;
   const window = from || to ? `${from ?? "the start"} to ${to ?? "today"}` : "All time";
@@ -251,6 +261,8 @@ export function buildLeadReportSheets(opts: {
       ["Leads", String(total.lead)],
       ["Who counts as the agent", "Whoever entered the lead. The owner is on the Lead journey sheet too."],
       ["Leads (all fields)", "Every column of every lead in this report, custom columns included, as the board's own Export writes them."],
+      ["Contacts (all fields)", "For each lead that became a contact: every column of the Contacts table, its added columns and the latest negotiation answers included."],
+      ["Offers & deals", "One row per offer made on those contacts: project, developer, value, stage, acceptance and downpayment."],
       ["Moved to contact", "The lead was moved to Contacts (the ✓ on the board)."],
       ["Got an offer", "At least one offer exists on that contact."],
       ["Deal accepted", "At least one of those offers was accepted by the client."],
@@ -311,7 +323,13 @@ export function buildLeadReportSheets(opts: {
       ];
     });
 
-  return [summary, { name: "Lead journey", columns: journeyColumns, rows: journeyRows }, about];
+  return {
+    summary,
+    journey: { name: "Lead journey", columns: journeyColumns, rows: journeyRows },
+    contacts: buildContactsSheet(journeys, users, contactColumns),
+    offers: buildOffersSheet(journeys, users, dealStages),
+    about,
+  };
 }
 
 export function leadReportFileName(from: string | null, to: string | null, agent?: string | null): string {
@@ -320,4 +338,161 @@ export function leadReportFileName(from: string | null, to: string | null, agent
   const who = agent ? `-${agent.trim().replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, "-")}` : "";
   if (!from && !to) return `lead-report${who}-all-time-${today}.xlsx`;
   return `lead-report${who}-${from ?? "start"}-to-${to ?? today}.xlsx`;
+}
+
+/* ─────────────────────── the other tables, per lead ─────────────────────── */
+
+const labelOf = (list: { key: string; label: string }[], key: string | null | undefined) =>
+  key ? list.find((o) => o.key === key)?.label ?? key : null;
+const yesNo = (v: boolean | null | undefined) => (v === true ? "Yes" : v === false ? "No" : null);
+
+/**
+ * Every column of the Contacts table for each lead that became a contact —
+ * the lead and whoever entered it first, so a row always says whose lead it
+ * was. A contact several leads were merged into appears once per lead.
+ */
+function buildContactsSheet(journeys: LeadJourney[], users: CrmUser[], columns: CrmCustomColumn[]): XlsxSheet {
+  const userName = (id: string | null) => users.find((u) => u.id === id)?.full_name ?? null;
+  const fixed: XlsxColumn[] = [
+    { header: "Lead", width: 28 },
+    { header: "Entered by", width: 22 },
+    { header: "Contact", width: 28 },
+    { header: "Contact code", width: 13 },
+    { header: "Owner", width: 22 },
+    { header: "Contact status", width: 14 },
+    { header: "Email", width: 28 },
+    { header: "Country code", width: 13 },
+    { header: "Telephone", width: 18 },
+    { header: "Country", width: 16 },
+    { header: "Gender", width: 10 },
+    { header: "Age", width: 7 },
+    { header: "Property type", width: 15 },
+    { header: "Size", width: 9 },
+    { header: "Budget", width: 13 },
+    { header: "Preferred area", width: 18 },
+    { header: "Requirements", width: 40, wrap: true },
+    { header: "Accounts", width: 22 },
+    { header: "First negotiation", width: 16 },
+    { header: "First contact type", width: 17 },
+    { header: "Lives in Oman", width: 13 },
+    { header: "Purpose", width: 18 },
+    { header: "Handover", width: 14 },
+    { header: "Matching offer", width: 14 },
+    { header: "Suggested instead", width: 20 },
+    { header: "Next negotiation", width: 16 },
+    { header: "Negotiation notes", width: 50, wrap: true },
+    { header: "Comments", width: 40, wrap: true },
+    { header: "Lead source", width: 14 },
+    { header: "Created", width: 12 },
+  ];
+  const rows: XlsxValue[][] = journeys
+    .filter((j) => j.contact)
+    .map((j) => {
+      const c = j.contact!;
+      const custom = (c.custom ?? {}) as Record<string, unknown>;
+      return [
+        j.lead.name,
+        userName(j.lead.created_by),
+        c.name,
+        c.code,
+        userName(c.owner_id),
+        c.temperature ? temperatureLabel(c.temperature) : null,
+        c.email,
+        c.country_code,
+        c.phone,
+        c.country,
+        c.gender ? genderLabel(c.gender) : null,
+        c.age,
+        c.property_type ? propertyTypeLabel(c.property_type) : null,
+        c.bedrooms ? bedroomLabel(c.bedrooms) : null,
+        c.budget,
+        c.preferred_area,
+        c.requirements,
+        c.account_name,
+        { date: c.first_negotiation_at },
+        labelOf(NEGOTIATION_CHANNELS, c.negotiation_channel),
+        yesNo(c.negotiation_resident),
+        c.negotiation_purpose === "other"
+          ? c.negotiation_purpose_other || "Other"
+          : labelOf(NEGOTIATION_PURPOSES, c.negotiation_purpose),
+        labelOf(NEGOTIATION_READINESS, c.negotiation_readiness),
+        yesNo(c.negotiation_has_offer),
+        c.negotiation_alt_project ?? null,
+        { date: c.next_negotiation_at ?? null },
+        c.first_negotiation_note,
+        c.comments,
+        c.lead_source ? sourceLabel(c.lead_source) : null,
+        { date: toLocalDateString(c.created_at) },
+        ...columns.map((col) => customValue(col, custom[col.key], users)),
+      ];
+    });
+  return {
+    name: "Contacts (all fields)",
+    columns: [...fixed, ...columns.map((col) => ({ header: col.label, width: 18, wrap: col.type === "text" }))],
+    rows,
+  };
+}
+
+/** One row per offer made on a lead's contact, with the lead it traces back to. */
+function buildOffersSheet(
+  journeys: LeadJourney[],
+  users: CrmUser[],
+  dealStages: { id: string; name: string }[]
+): XlsxSheet {
+  const userName = (id: string | null) => users.find((u) => u.id === id)?.full_name ?? null;
+  const columns: XlsxColumn[] = [
+    { header: "Lead", width: 28 },
+    { header: "Entered by", width: 22 },
+    { header: "Contact", width: 26 },
+    { header: "Offer", width: 30 },
+    { header: "Stage", width: 16 },
+    { header: "Offer owner", width: 22 },
+    { header: "Project", width: 20 },
+    { header: "Developer", width: 22 },
+    { header: "Property type", width: 15 },
+    { header: "Size", width: 9 },
+    { header: "Units", width: 7 },
+    { header: "Value", width: 13 },
+    { header: "Currency", width: 9 },
+    { header: "Close probability %", width: 18 },
+    { header: "Expected close", width: 14 },
+    { header: "Offer made on", width: 14 },
+    { header: "Accepted on", width: 13 },
+    { header: "Downpayment %", width: 14 },
+    { header: "Downpayment amount", width: 19 },
+    { header: "Invoice sent on", width: 15 },
+    { header: "Deal done on", width: 13 },
+    { header: "Next step", width: 30, wrap: true },
+    { header: "Lost reason", width: 24, wrap: true },
+    { header: "Offer details", width: 40, wrap: true },
+  ];
+  const rows: XlsxValue[][] = journeys.flatMap((j) =>
+    j.offers.map((d) => [
+      j.lead.name,
+      userName(j.lead.created_by),
+      j.contact?.name ?? d.contact_name,
+      d.name,
+      dealStages.find((st) => st.id === d.stage_id)?.name ?? null,
+      userName(d.owner_id),
+      d.project_name,
+      d.account_name,
+      d.offer_property_type ? propertyTypeLabel(d.offer_property_type) : null,
+      d.offer_bedrooms ? bedroomLabel(d.offer_bedrooms) : null,
+      d.unit_count,
+      d.deal_value,
+      d.deal_value == null ? null : d.currency,
+      d.close_probability,
+      { date: d.expected_close_date },
+      { date: toLocalDateString(d.created_at) },
+      { date: toLocalDateString(d.accepted_at) },
+      d.downpayment_percent,
+      d.downpayment_amount,
+      { date: toLocalDateString(d.invoice_sent_at) },
+      { date: toLocalDateString(d.downpayment_completed_at) },
+      d.next_step,
+      d.lost_reason,
+      d.offer_details,
+    ])
+  );
+  return { name: "Offers & deals", columns, rows };
 }

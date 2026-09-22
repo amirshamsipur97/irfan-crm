@@ -38,7 +38,7 @@ function movedToContact(lead: CrmLead): boolean {
 }
 
 /** A custom column's stored value, rendered the way its cell renders it. */
-function customValue(
+export function customValue(
   column: CrmCustomColumn,
   raw: unknown,
   users: CrmUser[]

@@ -145,6 +145,37 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-22 — Lead report: every lead's data from every table (this commit, no migration, DEPLOYED)
+
+The report's workbook now carries each lead's story from all three tables,
+six sheets in reading order: **Summary · Lead journey · Leads (all fields) ·
+Contacts (all fields) · Offers & deals · About**.
+
+- **Contacts (all fields)** — one row per lead that became a contact: the lead
+  and who entered it first, then every Contacts-table column (status, email,
+  phone, country, gender, age, property type, size, budget, preferred area,
+  requirements, accounts, the negotiation answers + next negotiation + notes,
+  comments, lead source, created) and the Contacts table's own added columns.
+  A contact several leads were merged into appears once per lead.
+- **Offers & deals** — one row per offer on those contacts: lead, entered by,
+  contact, offer, stage, owner, project, developer, property type, size, units,
+  value, currency, close probability, expected close, made on, accepted on,
+  downpayment % and amount, invoice sent, deal done on, next step, lost reason,
+  details.
+
+`getLeadJourneyData()` now returns the WHOLE contact and offer rows plus the
+Contacts table's custom columns (still full-access only). `customValue` in
+lead-export.ts is exported and reused, so an added column renders the same in
+every sheet.
+
+**Verified on the live data** (names and phones hashed in SQL): 355 journey
+rows, 355 full lead rows × 32 columns, **202** contact rows × 31 columns (+ the
+live "Project" added column), **50** offer rows, matching the journeys (202
+leads with a found contact, 50 lead×offer pairs); openpyxl opened all six
+sheets. Note: 241 leads reached "moved to contact", but 39 of them carry the ✓
+with no link and no matching phone, so they have no contact row to show — the
+same 39 as the open 43-row cleanup.
+
 ## SESSION 2026-09-22 — Lead report: pick an agent, export every field of their leads (this commit, no migration, DEPLOYED)
 
 The report only COUNTED per agent. Now each agent row in it is a radio-style

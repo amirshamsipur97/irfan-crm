@@ -410,13 +410,14 @@ export function LeadsBoard({
     }
     try {
       const agentName = agentActive ? users.find((u) => u.id === reportAgent)?.full_name ?? null : null;
-      const [summary, journeySheet, about] = buildLeadReportSheets({
+      const sheets = buildLeadReportSheets({
         journeys,
         users,
         dealStages: journeyData.dealStages,
         from: reportRange.from,
         to: reportRange.to,
         agent: agentName,
+        contactColumns: journeyData.contactColumns,
       });
       // every field of every lead in the report — the same columns, custom
       // columns included, that the board's own Export writes
@@ -427,11 +428,15 @@ export function LeadsBoard({
         stages,
         customColumns: localColumns,
       });
+      // the lead's whole story, one table per sheet: its own row on Leads,
+      // the contact it became, and the offers and deals made on that contact
       downloadXlsx(leadReportFileName(reportRange.from, reportRange.to, agentName), [
-        summary,
-        journeySheet,
+        sheets.summary,
+        sheets.journey,
         { ...full, name: "Leads (all fields)" },
-        about,
+        sheets.contacts,
+        sheets.offers,
+        sheets.about,
       ]);
       setToast({
         message: `Report exported: ${journeys.length} lead${journeys.length === 1 ? "" : "s"}${agentName ? ` entered by ${agentName}` : ""}`,

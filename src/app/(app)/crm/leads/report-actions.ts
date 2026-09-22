@@ -3,34 +3,24 @@
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
 import { isFullAccess } from "@/lib/permissions";
+import type { CrmContact, CrmDeal } from "@/lib/types";
+import type { CrmCustomColumn } from "@/lib/custom-columns";
 
-/** A contact, as much as the lead report needs to follow a lead onto it. */
-export interface JourneyContact {
-  id: string;
-  code: string | null;
-  name: string;
-  phone: string | null;
-  country_code: string | null;
-}
+/**
+ * The contact a lead became — the whole row, so the report can hand over every
+ * field the Contacts table holds, not just enough to find it.
+ */
+export type JourneyContact = CrmContact;
 
-/** An offer, as much as the lead report needs to place it on the journey. */
-export interface JourneyDeal {
-  id: string;
-  name: string;
-  contact_id: string | null;
-  contact_name: string | null;
-  stage_id: string | null;
-  created_at: string;
-  accepted_at: string | null;
-  deal_value: number | null;
-  currency: string | null;
-  downpayment_completed_at: string | null;
-}
+/** An offer on that contact — the whole Offers-table row, for the same reason. */
+export type JourneyDeal = CrmDeal;
 
 export interface JourneyData {
   contacts: JourneyContact[];
   deals: JourneyDeal[];
   dealStages: { id: string; name: string }[];
+  /** the Contacts table's own added columns, so the report carries them too */
+  contactColumns: CrmCustomColumn[];
 }
 
 /**
@@ -49,17 +39,18 @@ export async function getLeadJourneyData(): Promise<JourneyData | { error: strin
   if (!isFullAccess(profile.role)) return { error: "The lead report is for admins only." };
 
   const supabase = await createClient();
-  const [{ data: contacts, error: cErr }, { data: deals, error: dErr }, { data: stages }] = await Promise.all([
-    supabase
-      .from("crm_contacts")
-      .select("id, code, name, phone, country_code")
-      .returns<JourneyContact[]>(),
-    supabase
-      .from("crm_deals")
-      .select("id, name, contact_id, contact_name, stage_id, created_at, accepted_at, deal_value, currency, downpayment_completed_at")
-      .returns<JourneyDeal[]>(),
-    supabase.from("crm_deal_stages").select("id, name").order("position").returns<{ id: string; name: string }[]>(),
-  ]);
+  const [{ data: contacts, error: cErr }, { data: deals, error: dErr }, { data: stages }, { data: columns }] =
+    await Promise.all([
+      supabase.from("crm_contacts").select("*").returns<CrmContact[]>(),
+      supabase.from("crm_deals").select("*").returns<CrmDeal[]>(),
+      supabase.from("crm_deal_stages").select("id, name").order("position").returns<{ id: string; name: string }[]>(),
+      supabase
+        .from("crm_custom_columns")
+        .select("*")
+        .eq("board_key", "contacts")
+        .order("position")
+        .returns<CrmCustomColumn[]>(),
+    ]);
   if (cErr || dErr) return { error: (cErr ?? dErr)?.message ?? "could not read the journey" };
-  return { contacts: contacts ?? [], deals: deals ?? [], dealStages: stages ?? [] };
+  return { contacts: contacts ?? [], deals: deals ?? [], dealStages: stages ?? [], contactColumns: columns ?? [] };
 }
