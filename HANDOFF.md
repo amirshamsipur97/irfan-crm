@@ -145,6 +145,28 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-22 — Lead report: pick an agent, export every field of their leads (this commit, no migration, DEPLOYED)
+
+The report only COUNTED per agent. Now each agent row in it is a radio-style
+pick: clicking one narrows the board, the funnel and the Excel file to the
+leads that agent ENTERED (`created_by`), shows a chip "Only leads entered by …"
+with ✕, and counts in the Filter badge ("Clear all" clears it). Every agent
+stays listed (the table reads the window BEFORE the pick, `agentJourneys`), so
+another can be picked straight away.
+
+The report's workbook gained a **Leads (all fields)** sheet between Lead
+journey and About: `buildLeadsSheet`, the board's own Export, run over the
+report's leads, so it carries every board column including custom columns.
+With an agent picked the file is named `lead-report-<agent>-…xlsx` and its
+About sheet says whose leads it holds. Picking the Owner chip in the filters
+still narrows the report too, as before.
+
+Verified in the browser on a throwaway page (deleted before the commit):
+picking "aylar homayoun" showed the chip, cut the funnel and "Showing" line to
+her 10 of 40 leads, kept all three agents listed with hers marked, and the full
+sheet went from 40 rows to 10, 32 columns each. tsc clean, build clean, eslint
+at the 37+3 baseline.
+
 ## SESSION 2026-09-22 — The Filter panel fits the screen and scrolls inside itself (this commit, no migration, DEPLOYED)
 
 Report: with the admin Lead report on top, the Filter panel grew taller than a

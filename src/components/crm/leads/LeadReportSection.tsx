@@ -38,14 +38,22 @@ export function LeadReportSection({
   range,
   onRange,
   journeys,
+  agentJourneys,
+  selectedAgent,
+  onAgent,
   loadError,
   users,
   onExport,
 }: {
   range: Range;
   onRange: (next: Range) => void;
-  /** null while the contacts and offers are still loading */
+  /** the leads being counted and exported (narrowed to the picked agent); null while loading */
   journeys: LeadJourney[] | null;
+  /** the same window before the agent pick, so every agent stays listed */
+  agentJourneys: LeadJourney[] | null;
+  /** the agent whose leads the report is narrowed to, if any */
+  selectedAgent: string | null;
+  onAgent: (agentId: string | null) => void;
   loadError: string | null;
   users: CrmUser[];
   onExport: () => void;
@@ -53,7 +61,8 @@ export function LeadReportSection({
   const options = presets();
   const active = options.find((o) => o.range.from === range.from && o.range.to === range.to)?.key ?? "custom";
   const totals = journeys ? funnel(journeys) : null;
-  const agents = journeys ? byAgent(journeys, users) : [];
+  const agents = agentJourneys ? byAgent(agentJourneys, users) : [];
+  const pickedName = selectedAgent ? users.find((u) => u.id === selectedAgent)?.full_name ?? "Agent" : null;
 
   const input =
     "h-[30px] rounded-[4px] border border-line-strong bg-white px-[8px] font-sans text-[13px] text-ink outline-none focus:border-[#00a0a0]";
@@ -119,6 +128,25 @@ export function LeadReportSection({
         </span>
       </div>
 
+      {pickedName && (
+        <div className="mt-[8px] flex flex-wrap items-center gap-[8px]">
+          <span className="flex h-[28px] items-center gap-[6px] rounded-[14px] border border-teal-deep bg-teal-deep px-[10px] font-sans text-[12.5px] text-white">
+            Only leads entered by {pickedName}
+            <button
+              type="button"
+              onClick={() => onAgent(null)}
+              aria-label="Show every agent again"
+              className="flex size-[16px] items-center justify-center rounded-full text-[11px] text-white/80 hover:bg-white/20 hover:text-white"
+            >
+              ✕
+            </button>
+          </span>
+          <span className="font-sans text-[12px] text-ink-muted">
+            The board, the numbers and the Excel file now hold just these leads, every field of each.
+          </span>
+        </div>
+      )}
+
       {loadError ? (
         <p className="m-0 pt-[10px] font-sans text-[12.5px] text-alert">{loadError}</p>
       ) : !totals ? (
@@ -145,7 +173,12 @@ export function LeadReportSection({
             ))}
           </div>
 
-          {/* one line per agent */}
+          {/* one line per agent — click one to narrow everything to their leads */}
+          {agents.length > 0 && !pickedName && (
+            <p className="m-0 pt-[8px] font-sans text-[12px] text-ink-muted">
+              Click an agent to see only the leads they entered, and export every field of each.
+            </p>
+          )}
           {agents.length > 0 && (
             <div className="thin-scroll mt-[8px] max-h-[176px] overflow-auto rounded-[6px] border border-line bg-white">
               <table className="w-full min-w-[640px] border-collapse font-sans text-[12.5px]">
@@ -161,9 +194,30 @@ export function LeadReportSection({
                   </tr>
                 </thead>
                 <tbody>
-                  {agents.map((a) => (
-                    <tr key={a.agentId ?? a.agent} className="border-t border-line">
-                      <td className="max-w-[200px] truncate px-[10px] py-[5px] text-ink">{a.agent}</td>
+                  {agents.map((a) => {
+                    const picked = selectedAgent != null && a.agentId === selectedAgent;
+                    return (
+                    <tr
+                      key={a.agentId ?? a.agent}
+                      onClick={() => a.agentId && onAgent(picked ? null : a.agentId)}
+                      title={picked ? "Show every agent again" : `Only ${a.agent}'s leads: on the board, in the numbers and in the Excel file`}
+                      className={`cursor-pointer border-t border-line transition-colors ${
+                        picked ? "bg-[#00a0a0]/12" : "hover:bg-[var(--hover-ghost)]"
+                      }`}
+                    >
+                      <td className="max-w-[220px] truncate px-[10px] py-[5px] text-ink">
+                        <span className="flex items-center gap-[6px]">
+                          <span
+                            className={`flex size-[14px] shrink-0 items-center justify-center rounded-full border ${
+                              picked ? "border-teal-deep bg-teal-deep" : "border-line-strong bg-white"
+                            }`}
+                            aria-hidden
+                          >
+                            {picked && <span className="size-[6px] rounded-full bg-white" />}
+                          </span>
+                          <span className={`truncate ${picked ? "font-medium" : ""}`}>{a.agent}</span>
+                        </span>
+                      </td>
                       {JOURNEY_STEPS.map((s) => (
                         <td key={s.key} className="px-[8px] py-[5px] text-right tabular-nums text-ink">
                           {a.counts[s.key] || <span className="text-ink-muted">0</span>}
@@ -171,7 +225,8 @@ export function LeadReportSection({
                       ))}
                       <td className="px-[10px] py-[5px] text-right tabular-nums text-ink">{pct(a.counts.deal, a.counts.lead)}%</td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

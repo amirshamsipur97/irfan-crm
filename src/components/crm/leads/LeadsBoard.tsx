@@ -375,7 +375,12 @@ export function LeadsBoard({
   const inRange = rangeActive
     ? visibleLeads.filter((l) => inWindow(entryDay(l), reportRange.from, reportRange.to))
     : visibleLeads;
-  const sortedRows = applyQuickFilters([...inRange].sort(byPosition), filterDims, qf.state);
+  const filteredRows = applyQuickFilters([...inRange].sort(byPosition), filterDims, qf.state);
+  // one agent picked in the report narrows everything to the leads they
+  // entered: the board, the funnel and the export
+  const [reportAgent, setReportAgent] = useState<string | null>(null);
+  const agentActive = isAdmin && reportAgent != null;
+  const sortedRows = agentActive ? filteredRows.filter((l) => l.created_by === reportAgent) : filteredRows;
 
   // the contacts and offers each lead became — admins only, read once
   const [journeyData, setJourneyData] = useState<JourneyData | null>(null);
@@ -393,7 +398,10 @@ export function LeadsBoard({
       alive = false;
     };
   }, [isAdmin]);
-  const journeys = isAdmin && journeyData ? buildJourneys(sortedRows, journeyData) : null;
+  // every agent stays listed so another can be picked; the numbers and the
+  // file follow the pick
+  const agentJourneys = isAdmin && journeyData ? buildJourneys(filteredRows, journeyData) : null;
+  const journeys = agentJourneys && agentActive ? agentJourneys.filter((j) => j.lead.created_by === reportAgent) : agentJourneys;
 
   const handleReportExport = () => {
     if (!journeys || !journeyData || journeys.length === 0) {
@@ -401,17 +409,33 @@ export function LeadsBoard({
       return;
     }
     try {
-      downloadXlsx(
-        leadReportFileName(reportRange.from, reportRange.to),
-        buildLeadReportSheets({
-          journeys,
-          users,
-          dealStages: journeyData.dealStages,
-          from: reportRange.from,
-          to: reportRange.to,
-        })
-      );
-      setToast({ message: `Report exported: ${journeys.length} lead${journeys.length === 1 ? "" : "s"}` });
+      const agentName = agentActive ? users.find((u) => u.id === reportAgent)?.full_name ?? null : null;
+      const [summary, journeySheet, about] = buildLeadReportSheets({
+        journeys,
+        users,
+        dealStages: journeyData.dealStages,
+        from: reportRange.from,
+        to: reportRange.to,
+        agent: agentName,
+      });
+      // every field of every lead in the report — the same columns, custom
+      // columns included, that the board's own Export writes
+      const full = buildLeadsSheet({
+        leads: journeys.map((j) => j.lead),
+        groups: localGroups,
+        users,
+        stages,
+        customColumns: localColumns,
+      });
+      downloadXlsx(leadReportFileName(reportRange.from, reportRange.to, agentName), [
+        summary,
+        journeySheet,
+        { ...full, name: "Leads (all fields)" },
+        about,
+      ]);
+      setToast({
+        message: `Report exported: ${journeys.length} lead${journeys.length === 1 ? "" : "s"}${agentName ? ` entered by ${agentName}` : ""}`,
+      });
     } catch {
       setToast({ message: "Could not build the Excel file.", tone: "alert" });
     }
@@ -497,15 +521,19 @@ export function LeadsBoard({
               onClear: () => {
                 qf.clear();
                 setReportRange({ from: null, to: null });
+                setReportAgent(null);
               },
               visible: sortedRows.length,
               noun: "leads",
-              extraActive: rangeActive ? 1 : 0,
+              extraActive: (rangeActive ? 1 : 0) + (agentActive ? 1 : 0),
               extra: isAdmin ? (
                 <LeadReportSection
                   range={reportRange}
                   onRange={setReportRange}
                   journeys={journeys}
+                  agentJourneys={agentJourneys}
+                  selectedAgent={agentActive ? reportAgent : null}
+                  onAgent={setReportAgent}
                   loadError={journeyError}
                   users={users}
                   onExport={handleReportExport}

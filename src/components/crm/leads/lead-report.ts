@@ -185,9 +185,9 @@ const STEP_LABEL: Record<JourneyStep, string> = {
 };
 
 /**
- * Two sheets: the per-agent summary a manager reads first, and one row per
- * lead with every step of its journey dated, for anyone who wants to check a
- * number or pivot it their own way.
+ * The per-agent summary a manager reads first, one row per lead with every
+ * step of its journey dated, and a sheet saying what the file covers. The board
+ * adds the full lead sheet between the last two (it owns the board's columns).
  */
 export function buildLeadReportSheets(opts: {
   journeys: LeadJourney[];
@@ -195,8 +195,10 @@ export function buildLeadReportSheets(opts: {
   dealStages: { id: string; name: string }[];
   from: string | null;
   to: string | null;
+  /** set when the report was narrowed to one agent's leads */
+  agent?: string | null;
 }): XlsxSheet[] {
-  const { journeys, users, dealStages, from, to } = opts;
+  const { journeys, users, dealStages, from, to, agent } = opts;
   const userName = (id: string | null) => users.find((u) => u.id === id)?.full_name ?? null;
   const stageName = (id: string | null) => dealStages.find((s) => s.id === id)?.name ?? null;
   const window = from || to ? `${from ?? "the start"} to ${to ?? "today"}` : "All time";
@@ -245,8 +247,10 @@ export function buildLeadReportSheets(opts: {
     ],
     rows: [
       ["Window", `${window}, by the day each lead came in (the board's Date column)`],
+      ["Agent", agent ? `Only the leads entered by ${agent}` : "Every agent"],
       ["Leads", String(total.lead)],
-      ["Agent", "Whoever entered the lead. The owner is on the Lead journey sheet too."],
+      ["Who counts as the agent", "Whoever entered the lead. The owner is on the Lead journey sheet too."],
+      ["Leads (all fields)", "Every column of every lead in this report, custom columns included, as the board's own Export writes them."],
       ["Moved to contact", "The lead was moved to Contacts (the ✓ on the board)."],
       ["Got an offer", "At least one offer exists on that contact."],
       ["Deal accepted", "At least one of those offers was accepted by the client."],
@@ -310,8 +314,10 @@ export function buildLeadReportSheets(opts: {
   return [summary, { name: "Lead journey", columns: journeyColumns, rows: journeyRows }, about];
 }
 
-export function leadReportFileName(from: string | null, to: string | null): string {
+export function leadReportFileName(from: string | null, to: string | null, agent?: string | null): string {
   const today = toLocalDateString(new Date().toISOString());
-  if (!from && !to) return `lead-report-all-time-${today}.xlsx`;
-  return `lead-report-${from ?? "start"}-to-${to ?? today}.xlsx`;
+  // an agent's name goes in as written, spaces made safe for every OS
+  const who = agent ? `-${agent.trim().replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, "-")}` : "";
+  if (!from && !to) return `lead-report${who}-all-time-${today}.xlsx`;
+  return `lead-report${who}-${from ?? "start"}-to-${to ?? today}.xlsx`;
 }
