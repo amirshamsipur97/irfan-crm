@@ -145,6 +145,27 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-22 — The Filter panel fits the screen and scrolls inside itself (this commit, no migration, DEPLOYED)
+
+Report: with the admin Lead report on top, the Filter panel grew taller than a
+laptop screen and the column chips at its bottom could not be reached. The
+panel was `absolute` with no height limit, so it simply ran off the page.
+
+`QuickFiltersPanel` (every board uses it) now caps itself at the room left
+under the toolbar (`innerHeight − its top − 16px`, re-measured on resize,
+written straight to the element's style so no state or re-render is involved)
+and scrolls inside a body below a fixed title row, so "Quick filters · Clear
+all" stays in view. The report block is responsive: the five funnel tiles go
+2 / 3 / 5 across by width, From/To wraps under the presets, and the agent table
+scrolls sideways inside itself (min 640px) instead of crushing its numbers.
+
+Verified in the browser on a throwaway `/preview-report` page (deleted before
+the commit) with the real board's six chip columns: at 1280×720 the panel spans
+232→704px, its body scrolls (683px of content in 422px), and after scrolling to
+the end the last chip sits at 621px, inside the panel. At 768px wide there is
+no horizontal page overflow, the tiles fall into two rows and the table scrolls
+on its own.
+
 ## SESSION 2026-09-22 — Leads: an admin lead report in the Filter panel, with an Excel export (this commit, no migration, DEPLOYED)
 
 For the full-access tier only (developer, CEO; `isFullAccess`), the Leads

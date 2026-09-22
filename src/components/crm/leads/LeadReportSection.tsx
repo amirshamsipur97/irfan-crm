@@ -97,7 +97,7 @@ export function LeadReportSection({
             {o.label}
           </button>
         ))}
-        <span className="ml-[6px] flex items-center gap-[6px] font-sans text-[12.5px] text-ink-muted">
+        <span className="flex flex-wrap items-center gap-[6px] font-sans text-[12.5px] text-ink-muted sm:ml-[6px]">
           From
           <input
             type="date"
@@ -126,7 +126,7 @@ export function LeadReportSection({
       ) : (
         <>
           {/* the funnel */}
-          <div className="mt-[10px] grid grid-cols-5 gap-[6px]">
+          <div className="mt-[10px] grid grid-cols-2 gap-[6px] sm:grid-cols-3 lg:grid-cols-5">
             {JOURNEY_STEPS.map((step) => (
               <div key={step.key} className="rounded-[6px] border border-line bg-white px-[10px] py-[7px]">
                 <p className="m-0 flex items-center gap-[6px] font-sans text-[11.5px] text-ink-muted">
@@ -147,8 +147,8 @@ export function LeadReportSection({
 
           {/* one line per agent */}
           {agents.length > 0 && (
-            <div className="thin-scroll mt-[8px] max-h-[176px] overflow-y-auto rounded-[6px] border border-line bg-white">
-              <table className="w-full border-collapse font-sans text-[12.5px]">
+            <div className="thin-scroll mt-[8px] max-h-[176px] overflow-auto rounded-[6px] border border-line bg-white">
+              <table className="w-full min-w-[640px] border-collapse font-sans text-[12.5px]">
                 <thead className="sticky top-0 bg-canvas">
                   <tr className="text-left text-ink-muted">
                     <th className="px-[10px] py-[5px] font-medium">Agent (entered the lead)</th>

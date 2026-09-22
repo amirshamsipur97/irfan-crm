@@ -7,7 +7,7 @@
  * and run rows through applyQuickFilters().
  */
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 export const BLANK = "__blank__";
 
@@ -99,9 +99,30 @@ export function QuickFiltersPanel({
   const total = rows.length;
   const anyActive = countActiveFilters(state) + extraActive > 0;
 
+  // The panel hangs below the toolbar and used to be as tall as its content,
+  // so once the Leads report joined it the column chips ran past the bottom of
+  // a laptop screen with no way to reach them. It is now capped at the space
+  // left under the toolbar and scrolls inside itself; the title row with
+  // "Clear all" stays put above the scroll.
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const fit = () => {
+      const el = panelRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      el.style.maxHeight = `${Math.max(240, window.innerHeight - top - 16)}px`;
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
+
   return (
-    <div className="absolute left-0 right-0 top-[calc(100%-8px)] z-50 rounded-[8px] border border-line bg-white shadow-[0px_6px_20px_rgba(0,0,0,0.2)]">
-      <div className="flex items-center justify-between px-[20px] pb-[6px] pt-[14px]">
+    <div
+      ref={panelRef}
+      className="absolute left-0 right-0 top-[calc(100%-8px)] z-50 flex flex-col overflow-hidden rounded-[8px] border border-line bg-white shadow-[0px_6px_20px_rgba(0,0,0,0.2)]"
+    >
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-[6px] border-b border-line/60 px-[20px] pb-[8px] pt-[14px]">
         <p className="m-0 font-sans text-[15px] leading-[22px] text-ink">
           <span className="font-semibold">Quick filters</span>
           <span className="pl-[8px] text-[13px] text-ink-muted">
@@ -117,6 +138,7 @@ export function QuickFiltersPanel({
           Clear all
         </button>
       </div>
+      <div className="thin-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain pt-[10px]">
       {extra}
       <p className="m-0 px-[20px] pb-[6px] font-sans text-[13px] font-semibold text-ink">
         All columns
@@ -180,6 +202,7 @@ export function QuickFiltersPanel({
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );
