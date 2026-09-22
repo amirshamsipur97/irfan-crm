@@ -145,6 +145,50 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-22 — Leads: an admin lead report in the Filter panel, with an Excel export (this commit, no migration, DEPLOYED)
+
+For the full-access tier only (developer, CEO; `isFullAccess`), the Leads
+board's Filter panel now opens with a **Lead report** block above the column
+chips:
+
+- **A window on the day each lead came in** (`lead_date`, which all 355 live
+  leads have): All time / Today / Last 7 days / This month / Last month, or any
+  From and To. Presets are built from LOCAL dates. The window **filters the
+  board too**, so the rows under the panel are the rows being counted; it counts
+  in the Filter badge and "Clear all" clears it (`extra` + `extraActive` on
+  `QuickFiltersProp`, the slot any board can use).
+- **The funnel** for the leads in the window, five steps, each a count of leads
+  that reached AT LEAST that step: Leads → Moved to contact → Got an offer →
+  Deal accepted → Deal done, with the % of leads.
+- **One line per agent**, the agent being whoever ENTERED the lead
+  (`created_by`; equal to the owner on 351 of 355 rows).
+- **Export report (Excel)**: three sheets. *Summary* (per agent + an "All
+  agents" row), *Lead journey* (one row per lead, every step dated: came in,
+  moved on, first offer, latest offer stage, deals accepted, accepted value,
+  deal done, plus entered-by and owner), and *About* (the window and what each
+  step means, kept off the data sheets so their auto-filter stays clean).
+
+**How a lead is followed** (`components/crm/leads/lead-report.ts`, pure):
+`converted_contact_id` first; for the 39 leads that carry the ✓ with no stored
+link (merged into an existing card) the same phone number names the contact.
+Offers on that contact: `contact_id` first, the cached contact name second, the
+rule the Contacts board's deal-done badge uses. Several leads merged into one
+contact each count that contact's offer, so "Got an offer" can exceed the
+number of offers.
+
+The second half of the journey comes from `getLeadJourneyData()`
+(`leads/report-actions.ts`), which refuses anyone below full access on the
+server as well as in the UI.
+
+**Verified**: the TypeScript logic, run on the live data with names and phones
+hashed in SQL, gave **355 → 241 → 36 → 3 → 0** for all time and **133** leads
+for 1–22 September, identical to an independent SQL count of the same rules.
+The workbook it built was opened with openpyxl: three sheets, 355 journey rows,
+totals row `All agents 355 241 36 3 0 68%`. The panel was driven on a throwaway
+`/preview-report` page (deleted before the commit): presets and From/To filter
+the rows and the numbers, the chip highlights, "Clear all" enables. tsc clean,
+build clean, eslint at the 37+3 baseline.
+
 ## SESSION 2026-09-20 — To-do list: the client name opens the client's own side panel (this commit, no migration, DEPLOYED)
 
 The Client column linked out to the board, so working a reminder meant leaving

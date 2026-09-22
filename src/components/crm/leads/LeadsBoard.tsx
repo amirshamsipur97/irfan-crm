@@ -8,7 +8,7 @@ import {
   renameCustomColumn,
 } from "@/app/(app)/crm/custom-columns-actions";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -50,6 +50,10 @@ import { EmailComposer } from "@/components/crm/email/EmailComposer";
 import { GENDER_OPTIONS, TEMPERATURE_OPTIONS, genderLabel, temperatureLabel } from "@/lib/person-fields";
 import { downloadXlsx } from "@/lib/xlsx";
 import { buildLeadsSheet, leadsFileName } from "./lead-export";
+import { LeadReportSection } from "./LeadReportSection";
+import { buildJourneys, buildLeadReportSheets, entryDay, inWindow, leadReportFileName } from "./lead-report";
+import { getLeadJourneyData, type JourneyData } from "@/app/(app)/crm/leads/report-actions";
+import { isFullAccess } from "@/lib/permissions";
 
 export function LeadsBoard({
   profile,
@@ -363,7 +367,55 @@ export function LeadsBoard({
     // Blank = still an open lead; the chip mirrors the Move-to-contact ✓
     { key: "converted", label: "Moved to contact", get: (r) => (r.converted_contact_id ? "yes" : null), format: () => "Moved ✓", color: () => "#00c875" },
   ];
-  const sortedRows = applyQuickFilters([...visibleLeads].sort(byPosition), filterDims, qf.state);
+  // the admin report's window on the day each lead came in; it filters the
+  // board too, so the rows on screen are the rows being counted and exported
+  const isAdmin = isFullAccess(profile.role);
+  const [reportRange, setReportRange] = useState<{ from: string | null; to: string | null }>({ from: null, to: null });
+  const rangeActive = isAdmin && Boolean(reportRange.from || reportRange.to);
+  const inRange = rangeActive
+    ? visibleLeads.filter((l) => inWindow(entryDay(l), reportRange.from, reportRange.to))
+    : visibleLeads;
+  const sortedRows = applyQuickFilters([...inRange].sort(byPosition), filterDims, qf.state);
+
+  // the contacts and offers each lead became — admins only, read once
+  const [journeyData, setJourneyData] = useState<JourneyData | null>(null);
+  const [journeyError, setJourneyError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isAdmin) return;
+    let alive = true;
+    (async () => {
+      const result = await getLeadJourneyData().catch(() => ({ error: "Could not reach the server for the report." }));
+      if (!alive) return;
+      if ("error" in result) setJourneyError(result.error);
+      else setJourneyData(result);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [isAdmin]);
+  const journeys = isAdmin && journeyData ? buildJourneys(sortedRows, journeyData) : null;
+
+  const handleReportExport = () => {
+    if (!journeys || !journeyData || journeys.length === 0) {
+      setToast({ message: "No leads in this window to report on.", tone: "alert" });
+      return;
+    }
+    try {
+      downloadXlsx(
+        leadReportFileName(reportRange.from, reportRange.to),
+        buildLeadReportSheets({
+          journeys,
+          users,
+          dealStages: journeyData.dealStages,
+          from: reportRange.from,
+          to: reportRange.to,
+        })
+      );
+      setToast({ message: `Report exported: ${journeys.length} lead${journeys.length === 1 ? "" : "s"}` });
+    } catch {
+      setToast({ message: "Could not build the Excel file.", tone: "alert" });
+    }
+  };
 
 
   /**
@@ -437,7 +489,29 @@ export function LeadsBoard({
       <div ref={rootRef} className="flex h-full flex-col">
         <div className="board-anim">
           <BoardHeader
-            quickFilters={{ dims: filterDims, rows: localLeads, state: qf.state, onToggle: qf.toggle, onClear: qf.clear, visible: sortedRows.length, noun: "leads" }}
+            quickFilters={{
+              dims: filterDims,
+              rows: localLeads,
+              state: qf.state,
+              onToggle: qf.toggle,
+              onClear: () => {
+                qf.clear();
+                setReportRange({ from: null, to: null });
+              },
+              visible: sortedRows.length,
+              noun: "leads",
+              extraActive: rangeActive ? 1 : 0,
+              extra: isAdmin ? (
+                <LeadReportSection
+                  range={reportRange}
+                  onRange={setReportRange}
+                  journeys={journeys}
+                  loadError={journeyError}
+                  users={users}
+                  onExport={handleReportExport}
+                />
+              ) : undefined,
+            }}
             profile={profile}
             title="Leads"
             tabs={["Main table", "Lead submission form"]}

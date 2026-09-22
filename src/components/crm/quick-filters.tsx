@@ -7,7 +7,7 @@
  * and run rows through applyQuickFilters().
  */
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 export const BLANK = "__blank__";
 
@@ -34,6 +34,13 @@ export interface QuickFiltersProp {
   visible: number;
   /** e.g. "deals" — used in the "Showing X of N deals" line */
   noun: string;
+  /**
+   * A board-specific section drawn above the column chips — the Leads board
+   * puts its admin date-range report here. Its own filter counts through
+   * `extraActive`, so the Filter button's badge and "Clear all" include it.
+   */
+  extra?: ReactNode;
+  extraActive?: number;
 }
 
 function rowValues<T>(dim: QuickFilterDim<T>, row: T): string[] {
@@ -86,9 +93,11 @@ export function QuickFiltersPanel({
   onClear,
   visible,
   noun,
+  extra,
+  extraActive = 0,
 }: QuickFiltersProp) {
   const total = rows.length;
-  const anyActive = countActiveFilters(state) > 0;
+  const anyActive = countActiveFilters(state) + extraActive > 0;
 
   return (
     <div className="absolute left-0 right-0 top-[calc(100%-8px)] z-50 rounded-[8px] border border-line bg-white shadow-[0px_6px_20px_rgba(0,0,0,0.2)]">
@@ -108,6 +117,7 @@ export function QuickFiltersPanel({
           Clear all
         </button>
       </div>
+      {extra}
       <p className="m-0 px-[20px] pb-[6px] font-sans text-[13px] font-semibold text-ink">
         All columns
       </p>

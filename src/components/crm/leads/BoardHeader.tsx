@@ -136,7 +136,9 @@ export function BoardHeader({
     return () => document.removeEventListener("mousedown", handler);
   }, [filterOpen]);
 
-  const activeFilterCount = quickFilters ? countActiveFilters(quickFilters.state) : 0;
+  const activeFilterCount = quickFilters
+    ? countActiveFilters(quickFilters.state) + (quickFilters.extraActive ?? 0)
+    : 0;
 
   return (
     <div className="shrink-0 border-b border-transparent bg-white pl-[38px] pr-[30px] pt-[18px]">
