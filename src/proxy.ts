@@ -1,7 +1,20 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+/**
+ * The only paths a signed-OUT visitor may reach.
+ *
+ * 🚨 These are matched by SEGMENT, never by prefix. `startsWith` used to be
+ * enough for a hole: any route whose name merely BEGAN with one of these —
+ * `/preview-anything`, `/loginx` — skipped the session check, and this repo's
+ * own testing recipe creates `/preview-*` pages. A throwaway page now goes
+ * under `/preview/<name>` to be public, which cannot be typed by accident.
+ */
 const PUBLIC_PATHS = ["/login", "/signup", "/preview", "/auth"];
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
 
 export default async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -33,9 +46,9 @@ export default async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  const isPublic = isPublicPath(pathname);
   // /auth/* (OAuth callback, denied sign-out) must run even with a session
-  const isAuthFlow = pathname.startsWith("/auth");
+  const isAuthFlow = pathname === "/auth" || pathname.startsWith("/auth/");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();

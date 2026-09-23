@@ -145,6 +145,44 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-23 — Security pass, and the case-study permission (this commit, no migration, DEPLOYED)
+
+Full write-up in **`docs/SECURITY.md`**; the short version:
+
+**Fixed here.** (1) `src/proxy.ts` decided "is this public?" with
+`startsWith`, so **any** route whose name merely began with a public one —
+`/preview-anything`, `/loginx` — skipped the session check. It matches by
+SEGMENT now. 🚨 This changes the testing recipe: a throwaway page must live at
+**`/preview/<name>`**, not `/preview-<name>`, to be reachable signed out.
+Proved both ways on the dev server: `/preview-hole-test` → 307 to /login,
+`/preview/hole-ok` → 200. (2) Security headers on every response
+(frame-ancestors + X-Frame-Options, nosniff, Referrer-Policy, HSTS,
+Permissions-Policy, noindex) — verified in the response. (3) `backups/*.json`
+held REAL client rows (the 08-03 export, 125 contacts with negotiation notes)
+and were tracked; they are git-ignored now and stay on disk. They remain in
+history: the repo must stay private.
+
+**Checked clean:** no secret in the tree or anywhere in git history (searched
+the service-role key, JWT prefixes, the preview password); production carries
+only 3 env vars, so `/preview` 404s there; every `crm_*` table has RLS with
+policies; the admin report refuses below full access server-side.
+
+**⛔ Left for the owner, none touched** (see docs/SECURITY.md for the detail):
+RLS is OFF on eight tables in the same database — `leads`, `ai_conversations`,
+`call_attempts` and five `analytics_*` — which the public anon key can read;
+`login_user`/`signup_user` are anon-callable RPCs from another product;
+leaked-password protection is off; one SECURITY DEFINER view and three mutable
+`search_path` functions; nine tables have RLS with no policy at all.
+
+**Case study.** `docs/CASE-STUDY-PERMISSION.md` is a bilingual permission for
+Irfan Invest to SIGN (it is not permission until they do): the system, its
+screens and aggregate figures may be shown; client and staff personal data and
+**every financial figure** are excluded, the owner may review and withdraw.
+`docs/case-study/metrics-query.sql` is the only query it runs — counts, roles,
+dates, no personal field, no money — and `docs/case-study/metrics-2026-09-23.md`
+is today's snapshot (16 members, 357 leads, 248 contacts, 54 offers, 3→12
+agents in two months, 1.1 days lead→contact).
+
 ## SESSION 2026-09-22 — Lead report: every lead's data from every table (this commit, no migration, DEPLOYED)
 
 The report's workbook now carries each lead's story from all three tables,

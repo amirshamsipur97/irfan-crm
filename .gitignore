@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Database backups hold REAL client rows (names, phones, notes). They stay on
+# the machine that took them and out of the repository, even a private one.
+/backups/*.json
