@@ -34,6 +34,7 @@ investigate if it grows. Functions run in **hnd1 (Tokyo)**, beside the database.
 
 | sha | what | how it was verified |
 |---|---|---|
+| `cd4e81e` | Phone search gains an **agent picker** (lists every number that agent holds, owner or unowned-creator; digits narrow it) and **Export Excel** of exactly the rows shown (one "Numbers" sheet, 15 columns) | fixture page: picker, narrowing, empty states, and the downloaded .xlsx decoded (2 rows, dates as real Excel dates); live counts as a developer in `begin … rollback` (busiest agent 144 leads, cap is 2000) |
 | `ef6b8ce` | **Phone search** (developer + CEO): sidebar item under the boards, `/crm/phone-search`, any part of a number matched on `normalized_phone` across Leads + Contacts | fixture page drove typing/short/no-match; live query impersonated as a developer in `begin … rollback` (366 leads + 257 contacts visible, a 6-digit suffix found 1) |
 | `c2c2057` | Studio left the property-TYPE list; it is a size only | 5 offers + 4 clients moved to Apartment, backup taken; re-queried: 0 rows of either table still type `studio` |
 | `268a161` | Offers "Offer details" opens in a dialog | drove the real cell: dialog carried the text, Save wrote it back |
