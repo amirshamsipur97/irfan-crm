@@ -11,6 +11,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import type { IconName } from "@/lib/figma-icons";
 import { canAnimate } from "@/lib/motion";
 import type { CrmRole } from "@/lib/types";
+import { isFullAccess } from "@/lib/permissions";
 import { countTodoReminders } from "@/app/(app)/crm/reminders/actions";
 import { countPendingCollaborations } from "@/app/(app)/crm/collaboration/actions";
 import { useDebounced, useRealtimeTable } from "@/lib/use-realtime";
@@ -96,12 +97,18 @@ export const SECONDARY_NAV: NavItem[] = [
   { label: "Activities", icon: "navActivities", href: "/crm/activities" },
 ];
 
+/** Admin tools (developer + CEO), listed under the boards. */
+export const ADMIN_NAV: NavItem[] = [
+  // any part of a number → every lead and contact that holds it
+  { label: "Phone search", icon: "wsSearch", href: "/crm/phone-search" },
+];
+
 /** Every board, for lookups that do not care about the grouping. */
 export const WORKSPACE_NAV: NavItem[] = [...PRIMARY_NAV, ...SECONDARY_NAV];
 
 // Emails / Finance / Team moved to the left icon rail (IconRail) so the
 // workspace sidebar stays a pure board list.
-export function WorkspaceSidebar(_props: { role?: CrmRole }) {
+export function WorkspaceSidebar({ role }: { role?: CrmRole }) {
   const pathname = usePathname();
   const rootRef = useRef<HTMLElement>(null);
   const todoCount = useTodoCount();
@@ -221,6 +228,15 @@ export function WorkspaceSidebar(_props: { role?: CrmRole }) {
           </div>
 
           {SECONDARY_NAV.map(renderItem)}
+
+          {role && isFullAccess(role) && (
+            <>
+              <div className="my-[8px] px-[16px]">
+                <span className="block h-px bg-line" />
+              </div>
+              {ADMIN_NAV.map(renderItem)}
+            </>
+          )}
         </nav>
       </div>
 
