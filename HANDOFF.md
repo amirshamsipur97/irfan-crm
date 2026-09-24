@@ -12,33 +12,79 @@
 (The keyword is **CRM-LOAD**. Everything needed to resume is in this file;
 read the three sections above before touching anything.)
 
-### ▶️ Where the next session starts (written 2026-09-20)
+### ▶️ Where the next session starts (written 2026-09-24)
 
-1. **Three things are waiting on the USER, ask about them first:**
-   - **Yiti / Sustainable City belongs to WHICH company?** The register has
-     project `TSCY` under **SDIC**, while **Diamond Developers** (12 contacts,
-     0 projects) is described as "Sustainable City Yiti". One of the two is
-     wrong; the 12 contacts should then hang off the right project.
-   - **Who develops `morouj lanes`, `ray al qurum`, `Talal Al Qurum (Sorouh Al
-     Qurm)`?** They are on Developments as manual projects with an empty
-     Developer column, and still have an Accounts row of type `other`.
-   - **the 43-row consistency cleanup** (still open from 09-17): 39 leads show a
-     green "moved" check with no contact behind it, 4 leads have no group. The
-     statement, expected result (`relinked 1 · stale_checks_cleared 38 ·
-     leads_given_a_group 4`) and backup (`backups/crm-cleanup-2026-09-17.json`)
-     are in the 09-17 "why counts disagree" entry. The permission classifier
-     refused it; it needs the user's yes.
-2. **The reminder system is proven in production — leave it alone unless asked.**
-   `crm-followup-reminders` ran 04:00 UTC on 09-19 and 09-20, 46 follow-up
-   notifications have gone out, 104 Lead history entries exist (102 of them the
-   linked "next follow up" rows). Two collaborations are accepted and 2 leads
-   carry the Shared chip.
-3. **Nothing in the app is unverified except what could not be tested signed in**
-   (every board change this stretch was checked on a throwaway `/preview-*`
-   page, the database halves inside rolled-back transactions). The one thing
-   never exercised by a real signed-in member: the duplicate-phone popup end to
-   end on a live board (guard → popup → sign → admin approve → owner accept →
-   number lands + Shared chip).
+**State now.** HEAD `c2c2057` on `main`, tree clean, level with `origin/main`
+(0 ahead), deployed to production and `crm.irfaninvest.com` serves it. Checks at
+that sha: `npx tsc --noEmit` clean, `npx next build` clean, `npx eslint src`
+**37 errors + 3 warnings — the long-standing baseline, all false alarms**; only
+investigate if it grows. Functions run in **hnd1 (Tokyo)**, beside the database.
+
+**Start here, in this order:**
+
+1. **Ask the owner the four open questions** listed under "Waiting on the owner"
+   below. Three are from 09-20 and one is new; nothing else is blocked.
+2. **Check with the owner whether contact C-0260 is right.** The 09-24 studio
+   move left it as Apartment + 1BHK after it had been Studio + 1BHK, a
+   contradiction older than the change. Its own agent should say which is true.
+3. Then take whatever the owner asks for next. Nothing is half-built: every
+   change this stretch is committed, deployed and verified.
+
+**What changed 2026-09-20 → 09-24** (newest first, each verified):
+
+| sha | what | how it was verified |
+|---|---|---|
+| `c2c2057` | Studio left the property-TYPE list; it is a size only | 5 offers + 4 clients moved to Apartment, backup taken; re-queried: 0 rows of either table still type `studio` |
+| `268a161` | Offers "Offer details" opens in a dialog | drove the real cell: dialog carried the text, Save wrote it back |
+| `33093ac` | Security pass (see `docs/SECURITY.md`) + the case-study permission | `/preview-hole-test` → 307 to /login on production, headers read off the live response |
+| `d591613` | Lead report carries every table: Contacts + Offers sheets | on live data (hashed): 355 lead rows, 202 contact rows, 50 offer rows; openpyxl opened all 6 sheets |
+| `ec56af6` | Pick an agent in the report; full-field lead sheet | picking one agent cut 40 leads to 10 in the numbers AND in the sheet |
+| `25535a3` | Filter panel fits the screen and scrolls inside itself | at 1280×720 the panel spans 232→704px and its body scrolls 683px of content |
+| `bf77d90` | A follow up set for TODAY sits under Today, not Overdue | a date-only follow up stores 08:00 Muscat; today 08:00 → "today · late", yesterday → overdue |
+| `1476295` | To-do list: the client name opens that client's own drawer | both drawers opened over the list with fixture rows |
+| `9b512f1` | A failed save says so instead of dying silently | a throwing onSave produced the red toast and a live button, not a stuck one |
+| `6d9b067` | Vercel functions moved to Tokyo | `x-vercel-id: bom1::hnd1`, `λ index [hnd1]` |
+| `b368e45` | The negotiation LOG: a round per call, "+" for the next | impersonated the owner in `begin … rollback`: round 2 inserted, mirror correct |
+
+**Nothing is unfinished in code.** The only work that stopped without landing is
+what the owner has to answer, below.
+
+**⛔ Waiting on the owner** (one line each):
+
+1. **Yiti / Sustainable City belongs to which company?** The register puts
+   project `TSCY` under **SDIC**; **Diamond Developers** (12 contacts, 0
+   projects) is described as "Sustainable City Yiti". One is wrong.
+2. **Who develops `morouj lanes`, `ray al qurum`, `Talal Al Qurum (Sorouh Al
+   Qurm)`?** On Developments with an empty Developer, plus an Accounts row of
+   type `other`.
+3. **The 43-row cleanup** (open since 09-17): 39 leads carry a green "moved"
+   check with no contact behind it, 4 leads have no group. Statement, expected
+   result (`relinked 1 · stale_checks_cleared 38 · leads_given_a_group 4`) and
+   backup are in the 09-17 entry. The permission classifier refused it; it needs
+   the owner's yes. **These same 39 are why the lead report's Contacts sheet has
+   202 rows where the funnel says 241 reached "moved to contact".**
+4. **Lead `asif` (owner nastaran sistani) has an impossible date**: lead_date
+   19 Sep, row created 12 Sep. Only the agent knows the right day. Checked
+   2026-09-24, nothing changed.
+
+**🪤 Traps found this stretch, the next session will hit them otherwise:**
+
+- **A throwaway test page must live at `/preview/<name>`.** Since `33093ac` the
+  gate matches by segment, so `/preview-<name>` redirects to the login page. The
+  old recipe in "Testing in the Browser pane" below is out of date on that one
+  point.
+- **`backups/*.json` are git-ignored now** (they held real client rows). Take
+  them, keep them local, and say in the handoff where they are.
+- **Deploy is still `npx vercel deploy --prod --yes`**; `git push` deploys
+  nothing. Both were done for every sha above.
+- **A date-only value in this database is 08:00 Asia/Muscat**, not midnight
+  (`crm_followup_instant`). Any "is it overdue" question must compare DAYS.
+- **Server actions can reject before they return.** `reachable()` in
+  `components/crm/persist.ts` is the wrapper; new call sites need it or they
+  fail silently again.
+- **The Vercel token here cannot read project settings or runtime logs** (403 on
+  both). Use `npx vercel logs <url>` for a live tail, and the Supabase advisors
+  for the database side.
 
 ### 🔴 The system is LIVE — read this before your first command
 
@@ -144,6 +190,28 @@ an unused destructure in ContactGroup).
 
 > Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
+
+# Handoff log
+
+## 2026-09-24 Session: the admin lead report finished, a security pass, and studio fixed
+
+**State.** HEAD `c2c2057`, branch `main`, tree clean, pushed, deployed;
+`crm.irfaninvest.com` answers 200. tsc + build clean, eslint 37+3 (baseline).
+
+**Changed** (shas and verification in the table under "Where the next session
+starts"): the Leads admin report and its Excel file (`3971c54`, `ec56af6`,
+`d591613`), the Filter panel fitting the screen (`25535a3`), today-vs-overdue
+follow ups (`bf77d90`), the client drawer on the To-do list (`1476295`), saves
+that no longer fail silently (`9b512f1`), Tokyo region (`6d9b067`), the
+security pass (`33093ac`), Offer details in a dialog (`268a161`), studio as a
+size not a type (`c2c2057`).
+
+**Not code, still true:** `docs/CASE-STUDY-PERMISSION.md` is a DRAFT for Irfan
+Invest to sign. Until they sign it, the client is not named in any sales
+material. `docs/case-study/metrics-2026-09-23.md` holds the anonymous figures
+(16 members, 357 leads, 248 contacts, 54 offers, 1.1 days lead→contact).
+
+**Unfinished:** nothing in code. Four owner questions are open, listed above.
 
 ## SESSION 2026-09-24 — A studio is an apartment, not a property type (this commit + a data move, DEPLOYED)
 
