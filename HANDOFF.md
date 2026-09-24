@@ -188,7 +188,7 @@ an unused destructure in ContactGroup).
    This proved both 08-26 changes on the real markup.
    **Delete the file before committing — it ships as a public route.**
 
-> Updated: **2026-09-20** — committed and pushed through `6180b03`, every
+> Updated: **2026-09-24** — committed and pushed through `c2c2057`, every
 > migration applied, all deployed, working tree clean.
 
 # Handoff log
