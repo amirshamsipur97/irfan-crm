@@ -34,6 +34,7 @@ investigate if it grows. Functions run in **hnd1 (Tokyo)**, beside the database.
 
 | sha | what | how it was verified |
 |---|---|---|
+| `ef6b8ce` | **Phone search** (developer + CEO): sidebar item under the boards, `/crm/phone-search`, any part of a number matched on `normalized_phone` across Leads + Contacts | fixture page drove typing/short/no-match; live query impersonated as a developer in `begin … rollback` (366 leads + 257 contacts visible, a 6-digit suffix found 1) |
 | `c2c2057` | Studio left the property-TYPE list; it is a size only | 5 offers + 4 clients moved to Apartment, backup taken; re-queried: 0 rows of either table still type `studio` |
 | `268a161` | Offers "Offer details" opens in a dialog | drove the real cell: dialog carried the text, Save wrote it back |
 | `33093ac` | Security pass (see `docs/SECURITY.md`) + the case-study permission | `/preview-hole-test` → 307 to /login on production, headers read off the live response |
@@ -48,6 +49,8 @@ investigate if it grows. Functions run in **hnd1 (Tokyo)**, beside the database.
 
 **Nothing is unfinished in code.** The only work that stopped without landing is
 what the owner has to answer, below.
+
+**2026-09-24 late: developer `korooshkhaleghi72@gmail.com` "missing updates".** Account checked: role developer, active, session refreshed today; both hostnames serve the same build and no feature is gated per user. So the cause is on his device (a tab or home-screen app left open since August keeps the old code until a full reload). Owner was asked to have him hard reload and to say what exactly is missing if it persists.
 
 **⛔ Waiting on the owner** (one line each):
 
