@@ -6,10 +6,16 @@
  * actually be matched against stock.
  *
  * Drawn from the 407 real units in the irfaninvest.com register rather than
- * invented: Apartment dominates, then Villa / Sky Villa / Studio / Sky
- * Residence, with a tail of Penthouse, Duplex, Farm House, Chalet, Townhouse,
- * Twin Villa and Sky Palace. Office / Shop / Land are kept for commercial
- * enquiries even though the residential register has none.
+ * invented: Apartment dominates, then Villa / Sky Villa / Sky Residence, with a
+ * tail of Penthouse, Duplex, Farm House, Chalet, Townhouse, Twin Villa and Sky
+ * Palace. Office / Shop / Land are kept for commercial enquiries even though
+ * the residential register has none.
+ *
+ * 🚨 "Studio" is NOT here. A studio is an apartment, and the team says so on
+ * the phone: the TYPE is Apartment and the SIZE is Studio, which is what
+ * BEDROOM_OPTIONS below carries. It was in this list until 2026-09-24, and the
+ * nine rows that had picked it (5 offers, 4 clients) were moved to Apartment
+ * with their size left alone.
  */
 export const PROPERTY_TYPES: { key: string; label: string; color: string }[] = [
   { key: "apartment", label: "Apartment", color: "#579bfc" },
@@ -21,7 +27,6 @@ export const PROPERTY_TYPES: { key: string; label: string; color: string }[] = [
   { key: "townhouse", label: "Townhouse", color: "#00a0a0" },
   { key: "penthouse", label: "Penthouse", color: "#a25ddc" },
   { key: "duplex", label: "Duplex", color: "#e2a1f5" },
-  { key: "studio", label: "Studio", color: "#9aadbd" },
   { key: "chalet", label: "Chalet", color: "#ffcb00" },
   { key: "farm_house", label: "Farm House", color: "#7f5347" },
   { key: "office", label: "Office", color: "#fdab3d" },

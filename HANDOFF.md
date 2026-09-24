@@ -145,6 +145,31 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-24 — A studio is an apartment, not a property type (this commit + a data move, DEPLOYED)
+
+The team says it on the phone as "apartment, studio", but the board offered
+**Studio as a TYPE** as well as a size, so the same unit was recorded two ways.
+`PROPERTY_TYPES` in `contacts/demand-config.ts` no longer carries `studio`;
+`BEDROOM_OPTIONS` still does, and it is the only place a studio belongs. One
+list per concept, so Offers, the client's demand on Contacts and Units all
+changed together.
+
+**The nine live rows that had picked it were moved**, backup first in
+`backups/crm-studio-is-an-apartment-2026-09-24.json` (local only — backups are
+git-ignored since the 09-23 security pass):
+
+- 5 offers (Dileep India, Abu Manzil, ALI RIYAHI, bouzid ×2) → type Apartment,
+  size Studio. All five already carried size Studio, so nothing was invented.
+- 4 clients (C-0252, C-0323, C-0327) → Apartment + Studio; **C-0260 had type
+  Studio with size 1BHK**, a contradiction that predates this. Its size was left
+  alone: it is now Apartment + 1BHK, the agent's more specific answer. Worth a
+  glance from whoever owns that client.
+
+Verified after the write: zero rows of either table still carry type `studio`,
+the five offers read Apartment + Studio, and C-0260 kept its 1BHK. In the
+browser the type menu now lists Apartment, Villa, Twin Villa … with no Studio,
+while the size menu still starts with it.
+
 ## SESSION 2026-09-24 — Offers: "Offer details" opens in a dialog (this commit, no migration, DEPLOYED)
 
 The column held what was actually offered ("moruj 3 _ ground floor", "54 sqm",
