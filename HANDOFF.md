@@ -145,6 +145,22 @@ an unused destructure in ContactGroup).
 > Updated: **2026-09-20** — committed and pushed through `6180b03`, every
 > migration applied, all deployed, working tree clean.
 
+## SESSION 2026-09-24 — Offers: "Offer details" opens in a dialog (this commit, no migration, DEPLOYED)
+
+The column held what was actually offered ("moruj 3 _ ground floor", "54 sqm",
+"I received the offer from …") in a one-line inline input, which showed the
+middle of the sentence and edited it blind. It now opens the same
+`NoteDialogCell` the Contacts comments and the negotiation note use: title
+"Offer details — <offer>", an eight-row textarea, Cancel / Save, and a muted
+"Add details…" in an empty cell.
+
+Verified on the real component (throwaway page under `/preview/offer-details`,
+deleted before the commit): the dialog opened carrying the existing text, Save
+wrote the edited sentence back into the cell, and the empty cell shows the hint.
+
+⚠️ Note the path: throwaway test pages now live at **`/preview/<name>`** since
+the 09-23 security fix — `/preview-<name>` redirects to the login page.
+
 ## SESSION 2026-09-23 — Security pass, and the case-study permission (this commit, no migration, DEPLOYED)
 
 Full write-up in **`docs/SECURITY.md`**; the short version:

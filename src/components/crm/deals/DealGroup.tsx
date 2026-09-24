@@ -28,7 +28,7 @@ import {
   money,
 } from "./deals-config";
 import { CloseDateCell, NumberCell } from "./deal-cells";
-import { OptionCell, TextCell } from "@/components/crm/contacts/contact-cells";
+import { NoteDialogCell, OptionCell, TextCell } from "@/components/crm/contacts/contact-cells";
 import {
   BEDROOM_OPTIONS,
   PROPERTY_TYPES,
@@ -612,11 +612,15 @@ export function DealGroup({
                     case "offer_details":
                       return (
                         <span key={col.key} className={`${cellBorder} block bg-white`} style={w}>
-                          <TextCell
+                          {/* what was offered is a sentence, not a tag: the
+                              inline input showed its middle and edited blind,
+                              so it opens in the same dialog the notes use */}
+                          <NoteDialogCell
                             value={deal.offer_details}
-                            onSave={(next) =>
-                              onPatchDeal(deal.id, { offer_details: next || null })
-                            }
+                            title={`Offer details — ${deal.name}`}
+                            placeholder="What exactly was offered? Floor, view, unit number, what the client was told…"
+                            emptyHint="Add details…"
+                            onSave={(next) => onPatchDeal(deal.id, { offer_details: next })}
                           />
                         </span>
                       );
